@@ -1,0 +1,166 @@
+"use client";
+
+import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { DEFAULT_API } from "./config";
+import type { GAFile, GSCFile, Live, Meta } from "./types";
+
+/**
+ * One tiny store, one entry per data file. A block subscribes to just the file it needs, so when a slow
+ * file arrives only the blocks that read it render again. Two copies of every file exist: the one GitHub
+ * publishes every 2 hours (instant, from the CDN) and the live one from the Worker. The live copy replaces
+ * the published one only when its numbers differ, so an unchanged answer never causes a render.
+ */
+export interface Entry<T> {
+  data: T | null;
+  error: boolean;
+}
+const EMPTY: Entry<never> = { data: null, error: false };
+
+const store = new Map<string, Entry<unknown>>();
+const subs = new Map<string, Set<() => void>>();
+const inflight = new Set<string>();
+
+function emit(key: string) {
+  subs.get(key)?.forEach((f) => f());
+}
+function put(key: string, e: Entry<unknown>) {
+  store.set(key, e);
+  emit(key);
+}
+function sig(j: unknown) {
+  try {
+    return JSON.stringify(j, (k, v) => (k === "generatedAt" ? undefined : v));
+  } catch {
+    return String(Math.random());
+  }
+}
+
+let api: string | null = null;
+function apiBase(): string {
+  if (api !== null) return api;
+  api = DEFAULT_API;
+  try {
+    const q = new URLSearchParams(window.location.search).get("api");
+    if (q === "off") api = "";
+    else if (q) api = q;
+  } catch {
+    /* server render */
+  }
+  return api;
+}
+
+async function getJSON<T>(url: string, ms: number): Promise<T> {
+  const c = typeof AbortController === "function" ? new AbortController() : null;
+  const t = c ? setTimeout(() => c.abort(), ms) : 0;
+  try {
+    const r = await fetch(url, { signal: c?.signal, cache: "no-store" });
+    if (!r.ok) throw new Error(String(r.status));
+    return (await r.json()) as T;
+  } finally {
+    if (t) clearTimeout(t);
+  }
+}
+
+// ---- the "live" stamp in the header ------------------------------------------------
+interface Stamp {
+  liveAt: number;
+  live: boolean;
+  busy: boolean;
+}
+let stamp: Stamp = { liveAt: 0, live: false, busy: false };
+const stampSubs = new Set<() => void>();
+function setStamp(p: Partial<Stamp>) {
+  stamp = { ...stamp, ...p };
+  stampSubs.forEach((f) => f());
+}
+export function useStamp(): Stamp {
+  return useSyncExternalStore(
+    (cb) => {
+      stampSubs.add(cb);
+      return () => stampSubs.delete(cb);
+    },
+    () => stamp,
+    () => stamp,
+  );
+}
+
+/** Fetch the published copy and the live copy of one file. Safe to call many times. */
+export function ensure(file: string, force = false) {
+  if (inflight.has(file) && !force) return;
+  inflight.add(file);
+  const base = apiBase();
+  const applyLive = (j: unknown) => {
+    const cur = store.get(file);
+    if (!cur?.data || sig(cur.data) !== sig(j)) put(file, { data: j, error: false });
+    setStamp({ liveAt: Date.now(), live: true });
+  };
+  const live = base ? getJSON<unknown>(`${base}/data/${file}`, 45000).then(applyLive, () => {}) : Promise.resolve();
+  const stat = force
+    ? Promise.resolve()
+    : getJSON<unknown>(`/data/${file}`, 30000).then(
+        (j) => {
+          if (!store.get(file)?.data) put(file, { data: j, error: false });
+        },
+        () => {},
+      );
+  Promise.all([stat, live]).then(() => {
+    inflight.delete(file);
+    if (!store.get(file)?.data) put(file, { data: null, error: true });
+  });
+}
+
+/** Ask Google (through the Worker) again for everything on screen. */
+export function refreshAll() {
+  const keys = [...subs.keys()].filter((k) => (subs.get(k)?.size ?? 0) > 0);
+  setStamp({ busy: true });
+  const done = () => setStamp({ busy: false });
+  if (!keys.length) return done();
+  let left = keys.length;
+  keys.forEach((k) => {
+    ensure(k, true);
+    const t = setInterval(() => {
+      if (!inflight.has(k)) {
+        clearInterval(t);
+        if (--left === 0) done();
+      }
+    }, 150);
+  });
+}
+
+function useSource<T>(file: string | null): Entry<T> {
+  useEffect(() => {
+    if (file) ensure(file);
+  }, [file]);
+  const subscribe = useCallback(
+    (cb: () => void) => {
+      if (!file) return () => {};
+      let s = subs.get(file);
+      if (!s) subs.set(file, (s = new Set()));
+      s.add(cb);
+      return () => {
+        s!.delete(cb);
+      };
+    },
+    [file],
+  );
+  return useSyncExternalStore(
+    subscribe,
+    () => (file ? ((store.get(file) as Entry<T> | undefined) ?? (EMPTY as Entry<T>)) : (EMPTY as Entry<T>)),
+    () => EMPTY as Entry<T>,
+  );
+}
+
+export const useMeta = () => useSource<Meta>("meta.json");
+export const useGA = (range: string) => useSource<GAFile>(`ga-${range}.json`);
+export const useGSC = (range: string) => useSource<GSCFile>(`gsc-${range}.json`);
+export const useLive = () => useSource<Live>("live.json");
+
+/** Keep the realtime numbers moving while the page is open and visible. */
+export function useLivePolling(everyMs = 60000) {
+  useEffect(() => {
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible" && apiBase()) ensure("live.json", true);
+    }, everyMs);
+    return () => clearInterval(t);
+  }, [everyMs]);
+}

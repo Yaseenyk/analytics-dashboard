@@ -1,4 +1,7 @@
-site/data/
+public/data/
+.next/
+out/
 node_modules/
 worker/.wrangler/
 worker/node_modules/
+*.tsbuildinfo

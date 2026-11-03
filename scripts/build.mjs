@@ -1,9 +1,9 @@
 // Pulls Google Analytics 4 and Search Console data for every site, for several date ranges, and writes
-// small JSON files under site/data/ that the dashboard loads lazily (only the range and source you open).
-//   site/data/meta.json          ranges, key events, what could be read, API warnings
-//   site/data/live.json          GA4 realtime (last 30 minutes)
-//   site/data/ga-<range>.json    GA4 reports for one range (current period, plus the prior period totals)
-//   site/data/gsc-<range>.json   Search Console for one range (current and prior period)
+// small JSON files under public/data/ that the dashboard loads lazily (only the range and source you open).
+//   public/data/meta.json          ranges, key events, what could be read, API warnings
+//   public/data/live.json          GA4 realtime (last 30 minutes)
+//   public/data/ga-<range>.json    GA4 reports for one range (current period, plus the prior period totals)
+//   public/data/gsc-<range>.json   Search Console for one range (current and prior period)
 // No dependencies: Node 20+. Secret: GA_SERVICE_ACCOUNT_JSON. The files hold aggregate numbers only.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -200,8 +200,8 @@ async function gscSite(site, range) {
 }
 
 // ---------------------------------------------------------------- run
-fs.mkdirSync('site/data', { recursive: true });
-const write = (name, obj) => fs.writeFileSync(`site/data/${name}.json`, JSON.stringify(obj));
+fs.mkdirSync('public/data', { recursive: true });
+const write = (name, obj) => fs.writeFileSync(`public/data/${name}.json`, JSON.stringify(obj));
 const generatedAt = new Date().toISOString();
 
 // GA4: one file per range. Requests are throttled to stay under the concurrent-request limit.
