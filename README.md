@@ -19,3 +19,13 @@ Repository secret: `GA_SERVICE_ACCOUNT_JSON` (the service account key).
 The service account must be a Viewer on the GA4 property and a user on each Search Console property.
 Scheduled workflows in a public repo are paused after 60 days without repository activity; if that happens,
 re-enable it under the Actions tab.
+
+## Live data on open
+
+`worker/` is a Cloudflare Worker (`analytics-api`, free plan) that runs the same Google queries as the Action and
+returns the same JSON files, cached for 45 seconds (online now) to 15 minutes (Search Console). The dashboard shows
+the copy GitHub publishes every 2 hours instantly, then swaps in the Worker's live data. If the Worker is down it
+keeps the published copy. The Google key is a Worker secret (`GA_SERVICE_ACCOUNT_JSON`), never sent to the browser,
+and the Worker only answers requests from analytics.streamerosai.com.
+
+Deploy or update: `cd worker && npx wrangler deploy`. Change the key: `npx wrangler secret put GA_SERVICE_ACCOUNT_JSON`.
