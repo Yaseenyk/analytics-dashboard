@@ -3,10 +3,12 @@
 One page for every site: Google Analytics 4 and Search Console, rebuilt every 6 hours by GitHub Actions and
 served from GitHub Pages at https://analytics.streamerosai.com.
 
-- `scripts/build.mjs` signs in with a read-only Google service account and pulls GA4 and Search Console data
-  into `site/data.json` (aggregate numbers only).
-- `site/index.html` reads that file and draws the dashboard. It works on phones and desktops.
-- `.github/workflows/dashboard.yml` runs hourly and deploys the `site/` folder to GitHub Pages.
+- `scripts/build.mjs` signs in with a read-only Google service account and pulls GA4 and Search Console data for
+  7 days, 28 days, 3, 6, 12 and 16 months (each with the previous period for comparison) into `site/data/`:
+  `meta.json`, `live.json`, `ga-<range>.json` and `gsc-<range>.json` (aggregate numbers only).
+- `site/index.html` loads only the range and source you open (lazy loading) and draws the dashboard. It works on
+  phones and desktops, with sortable and filterable tables and a Search Console style Search tab.
+- `.github/workflows/dashboard.yml` runs every 2 hours and deploys the `site/` folder to GitHub Pages.
 - The page is public and has no login: anyone with the link can read the numbers. The Google key stays in
   repository secrets and is never published.
 

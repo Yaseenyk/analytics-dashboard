@@ -2,7 +2,7 @@ name: Build analytics dashboard
 
 on:
   schedule:
-    - cron: "11 * * * *" # hourly, off the top of the hour when GitHub delays runs
+    - cron: "11 */2 * * *" # every 2 hours, off the top of the hour when GitHub delays runs
   workflow_dispatch:
   push:
     branches: [main]
@@ -19,6 +19,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

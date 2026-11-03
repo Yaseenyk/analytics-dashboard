@@ -1,11 +1,22 @@
-// Pulls Google Analytics 4 and Search Console data for every site and writes site/data.json, which
-// site/index.html reads. The data is aggregate numbers only and is published as-is (the repo is public).
-// No dependencies: Node 20+ (fetch, crypto). Secret: GA_SERVICE_ACCOUNT_JSON.
+// Pulls Google Analytics 4 and Search Console data for every site, for several date ranges, and writes
+// small JSON files under site/data/ that the dashboard loads lazily (only the range and source you open).
+//   site/data/meta.json          ranges, key events, what could be read, API warnings
+//   site/data/live.json          GA4 realtime (last 30 minutes)
+//   site/data/ga-<range>.json    GA4 reports for one range (current period, plus the prior period totals)
+//   site/data/gsc-<range>.json   Search Console for one range (current and prior period)
+// No dependencies: Node 20+. Secret: GA_SERVICE_ACCOUNT_JSON. The files hold aggregate numbers only.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 
 const PROPERTY = process.env.GA_PROPERTY_ID || '562159345';
-const DAYS = 28;
+const RANGES = [
+  { id: '7d', days: 7, label: 'Last 7 days' },
+  { id: '28d', days: 28, label: 'Last 28 days' },
+  { id: '3m', days: 90, label: 'Last 3 months' },
+  { id: '6m', days: 180, label: 'Last 6 months' },
+  { id: '12m', days: 365, label: 'Last 12 months' },
+  { id: '16m', days: 480, label: 'Last 16 months' },
+];
 const GSC_SITES = [
   'sc-domain:streamerosai.com',
   'https://yk.streamerosai.com/',
@@ -22,8 +33,9 @@ if (!raw) {
   process.exit(1);
 }
 const sa = JSON.parse(raw);
-
+const errors = [];
 const b64u = (b) => Buffer.from(b).toString('base64url');
+
 async function accessToken() {
   const now = Math.floor(Date.now() / 1000);
   const head = b64u(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
@@ -46,144 +58,179 @@ async function accessToken() {
   if (!j.access_token) throw new Error(`token: ${JSON.stringify(j)}`);
   return j.access_token;
 }
-
 const token = await accessToken();
 const auth = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-const errors = [];
 
-async function ga(name, { dims = [], mets, limit = 250, filter, order, range = 'cur' }) {
-  const ranges = {
-    cur: { startDate: `${DAYS}daysAgo`, endDate: 'today' },
-    prev: { startDate: `${DAYS * 2}daysAgo`, endDate: `${DAYS + 1}daysAgo` },
-  };
-  const body = {
-    dateRanges: [ranges[range]],
-    dimensions: dims.map((name) => ({ name })),
-    metrics: mets.map((name) => ({ name })),
-    limit,
-    keepEmptyRows: false,
-  };
-  if (filter) body.dimensionFilter = filter;
-  if (order) body.orderBys = order;
-  else if (mets.length) body.orderBys = [{ metric: { metricName: mets[0] }, desc: true }];
-  const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${PROPERTY}:runReport`, {
-    method: 'POST',
-    headers: auth,
-    body: JSON.stringify(body),
-  });
-  const j = await res.json();
-  if (!res.ok) {
-    errors.push(`${name}: ${j.error?.message ?? res.status}`);
-    return { dims, mets, rows: [] };
-  }
-  const rows = (j.rows ?? []).map((r) => [...r.dimensionValues.map((v) => v.value), ...r.metricValues.map((v) => Number(v.value))]);
-  return { dims, mets, rows };
+// Run async tasks with a concurrency limit (GA4 allows 10 concurrent requests per property).
+async function pool(tasks, limit) {
+  const out = new Array(tasks.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: limit }, async () => {
+      while (next < tasks.length) {
+        const i = next++;
+        out[i] = await tasks[i]();
+      }
+    }),
+  );
+  return out;
 }
 
+// POST with a few retries on quota and server errors.
+async function post(url, body) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = await fetch(url, { method: 'POST', headers: auth, body: JSON.stringify(body) });
+    if (res.status === 429 || res.status >= 500) {
+      await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+      continue;
+    }
+    return { res, json: await res.json().catch(() => ({})) };
+  }
+  return { res: { ok: false, status: 599 }, json: { error: { message: 'retries exhausted' } } };
+}
+
+// ---------------------------------------------------------------- GA4
 const inList = (field, values) => ({ filter: { fieldName: field, inListFilter: { values } } });
 const keyEventFilter = inList('eventName', KEY_EVENTS);
 const byDate = [{ dimension: { dimensionName: 'date' } }];
-
-const reports = {};
 const M = ['sessions', 'activeUsers', 'keyEvents'];
-const plan = {
-  totals: { dims: ['hostName'], mets: ['sessions', 'activeUsers', 'newUsers', 'engagedSessions', 'screenPageViews', 'eventCount', 'keyEvents', 'userEngagementDuration'] },
-  totalsPrev: { dims: ['hostName'], mets: ['sessions', 'activeUsers', 'newUsers', 'engagedSessions', 'screenPageViews', 'eventCount', 'keyEvents', 'userEngagementDuration'], range: 'prev' },
-  daily: { dims: ['date', 'hostName'], mets: ['sessions', 'activeUsers', 'screenPageViews', 'keyEvents'], limit: 1000, order: byDate },
-  channels: { dims: ['hostName', 'sessionDefaultChannelGroup'], mets: [...M, 'engagedSessions'] },
-  sourceMedium: { dims: ['hostName', 'sessionSourceMedium'], mets: [...M, 'engagedSessions'], limit: 400 },
+const TOTAL_METS = ['sessions', 'activeUsers', 'newUsers', 'engagedSessions', 'screenPageViews', 'eventCount', 'keyEvents', 'userEngagementDuration'];
+const PLAN = {
+  totals: { dims: ['hostName'], mets: TOTAL_METS },
+  totalsPrev: { dims: ['hostName'], mets: TOTAL_METS, prev: true },
+  daily: { dims: ['date', 'hostName'], mets: ['sessions', 'activeUsers', 'screenPageViews', 'keyEvents'], limit: 5000, order: byDate },
+  channels: { dims: ['hostName', 'sessionDefaultChannelGroup'], mets: [...M, 'engagedSessions', 'newUsers'] },
+  sourceMedium: { dims: ['hostName', 'sessionSource', 'sessionMedium'], mets: [...M, 'newUsers', 'engagedSessions'], limit: 600 },
   campaigns: { dims: ['hostName', 'sessionCampaignName', 'sessionSourceMedium'], mets: [...M, 'engagedSessions'], limit: 300 },
   campaignContent: { dims: ['hostName', 'sessionManualAdContent', 'sessionManualTerm'], mets: ['sessions', 'keyEvents'], limit: 200 },
-  firstTouch: { dims: ['hostName', 'firstUserSourceMedium', 'firstUserCampaignName'], mets: ['newUsers', 'sessions', 'keyEvents'], limit: 300 },
-  referrers: { dims: ['hostName', 'pageReferrer'], mets: ['screenPageViews', 'activeUsers'], limit: 300 },
-  landing: { dims: ['hostName', 'landingPage'], mets: ['sessions', 'engagedSessions', 'keyEvents', 'activeUsers'], limit: 400 },
-  landingSource: { dims: ['hostName', 'landingPage', 'sessionSourceMedium'], mets: ['sessions', 'keyEvents'], limit: 500 },
-  pages: { dims: ['hostName', 'pagePath'], mets: ['screenPageViews', 'activeUsers', 'userEngagementDuration', 'keyEvents'], limit: 500 },
-  countries: { dims: ['hostName', 'country'], mets: ['sessions', 'activeUsers', 'keyEvents'], limit: 400 },
-  cities: { dims: ['hostName', 'country', 'city'], mets: ['sessions', 'keyEvents'], limit: 300 },
-  devices: { dims: ['hostName', 'deviceCategory'], mets: ['sessions', 'keyEvents'] },
-  browsers: { dims: ['hostName', 'browser'], mets: ['sessions', 'keyEvents'], limit: 100 },
-  os: { dims: ['hostName', 'operatingSystem'], mets: ['sessions', 'keyEvents'], limit: 100 },
-  languages: { dims: ['hostName', 'language'], mets: ['sessions', 'keyEvents'], limit: 100 },
+  firstTouch: { dims: ['hostName', 'firstUserSource', 'firstUserMedium', 'firstUserCampaignName'], mets: ['newUsers', 'sessions', 'keyEvents'], limit: 400 },
+  referrers: { dims: ['hostName', 'pageReferrer'], mets: ['screenPageViews', 'activeUsers'], limit: 400 },
+  landing: { dims: ['hostName', 'landingPage'], mets: ['sessions', 'engagedSessions', 'keyEvents', 'activeUsers'], limit: 500 },
+  landingSource: { dims: ['hostName', 'landingPage', 'sessionSourceMedium'], mets: ['sessions', 'keyEvents'], limit: 600 },
+  pages: { dims: ['hostName', 'pagePath'], mets: ['screenPageViews', 'activeUsers', 'userEngagementDuration', 'keyEvents'], limit: 600 },
+  countries: { dims: ['hostName', 'country'], mets: ['sessions', 'activeUsers', 'keyEvents'], limit: 500 },
+  cities: { dims: ['hostName', 'country', 'city'], mets: ['sessions', 'keyEvents'], limit: 400 },
+  devices: { dims: ['hostName', 'deviceCategory'], mets: ['sessions', 'activeUsers', 'keyEvents'] },
+  browsers: { dims: ['hostName', 'browser'], mets: ['sessions', 'keyEvents'], limit: 150 },
+  os: { dims: ['hostName', 'operatingSystem'], mets: ['sessions', 'keyEvents'], limit: 150 },
+  languages: { dims: ['hostName', 'language'], mets: ['sessions', 'keyEvents'], limit: 150 },
   newReturning: { dims: ['hostName', 'newVsReturning'], mets: ['sessions', 'activeUsers', 'keyEvents'] },
   weekday: { dims: ['hostName', 'dayOfWeek'], mets: ['sessions', 'keyEvents'], limit: 100, order: [{ dimension: { dimensionName: 'dayOfWeek' } }] },
   hour: { dims: ['hostName', 'hour'], mets: ['sessions', 'keyEvents'], limit: 400, order: [{ dimension: { dimensionName: 'hour' } }] },
-  events: { dims: ['hostName', 'eventName'], mets: ['eventCount', 'totalUsers', 'keyEvents'], limit: 500 },
-  keyEventsDaily: { dims: ['date', 'hostName', 'eventName'], mets: ['eventCount'], limit: 2000, filter: keyEventFilter, order: byDate },
-  keyEventsBySource: { dims: ['hostName', 'eventName', 'sessionSourceMedium'], mets: ['eventCount'], limit: 500, filter: keyEventFilter },
-  keyEventsByPage: { dims: ['hostName', 'eventName', 'pagePath'], mets: ['eventCount'], limit: 600, filter: keyEventFilter },
-  ctaText: { dims: ['hostName', 'eventName', 'customEvent:cta_text'], mets: ['eventCount'], limit: 500, filter: keyEventFilter },
+  events: { dims: ['hostName', 'eventName'], mets: ['eventCount', 'totalUsers', 'keyEvents'], limit: 600 },
+  keyEventsDaily: { dims: ['date', 'hostName', 'eventName'], mets: ['eventCount'], limit: 20000, filter: keyEventFilter, order: byDate },
+  keyEventsBySource: { dims: ['hostName', 'eventName', 'sessionSource', 'sessionMedium'], mets: ['eventCount'], limit: 600, filter: keyEventFilter },
+  keyEventsByPage: { dims: ['hostName', 'eventName', 'pagePath'], mets: ['eventCount'], limit: 700, filter: keyEventFilter },
+  ctaText: { dims: ['hostName', 'eventName', 'customEvent:cta_text'], mets: ['eventCount'], limit: 600, filter: keyEventFilter },
   forms: { dims: ['hostName', 'eventName', 'customEvent:form_name'], mets: ['eventCount'], limit: 200, filter: inList('eventName', ['generate_lead', 'agreement_signed']) },
   leadsFirstTouch: {
     dims: ['hostName', 'customEvent:first_source', 'customEvent:first_medium', 'customEvent:first_campaign', 'customEvent:form_name'],
     mets: ['eventCount'],
-    limit: 400,
+    limit: 500,
     filter: inList('eventName', ['generate_lead', 'agreement_signed']),
   },
-  eventsFirstTouch: {
-    dims: ['hostName', 'eventName', 'customEvent:first_source', 'customEvent:first_medium'],
-    mets: ['eventCount'],
-    limit: 500,
-    filter: keyEventFilter,
-  },
+  eventsFirstTouch: { dims: ['hostName', 'eventName', 'customEvent:first_source', 'customEvent:first_medium'], mets: ['eventCount'], limit: 600, filter: keyEventFilter },
 };
-for (const [name, spec] of Object.entries(plan)) reports[name] = await ga(name, spec);
 
-// Realtime (last 30 minutes).
-async function realtime(dims, mets) {
-  const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${PROPERTY}:runRealtimeReport`, {
-    method: 'POST',
-    headers: auth,
-    body: JSON.stringify({ dimensions: dims.map((name) => ({ name })), metrics: mets.map((name) => ({ name })), limit: 50 }),
-  });
-  const j = await res.json();
+function gaRange(days, prev) {
+  return prev ? { startDate: `${days * 2}daysAgo`, endDate: `${days + 1}daysAgo` } : { startDate: `${days}daysAgo`, endDate: 'today' };
+}
+async function gaReport(label, spec, days) {
+  const body = {
+    dateRanges: [gaRange(days, spec.prev)],
+    dimensions: spec.dims.map((name) => ({ name })),
+    metrics: spec.mets.map((name) => ({ name })),
+    limit: spec.limit || 250,
+    keepEmptyRows: false,
+    orderBys: spec.order || [{ metric: { metricName: spec.mets[0] }, desc: true }],
+  };
+  if (spec.filter) body.dimensionFilter = spec.filter;
+  const { res, json } = await post(`https://analyticsdata.googleapis.com/v1beta/properties/${PROPERTY}:runReport`, body);
   if (!res.ok) {
-    errors.push(`realtime: ${j.error?.message ?? res.status}`);
+    errors.push(`GA4 ${label}: ${json.error?.message ?? res.status}`);
+    return { dims: spec.dims, mets: spec.mets, rows: [] };
+  }
+  const rows = (json.rows ?? []).map((r) => [...r.dimensionValues.map((v) => v.value), ...r.metricValues.map((v) => Number(v.value))]);
+  return { dims: spec.dims, mets: spec.mets, rows };
+}
+
+async function realtime(dims, mets) {
+  const { res, json } = await post(`https://analyticsdata.googleapis.com/v1beta/properties/${PROPERTY}:runRealtimeReport`, {
+    dimensions: dims.map((name) => ({ name })),
+    metrics: mets.map((name) => ({ name })),
+    limit: 50,
+  });
+  if (!res.ok) {
+    errors.push(`GA4 realtime: ${json.error?.message ?? res.status}`);
     return { dims, mets, rows: [] };
   }
-  return { dims, mets, rows: (j.rows ?? []).map((r) => [...r.dimensionValues.map((v) => v.value), ...r.metricValues.map((v) => Number(v.value))]) };
+  return { dims, mets, rows: (json.rows ?? []).map((r) => [...r.dimensionValues.map((v) => v.value), ...r.metricValues.map((v) => Number(v.value))]) };
 }
-reports.rtStreams = await realtime(['streamName'], ['activeUsers', 'screenPageViews', 'eventCount']);
-reports.rtPages = await realtime(['streamName', 'unifiedScreenName'], ['activeUsers']);
-reports.rtCountries = await realtime(['country'], ['activeUsers']);
 
-// Search Console, for every property the service account can read.
+// ---------------------------------------------------------------- Search Console
 const iso = (d) => d.toISOString().slice(0, 10);
-const end = new Date(Date.now() - 2 * 864e5); // Search Console data lags about two days
-const start = new Date(end.getTime() - (DAYS - 1) * 864e5);
-async function gsc(site, dimensions, rowLimit) {
-  const res = await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`, {
-    method: 'POST',
-    headers: auth,
-    body: JSON.stringify({ startDate: iso(start), endDate: iso(end), dimensions, rowLimit }),
-  });
-  if (!res.ok) return { status: res.status, rows: [] };
-  const j = await res.json();
-  return { status: 200, rows: (j.rows ?? []).map((r) => [...(r.keys ?? []), r.clicks, r.impressions, +(r.ctr * 100).toFixed(2), +r.position.toFixed(1)]) };
+const DAY = 864e5;
+function gscDates(days, prev) {
+  const end = new Date(Date.now() - 2 * DAY - (prev ? days * DAY : 0)); // Search Console runs about two days behind
+  const start = new Date(end.getTime() - (days - 1) * DAY);
+  return { startDate: iso(start), endDate: iso(end) };
 }
-const search = {};
-for (const site of GSC_SITES) {
-  const total = await gsc(site, [], 1);
-  if (total.status !== 200) {
-    search[site] = { ok: false, status: total.status };
-    continue;
-  }
-  search[site] = {
+async function gsc(site, dates, dimensions, rowLimit) {
+  const { res, json } = await post(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`, { ...dates, dimensions, rowLimit });
+  if (!res.ok) return { status: res.status, rows: [] };
+  return { status: 200, rows: (json.rows ?? []).map((r) => [...(r.keys ?? []), r.clicks, r.impressions, +(r.ctr * 100).toFixed(2), +r.position.toFixed(1)]) };
+}
+async function gscSite(site, range) {
+  const cur = gscDates(range.days, false);
+  const total = await gsc(site, cur, [], 1);
+  if (total.status !== 200) return { ok: false, status: total.status };
+  const prevTotal = await gsc(site, gscDates(range.days, true), [], 1);
+  const big = range.days > 100 ? 1 : 0;
+  return {
     ok: true,
     total: total.rows[0] ?? null,
-    queries: (await gsc(site, ['query'], 100)).rows,
-    pages: (await gsc(site, ['page'], 100)).rows,
-    daily: (await gsc(site, ['date'], 60)).rows,
-    countries: (await gsc(site, ['country'], 20)).rows,
-    devices: (await gsc(site, ['device'], 5)).rows,
-    queryPage: (await gsc(site, ['query', 'page'], 150)).rows,
+    totalPrev: prevTotal.rows[0] ?? null,
+    queries: (await gsc(site, cur, ['query'], big ? 500 : 250)).rows,
+    pages: (await gsc(site, cur, ['page'], big ? 400 : 250)).rows,
+    daily: (await gsc(site, cur, ['date'], 600)).rows,
+    countries: (await gsc(site, cur, ['country'], 60)).rows,
+    devices: (await gsc(site, cur, ['device'], 5)).rows,
+    queryPage: (await gsc(site, cur, ['query', 'page'], big ? 500 : 300)).rows,
   };
 }
 
-const payload = { generatedAt: new Date().toISOString(), days: DAYS, property: PROPERTY, keyEvents: KEY_EVENTS, reports, search, errors };
-if (errors.length) console.warn(`Warnings (${errors.length}):\n${errors.join('\n')}`);
+// ---------------------------------------------------------------- run
+fs.mkdirSync('site/data', { recursive: true });
+const write = (name, obj) => fs.writeFileSync(`site/data/${name}.json`, JSON.stringify(obj));
+const generatedAt = new Date().toISOString();
 
-fs.mkdirSync('site', { recursive: true });
-fs.writeFileSync('site/data.json', JSON.stringify(payload));
-const gscOk = Object.values(search).filter((s) => s.ok).length;
-console.log(`Wrote site/data.json: ${Object.keys(reports).length} GA4 reports, ${gscOk}/${GSC_SITES.length} Search Console properties, ${errors.length} warnings.`);
+// GA4: one file per range. Requests are throttled to stay under the concurrent-request limit.
+for (const range of RANGES) {
+  const names = Object.keys(PLAN);
+  const results = await pool(names.map((n) => () => gaReport(`${range.id}/${n}`, PLAN[n], range.days)), 6);
+  const reports = Object.fromEntries(names.map((n, i) => [n, results[i]]));
+  write(`ga-${range.id}`, { range: range.id, days: range.days, generatedAt, reports });
+}
+
+// Search Console: one file per range, every property the service account can read.
+const gscStatus = {};
+for (const range of RANGES) {
+  const results = await pool(GSC_SITES.map((s) => () => gscSite(s, range)), 3);
+  const search = Object.fromEntries(GSC_SITES.map((s, i) => [s, results[i]]));
+  GSC_SITES.forEach((s, i) => (gscStatus[s] = results[i].ok ? 'ok' : results[i].status));
+  write(`gsc-${range.id}`, { range: range.id, days: range.days, generatedAt, search, ...gscDates(range.days, false) });
+}
+
+const live = {
+  generatedAt,
+  streams: await realtime(['streamName'], ['activeUsers', 'screenPageViews', 'eventCount']),
+  pages: await realtime(['streamName', 'unifiedScreenName'], ['activeUsers']),
+  countries: await realtime(['country'], ['activeUsers']),
+  events: await realtime(['streamName', 'eventName'], ['eventCount']),
+  devices: await realtime(['deviceCategory'], ['activeUsers']),
+};
+write('live', live);
+write('meta', { generatedAt, property: PROPERTY, ranges: RANGES, keyEvents: KEY_EVENTS, gsc: gscStatus, errors: [...new Set(errors)].slice(0, 30) });
+if (errors.length) console.warn(`Warnings (${errors.length}):\n${[...new Set(errors)].slice(0, 15).join('\n')}`);
+const gscOk = Object.values(gscStatus).filter((s) => s === 'ok').length;
+console.log(`Wrote ${RANGES.length} GA4 ranges, ${RANGES.length} Search Console ranges (${gscOk}/${GSC_SITES.length} properties readable), realtime, meta. ${errors.length} warnings.`);
