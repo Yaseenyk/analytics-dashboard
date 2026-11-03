@@ -2,7 +2,7 @@ name: Build analytics dashboard
 
 on:
   schedule:
-    - cron: "11 */6 * * *" # every 6 hours, off the top of the hour when GitHub delays runs
+    - cron: "11 * * * *" # hourly, off the top of the hour when GitHub delays runs
   workflow_dispatch:
   push:
     branches: [main]
@@ -27,11 +27,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Pull GA4 and Search Console, encrypt
+      - name: Pull GA4 and Search Console
         run: node scripts/build.mjs
         env:
           GA_SERVICE_ACCOUNT_JSON: ${{ secrets.GA_SERVICE_ACCOUNT_JSON }}
-          DASHBOARD_PASSPHRASE: ${{ secrets.DASHBOARD_PASSPHRASE }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -1,6 +1,6 @@
-// Pulls Google Analytics 4 and Search Console data for every site, encrypts it with the dashboard
-// passphrase, and writes site/data.json. The page in site/index.html decrypts it in the browser.
-// No dependencies: Node 20+ (fetch, crypto). Secrets: GA_SERVICE_ACCOUNT_JSON, DASHBOARD_PASSPHRASE.
+// Pulls Google Analytics 4 and Search Console data for every site and writes site/data.json, which
+// site/index.html reads. The data is aggregate numbers only and is published as-is (the repo is public).
+// No dependencies: Node 20+ (fetch, crypto). Secret: GA_SERVICE_ACCOUNT_JSON.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 
@@ -17,9 +17,8 @@ const GSC_SITES = [
 const KEY_EVENTS = ['whatsapp_click', 'email_click', 'phone_click', 'generate_lead', 'app_download', 'template_download', 'agreement_signed', 'calculator_use'];
 
 const raw = process.env.GA_SERVICE_ACCOUNT_JSON;
-const passphrase = process.env.DASHBOARD_PASSPHRASE;
-if (!raw || !passphrase) {
-  console.error('GA_SERVICE_ACCOUNT_JSON and DASHBOARD_PASSPHRASE must be set as repository secrets.');
+if (!raw) {
+  console.error('GA_SERVICE_ACCOUNT_JSON must be set as a repository secret.');
   process.exit(1);
 }
 const sa = JSON.parse(raw);
@@ -184,14 +183,7 @@ for (const site of GSC_SITES) {
 const payload = { generatedAt: new Date().toISOString(), days: DAYS, property: PROPERTY, keyEvents: KEY_EVENTS, reports, search, errors };
 if (errors.length) console.warn(`Warnings (${errors.length}):\n${errors.join('\n')}`);
 
-// AES-256-GCM, key from PBKDF2-SHA256. The page repeats the derivation with WebCrypto.
-const ITER = 250000;
-const salt = crypto.randomBytes(16);
-const iv = crypto.randomBytes(12);
-const key = crypto.pbkdf2Sync(passphrase, salt, ITER, 32, 'sha256');
-const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-const ct = Buffer.concat([cipher.update(JSON.stringify(payload), 'utf8'), cipher.final(), cipher.getAuthTag()]);
 fs.mkdirSync('site', { recursive: true });
-fs.writeFileSync('site/data.json', JSON.stringify({ v: 1, iter: ITER, salt: salt.toString('base64'), iv: iv.toString('base64'), ct: ct.toString('base64') }));
+fs.writeFileSync('site/data.json', JSON.stringify(payload));
 const gscOk = Object.values(search).filter((s) => s.ok).length;
 console.log(`Wrote site/data.json: ${Object.keys(reports).length} GA4 reports, ${gscOk}/${GSC_SITES.length} Search Console properties, ${errors.length} warnings.`);
