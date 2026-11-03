@@ -132,6 +132,7 @@
   @keyframes fin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
   .page.fin>*{animation:fin .28s ease both}
   .cols>.wide{grid-column:1/-1}
+  .pend{text-align:center;padding:44px 20px}.pend svg{width:44px;height:44px;stroke:var(--brand);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;margin-bottom:10px}.pend h2{font-size:17px}.pend .sub{max-width:460px;margin:6px auto 14px}.pbtn{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
   .wait{display:inline-block;color:var(--dim);font:11.5px var(--mono)}
   /* mobile: bottom navigation, stacked tables */
   .bnav,.sheet{display:none}
@@ -582,6 +583,9 @@ function skeleton(tab) {
   else h += '<div class="cols">' + skTable(5) + skTable(5) + skTable(5) + skTable(5) + '</div>';
   return h;
 }
+function waitingPage() {
+  return '<div class="card pend"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/></svg><h2>Google is still processing your new tags</h2><p class="sub">Visitor reports for this page appear about a day after a tag goes live. They fill in on their own, and the page checks Google every time you open it.</p><div class="pbtn"><button class="pill on" data-tab="Live">See who is online now</button><button class="pill" data-tab="Search">Open Search (Google)</button></div></div>';
+}
 var token = 0;
 function render(keepScroll) {
   syncChrome(); var my = ++token, nd0 = need(), ps = [];
@@ -589,7 +593,7 @@ function render(keepScroll) {
   var ready = (!nd0.ga || GA[st.range]) && (!nd0.gsc || GSC[st.range]);
   if (!ready) { $('page').setAttribute('aria-busy', 'true'); $('page').classList.remove('fin'); $('page').innerHTML = skeleton(st.tab); }
   Promise.all(ps).then(function () {
-    if (my !== token) return; TB = {}; CH = {}; var pg = $('page'); pg.innerHTML = view[st.tab](); pg.setAttribute('aria-busy', 'false'); if (!ready || !keepScroll) { pg.classList.remove('fin'); void pg.offsetWidth; pg.classList.add('fin'); } paintAll(); paintCharts(); if (st.tab === 'Tools') bindTools(); if (!keepScroll) window.scrollTo(0, 0);
+    if (my !== token) return; TB = {}; CH = {}; var pg = $('page'); pg.innerHTML = (['Sources', 'Pages', 'Conversions', 'Audience'].indexOf(st.tab) >= 0 && !hasGA()) ? waitingPage() : view[st.tab](); pg.setAttribute('aria-busy', 'false'); if (!ready || !keepScroll) { pg.classList.remove('fin'); void pg.offsetWidth; pg.classList.add('fin'); } paintAll(); paintCharts(); if (st.tab === 'Tools') bindTools(); if (!keepScroll) window.scrollTo(0, 0);
   }, function (e) { if (my !== token) return; $('page').innerHTML = '<div class="card"><h2>Could not load this range</h2><p class="sub">The data file for ' + esc(st.range) + ' is not published yet. The next refresh will add it. (' + esc(e && e.message) + ')</p></div>'; });
 }
 function bindTools() {
