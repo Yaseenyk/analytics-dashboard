@@ -1,0 +1,219 @@
+// analytics-api: live GA4 + Search Console data for analytics.streamerosai.com.
+// Returns the same JSON files the GitHub Action publishes (meta, live, ga-<range>, gsc-<range>), but fetched
+// from Google when the dashboard opens and cached for a few minutes. The Google service account key is a
+// Worker secret (GA_SERVICE_ACCOUNT_JSON); it is never sent to the browser. Aggregate numbers only.
+
+const PROPERTY = '562159345';
+const RANGES = [
+  { id: '7d', days: 7, label: 'Last 7 days' },
+  { id: '28d', days: 28, label: 'Last 28 days' },
+  { id: '3m', days: 90, label: 'Last 3 months' },
+  { id: '6m', days: 180, label: 'Last 6 months' },
+  { id: '12m', days: 365, label: 'Last 12 months' },
+  { id: '16m', days: 480, label: 'Last 16 months' },
+];
+const GSC_SITES = [
+  'sc-domain:streamerosai.com',
+  'https://yk.streamerosai.com/',
+  'https://fitrank.streamerosai.com/',
+  'https://campus.streamerosai.com/',
+  'https://spotai.streamerosai.com/',
+  'https://streamerosai.com/',
+];
+const KEY_EVENTS = ['whatsapp_click', 'email_click', 'phone_click', 'generate_lead', 'app_download', 'template_download', 'agreement_signed', 'calculator_use'];
+// Cache lifetimes in seconds. GA4 standard reports and Search Console move slowly; realtime is the live part.
+const TTL = { live: 45, ga: 300, gsc: 900, meta: 300 };
+const ORIGIN_OK = /^(https:\/\/analytics\.streamerosai\.com|https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?)$/;
+
+const inList = (field, values) => ({ filter: { fieldName: field, inListFilter: { values } } });
+const keyEventFilter = inList('eventName', KEY_EVENTS);
+const byDate = [{ dimension: { dimensionName: 'date' } }];
+const M = ['sessions', 'activeUsers', 'keyEvents'];
+const TOTAL_METS = ['sessions', 'activeUsers', 'newUsers', 'engagedSessions', 'screenPageViews', 'eventCount', 'keyEvents', 'userEngagementDuration'];
+const PLAN = {
+  totals: { dims: ['hostName'], mets: TOTAL_METS },
+  totalsPrev: { dims: ['hostName'], mets: TOTAL_METS, prev: true },
+  daily: { dims: ['date', 'hostName'], mets: ['sessions', 'activeUsers', 'screenPageViews', 'keyEvents'], limit: 5000, order: byDate },
+  channels: { dims: ['hostName', 'sessionDefaultChannelGroup'], mets: [...M, 'engagedSessions', 'newUsers'] },
+  sourceMedium: { dims: ['hostName', 'sessionSource', 'sessionMedium'], mets: [...M, 'newUsers', 'engagedSessions'], limit: 600 },
+  campaigns: { dims: ['hostName', 'sessionCampaignName', 'sessionSourceMedium'], mets: [...M, 'engagedSessions'], limit: 300 },
+  campaignContent: { dims: ['hostName', 'sessionManualAdContent', 'sessionManualTerm'], mets: ['sessions', 'keyEvents'], limit: 200 },
+  firstTouch: { dims: ['hostName', 'firstUserSource', 'firstUserMedium', 'firstUserCampaignName'], mets: ['newUsers', 'sessions', 'keyEvents'], limit: 400 },
+  referrers: { dims: ['hostName', 'pageReferrer'], mets: ['screenPageViews', 'activeUsers'], limit: 400 },
+  landing: { dims: ['hostName', 'landingPage'], mets: ['sessions', 'engagedSessions', 'keyEvents', 'activeUsers'], limit: 500 },
+  landingSource: { dims: ['hostName', 'landingPage', 'sessionSourceMedium'], mets: ['sessions', 'keyEvents'], limit: 600 },
+  pages: { dims: ['hostName', 'pagePath'], mets: ['screenPageViews', 'activeUsers', 'userEngagementDuration', 'keyEvents'], limit: 600 },
+  countries: { dims: ['hostName', 'country'], mets: ['sessions', 'activeUsers', 'keyEvents'], limit: 500 },
+  cities: { dims: ['hostName', 'country', 'city'], mets: ['sessions', 'keyEvents'], limit: 400 },
+  devices: { dims: ['hostName', 'deviceCategory'], mets: ['sessions', 'activeUsers', 'keyEvents'] },
+  browsers: { dims: ['hostName', 'browser'], mets: ['sessions', 'keyEvents'], limit: 150 },
+  os: { dims: ['hostName', 'operatingSystem'], mets: ['sessions', 'keyEvents'], limit: 150 },
+  languages: { dims: ['hostName', 'language'], mets: ['sessions', 'keyEvents'], limit: 150 },
+  newReturning: { dims: ['hostName', 'newVsReturning'], mets: ['sessions', 'activeUsers', 'keyEvents'] },
+  weekday: { dims: ['hostName', 'dayOfWeek'], mets: ['sessions', 'keyEvents'], limit: 100, order: [{ dimension: { dimensionName: 'dayOfWeek' } }] },
+  hour: { dims: ['hostName', 'hour'], mets: ['sessions', 'keyEvents'], limit: 400, order: [{ dimension: { dimensionName: 'hour' } }] },
+  events: { dims: ['hostName', 'eventName'], mets: ['eventCount', 'totalUsers', 'keyEvents'], limit: 600 },
+  keyEventsDaily: { dims: ['date', 'hostName', 'eventName'], mets: ['eventCount'], limit: 20000, filter: keyEventFilter, order: byDate },
+  keyEventsBySource: { dims: ['hostName', 'eventName', 'sessionSource', 'sessionMedium'], mets: ['eventCount'], limit: 600, filter: keyEventFilter },
+  keyEventsByPage: { dims: ['hostName', 'eventName', 'pagePath'], mets: ['eventCount'], limit: 700, filter: keyEventFilter },
+  ctaText: { dims: ['hostName', 'eventName', 'customEvent:cta_text'], mets: ['eventCount'], limit: 600, filter: keyEventFilter },
+  forms: { dims: ['hostName', 'eventName', 'customEvent:form_name'], mets: ['eventCount'], limit: 200, filter: inList('eventName', ['generate_lead', 'agreement_signed']) },
+  leadsFirstTouch: {
+    dims: ['hostName', 'customEvent:first_source', 'customEvent:first_medium', 'customEvent:first_campaign', 'customEvent:form_name'],
+    mets: ['eventCount'], limit: 500, filter: inList('eventName', ['generate_lead', 'agreement_signed']),
+  },
+  eventsFirstTouch: { dims: ['hostName', 'eventName', 'customEvent:first_source', 'customEvent:first_medium'], mets: ['eventCount'], limit: 600, filter: keyEventFilter },
+};
+
+// ---- Google auth (service account JWT, RS256 via WebCrypto) ----
+let tokenCache = { value: '', exp: 0 };
+const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const b64uStr = (s) => b64u(new TextEncoder().encode(s));
+async function accessToken(env) {
+  if (tokenCache.value && Date.now() < tokenCache.exp) return tokenCache.value;
+  const sa = JSON.parse(env.GA_SERVICE_ACCOUNT_JSON);
+  const now = Math.floor(Date.now() / 1000);
+  const head = b64uStr(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const claim = b64uStr(JSON.stringify({
+    iss: sa.client_email,
+    scope: 'https://www.googleapis.com/auth/analytics.readonly https://www.googleapis.com/auth/webmasters.readonly',
+    aud: 'https://oauth2.googleapis.com/token', iat: now, exp: now + 3600,
+  }));
+  const pem = sa.private_key.replace(/-----[A-Z ]+-----/g, '').replace(/\s+/g, '');
+  const der = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+  const sig = b64u(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(`${head}.${claim}`)));
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${head}.${claim}.${sig}` }),
+  });
+  const j = await res.json();
+  if (!j.access_token) throw new Error('token ' + JSON.stringify(j).slice(0, 200));
+  tokenCache = { value: j.access_token, exp: Date.now() + 50 * 60 * 1000 };
+  return j.access_token;
+}
+
+async function post(env, url, body) {
+  const token = await accessToken(env);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (res.status === 429 || res.status >= 500) { await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
+    return { res, json: await res.json().catch(() => ({})) };
+  }
+  return { res: { ok: false, status: 599 }, json: { error: { message: 'retries exhausted' } } };
+}
+// Run tasks with a concurrency limit (Workers allow 6 open connections per request).
+async function pool(tasks, limit) {
+  const out = new Array(tasks.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: limit }, async () => { while (next < tasks.length) { const i = next++; out[i] = await tasks[i](); } }));
+  return out;
+}
+
+// ---- GA4 ----
+const gaRange = (days, prev) => (prev ? { startDate: `${days * 2}daysAgo`, endDate: `${days + 1}daysAgo` } : { startDate: `${days}daysAgo`, endDate: 'today' });
+async function gaReport(env, label, spec, days, errors) {
+  const body = {
+    dateRanges: [gaRange(days, spec.prev)],
+    dimensions: spec.dims.map((name) => ({ name })), metrics: spec.mets.map((name) => ({ name })),
+    limit: spec.limit || 250, keepEmptyRows: false,
+    orderBys: spec.order || [{ metric: { metricName: spec.mets[0] }, desc: true }],
+  };
+  if (spec.filter) body.dimensionFilter = spec.filter;
+  const { res, json } = await post(env, `https://analyticsdata.googleapis.com/v1beta/properties/${PROPERTY}:runReport`, body);
+  if (!res.ok) { errors.push(`GA4 ${label}: ${json.error?.message ?? res.status}`); return { dims: spec.dims, mets: spec.mets, rows: [] }; }
+  return { dims: spec.dims, mets: spec.mets, rows: (json.rows ?? []).map((r) => [...r.dimensionValues.map((v) => v.value), ...r.metricValues.map((v) => Number(v.value))]) };
+}
+async function realtime(env, dims, mets, errors) {
+  const { res, json } = await post(env, `https://analyticsdata.googleapis.com/v1beta/properties/${PROPERTY}:runRealtimeReport`, {
+    dimensions: dims.map((name) => ({ name })), metrics: mets.map((name) => ({ name })), limit: 50,
+  });
+  if (!res.ok) { errors.push(`GA4 realtime: ${json.error?.message ?? res.status}`); return { dims, mets, rows: [] }; }
+  return { dims, mets, rows: (json.rows ?? []).map((r) => [...r.dimensionValues.map((v) => v.value), ...r.metricValues.map((v) => Number(v.value))]) };
+}
+
+// ---- Search Console ----
+const iso = (d) => d.toISOString().slice(0, 10);
+const DAY = 864e5;
+function gscDates(days, prev) {
+  const end = new Date(Date.now() - 2 * DAY - (prev ? days * DAY : 0));
+  return { startDate: iso(new Date(end.getTime() - (days - 1) * DAY)), endDate: iso(end) };
+}
+async function gsc(env, site, dates, dimensions, rowLimit) {
+  const { res, json } = await post(env, `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`, { ...dates, dimensions, rowLimit });
+  if (!res.ok) return { status: res.status, rows: [] };
+  return { status: 200, rows: (json.rows ?? []).map((r) => [...(r.keys ?? []), r.clicks, r.impressions, +(r.ctr * 100).toFixed(2), +r.position.toFixed(1)]) };
+}
+async function gscSite(env, site, range) {
+  const cur = gscDates(range.days, false);
+  const total = await gsc(env, site, cur, [], 1);
+  if (total.status !== 200) return { ok: false, status: total.status };
+  const big = range.days > 100 ? 1 : 0;
+  const [prevTotal, queries, pages, daily, countries, devices, queryPage] = await Promise.all([
+    gsc(env, site, gscDates(range.days, true), [], 1), gsc(env, site, cur, ['query'], big ? 500 : 250), gsc(env, site, cur, ['page'], big ? 400 : 250),
+    gsc(env, site, cur, ['date'], 600), gsc(env, site, cur, ['country'], 60), gsc(env, site, cur, ['device'], 5), gsc(env, site, cur, ['query', 'page'], big ? 500 : 300),
+  ]);
+  return { ok: true, total: total.rows[0] ?? null, totalPrev: prevTotal.rows[0] ?? null, queries: queries.rows, pages: pages.rows, daily: daily.rows, countries: countries.rows, devices: devices.rows, queryPage: queryPage.rows };
+}
+
+// ---- routes ----
+async function build(kind, id, env) {
+  const generatedAt = new Date().toISOString();
+  const errors = [];
+  if (kind === 'meta') return { generatedAt, property: PROPERTY, ranges: RANGES, keyEvents: KEY_EVENTS, errors, live: true };
+  if (kind === 'live') {
+    const [streams, pages, countries, events, devices] = await Promise.all([
+      realtime(env, ['streamName'], ['activeUsers', 'screenPageViews', 'eventCount'], errors), realtime(env, ['streamName', 'unifiedScreenName'], ['activeUsers'], errors),
+      realtime(env, ['country'], ['activeUsers'], errors), realtime(env, ['streamName', 'eventName'], ['eventCount'], errors), realtime(env, ['deviceCategory'], ['activeUsers'], errors),
+    ]);
+    return { generatedAt, streams, pages, countries, events, devices, live: true };
+  }
+  const range = RANGES.find((r) => r.id === id);
+  if (!range) return null;
+  if (kind === 'ga') {
+    const names = Object.keys(PLAN);
+    const results = await pool(names.map((n) => () => gaReport(env, `${range.id}/${n}`, PLAN[n], range.days, errors)), 6);
+    return { range: range.id, days: range.days, generatedAt, reports: Object.fromEntries(names.map((n, i) => [n, results[i]])), errors, live: true };
+  }
+  if (kind === 'gsc') {
+    const results = await pool(GSC_SITES.map((s) => () => gscSite(env, s, range)), 3);
+    return { range: range.id, days: range.days, generatedAt, search: Object.fromEntries(GSC_SITES.map((s, i) => [s, results[i]])), ...gscDates(range.days, false), live: true };
+  }
+  return null;
+}
+
+const memo = new Map(); // in-isolate cache: key -> { at, body }
+const inflight = new Map();
+function cors(req) {
+  const o = req.headers.get('Origin') || '';
+  const h = { 'Vary': 'Origin' };
+  if (ORIGIN_OK.test(o)) { h['Access-Control-Allow-Origin'] = o; h['Access-Control-Allow-Methods'] = 'GET, OPTIONS'; h['Access-Control-Max-Age'] = '86400'; }
+  return h;
+}
+export default {
+  async fetch(req, env) {
+    const url = new URL(req.url);
+    const ch = cors(req);
+    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: ch });
+    if (url.pathname === '/health') return new Response('ok', { headers: ch });
+    const m = url.pathname.match(/^\/data\/(meta|live|ga|gsc)(?:-([a-z0-9]+))?\.json$/);
+    if (!m || req.method !== 'GET') return new Response('not found', { status: 404, headers: ch });
+    const kind = m[1], id = m[2] || '', key = kind + id;
+    const ttl = (TTL[kind] || 60) * 1000, hit = memo.get(key);
+    let body;
+    if (hit && Date.now() - hit.at < ttl) body = hit.body;
+    else {
+      try {
+        let p = inflight.get(key);
+        if (!p) { p = build(kind, id, env).then((o) => (o ? JSON.stringify(o) : null)).finally(() => inflight.delete(key)); inflight.set(key, p); }
+        body = await p;
+        if (body) memo.set(key, { at: Date.now(), body });
+      } catch (e) {
+        if (hit) body = hit.body; // serve the last good copy if Google is unreachable
+        else return new Response(JSON.stringify({ error: String(e.message || e) }), { status: 502, headers: { ...ch, 'Content-Type': 'application/json' } });
+      }
+    }
+    if (!body) return new Response('not found', { status: 404, headers: ch });
+    return new Response(body, { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${Math.min(60, TTL[kind] || 60)}` } });
+  },
+};

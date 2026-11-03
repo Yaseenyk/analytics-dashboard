@@ -45,6 +45,7 @@
   .eyebrow{font:600 10.5px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:rgba(34,211,238,.8)}
   .top h1{margin:1px 0 0;font-size:21px;font-weight:700;letter-spacing:-.015em;line-height:1.2}
   .span{color:var(--dim);font-size:12.5px;margin-top:2px}
+  .rbtn{background:var(--card2);border:1px solid var(--line);color:var(--mute);border-radius:999px;width:30px;height:30px;display:grid;place-items:center;cursor:pointer;padding:0}.rbtn:hover{color:var(--brand);border-color:var(--accent-line)}.rbtn svg.i{width:15px;height:15px}
   .stamp{display:inline-flex;align-items:center;gap:7px;color:var(--dim);font:11.5px var(--mono);white-space:nowrap}
   .dot{width:7px;height:7px;border-radius:50%;background:var(--good);flex:none;animation:pg 3s ease-in-out infinite}
   @keyframes pg{0%,100%{box-shadow:0 0 3px rgba(34,197,94,.1)}50%{box-shadow:0 0 12px rgba(34,197,94,.55)}}
@@ -121,7 +122,7 @@
     .shell{display:block}aside{display:none}
     main{padding:0 14px calc(var(--nav) + 28px + env(safe-area-inset-bottom))}
     .top{position:static;margin:0 -14px;padding:14px 14px 12px}
-    .top h1{font-size:20px}.top-row .stamp{display:none}
+    .top h1{font-size:20px}.top-row .stamp{font-size:11px}.top-row .stamp #stamp{display:none}
     .ctl{margin-top:12px;gap:8px}.ctl .seg{display:none}
     .ctl .sel{flex:1;min-width:0;font-size:16px;min-height:44px}
     .ctl .chk{width:100%;min-height:40px}
@@ -162,7 +163,7 @@
   </aside>
   <main>
     <div class="top">
-      <div class="top-row"><div><div class="eyebrow">Analytics</div><h1 id="title">Overview</h1><div class="span" id="span"></div></div><span class="stamp"><span class="dot"></span><span id="stamp">Loading</span></span></div>
+      <div class="top-row"><div><div class="eyebrow">Analytics</div><h1 id="title">Overview</h1><div class="span" id="span"></div></div><span class="stamp"><span class="dot"></span><span id="stamp">Loading</span><button class="rbtn" id="refresh" aria-label="Refresh now" title="Fetch fresh data now"><svg class="i" viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7M20 5v6h-6"/></svg></button></span></div>
       <div class="ctl">
         <select class="sel" id="site" aria-label="Site"></select>
         <div class="seg" id="ranges" role="group" aria-label="Date range"></div>
@@ -203,13 +204,39 @@ function nd(s) { s = String(s); return /^\d{8}$/.test(s) ? s.slice(0, 4) + '-' +
 function tabLabel(id, k) { var t = TABS.filter(function (x) { return x[0] === id; })[0] || TABS[0]; return t[k]; }
 
 // ---- lazy loading -----------------------------------------------------------
+// Two sources: the copy GitHub publishes every 2 hours (instant, from the CDN) and the live Worker (fresh
+// from Google, 1 to 4 seconds). The page shows the first one that arrives and swaps in the live data after.
+var API = 'https://analytics-api.yaseenyk.workers.dev';
+var liveOK = false, liveAt = 0, forceLive = false;
+function getJSON(u, ms) {
+  var c = typeof AbortController === 'function' ? new AbortController() : null, to = c && setTimeout(function () { c.abort(); }, ms || 30000);
+  return fetch(u, { signal: c ? c.signal : undefined, cache: 'no-store' }).then(function (r) { if (to) clearTimeout(to); if (!r.ok) throw new Error(r.status); return r.json(); });
+}
+function stampLive() {
+  var el = $('stamp'); if (!el) return;
+  el.textContent = liveOK ? 'Live · ' + new Date(liveAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Updated ' + agoText();
+  var f = $('foot'); if (f) f.innerHTML = 'GA4 + Search Console<br>' + (liveOK ? 'Fetched live on open' : 'Rebuilt every 2 hours') + '<br>' + esc(el.textContent);
+}
+function agoText() { var ago = Math.max(0, Math.round((Date.now() - new Date(META.generatedAt)) / 60000)); return ago < 90 ? ago + ' min ago' : Math.round(ago / 60) + ' h ago'; }
 function load(kind, id) {
-  var store = kind === 'ga' ? GA : GSC, key = kind + id;
+  var store = kind === 'ga' ? GA : GSC, key = kind + id, file = kind + '-' + id + '.json';
   if (store[id]) return Promise.resolve(store[id]);
   if (pend[key]) return pend[key];
-  pend[key] = fetch('data/' + kind + '-' + id + '.json?v=' + encodeURIComponent(META.generatedAt), { cache: 'force-cache' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(function (j) { store[id] = j; delete pend[key]; return j; }, function (e) { delete pend[key]; throw e; });
+  var live = getJSON(API + '/data/' + file, 45000);
+  live.then(function (j) {
+    var had = !!store[id]; store[id] = j; liveOK = true; liveAt = Date.now(); stampLive();
+    var nd0 = need(); if (had && st.range === id && ((kind === 'ga' && nd0.ga) || (kind === 'gsc' && nd0.gsc))) render(true);
+  }, function () {});
+  var stat = fetch('data/' + file + '?v=' + encodeURIComponent(META.generatedAt), { cache: 'force-cache' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  var viaStatic = stat.then(function (j) { if (!store[id]) store[id] = j; return store[id]; }, function (e) { return live.then(function () { return store[id]; }, function () { throw e; }); });
+  var fresh = forceLive ? live.then(function () { return store[id]; }, function () { return viaStatic; }) : null;
+  pend[key] = (fresh || viaStatic).then(function (v) { delete pend[key]; return v; }, function (e) { delete pend[key]; throw e; });
   return pend[key];
+}
+function refreshNow() {
+  GA = {}; GSC = {}; pend = {}; forceLive = true; liveOK = false;
+  getJSON(API + '/data/live.json', 15000).then(function (j) { LIVE = j; liveOK = true; liveAt = Date.now(); }, function () { liveOK = false; }).then(function () { stampLive(); render(true); setTimeout(function () { forceLive = false; }, 0); });
+  $('stamp').textContent = 'Refreshing…';
 }
 function need() { var t = st.tab; return { ga: ['Overview', 'Sources', 'Pages', 'Conversions', 'Audience'].indexOf(t) >= 0, gsc: ['Overview', 'Search'].indexOf(t) >= 0 }; }
 function rep(name) { var g = GA[st.range]; return (g && g.reports[name]) || { dims: [], mets: [], rows: [] }; }
@@ -536,6 +563,7 @@ function bindTools() {
 function closeSheet() { $('sheet').classList.remove('open'); }
 document.addEventListener('click', function (e) {
   var t = e.target, c = t.closest ? t.closest.bind(t) : function () { return null; }, x;
+  if (c('#refresh')) { refreshNow(); return; }
   if (c('#sheet') && !c('#sheet > div')) { closeSheet(); return; }
   if ((x = c('th[data-t]'))) { var id = x.getAttribute('data-t'), col = +x.getAttribute('data-c'), tb = TB[id]; if (tb.sort === col) tb.dir = -tb.dir; else { tb.sort = col; tb.dir = typeof (tb.rows[0] || [])[col] === 'number' ? -1 : 1; } paint(id); return; }
   if ((x = c('[data-more]'))) { $('sheet').classList.add('open'); return; }
@@ -565,9 +593,12 @@ function start() {
   $('side').innerHTML = TABS.map(function (t) { return '<button data-tab="' + t[0] + '">' + ico(t[0]) + '<span>' + t[1] + '</span></button>'; }).join('');
   $('bnav').innerHTML = PRIMARY.map(function (id) { return '<button data-tab="' + id + '">' + ico(id) + '<span>' + tabLabel(id, 2) + '</span></button>'; }).join('') + '<button data-more="1">' + ico('More') + '<span>More</span></button>';
   $('sheetItems').innerHTML = TABS.filter(function (t) { return PRIMARY.indexOf(t[0]) < 0; }).map(function (t) { return '<button class="item" data-tab="' + t[0] + '">' + ico(t[0]) + '<span>' + t[1] + '</span></button>'; }).join('');
-  var ago = Math.max(0, Math.round((Date.now() - new Date(META.generatedAt)) / 60000)); $('stamp').textContent = 'Updated ' + (ago < 90 ? ago + ' min ago' : Math.round(ago / 60) + ' h ago');
-  $('foot').innerHTML = 'GA4 + Search Console<br>Updated every 2 hours<br>' + esc($('stamp').textContent);
+  stampLive();
   render();
+  getJSON(API + '/data/live.json', 20000).then(function (j) {
+    LIVE = j; liveOK = true; liveAt = Date.now(); stampLive();
+    if (st.tab === 'Overview' || st.tab === 'Live') render(true);
+  }, function () {});
 }
 try { var sv = JSON.parse(localStorage.getItem('dash') || '{}'); if (sv.range) st.range = sv.range; if (typeof sv.cmp === 'boolean') st.cmp = sv.cmp; } catch (e) {}
 var hp = location.hash.replace(/^#/, '').split('/'); if (hp[0] && TABS.some(function (t) { return t[0] === hp[0]; })) st.tab = hp[0]; if (hp[1]) st.range = hp[1]; if (hp[2]) st.site = decodeURIComponent(hp[2]);

@@ -1,0 +1,8 @@
+# analytics-api: live GA4 + Search Console data for analytics.streamerosai.com (free plan is enough).
+# Secret: GA_SERVICE_ACCOUNT_JSON (set with `wrangler secret put GA_SERVICE_ACCOUNT_JSON`).
+name = "analytics-api"
+main = "src/index.js"
+compatibility_date = "2026-06-01"
+
+[observability]
+enabled = true
