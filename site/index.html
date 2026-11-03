@@ -234,6 +234,10 @@ function getJSON(u, ms) {
   var c = typeof AbortController === 'function' ? new AbortController() : null, to = c && setTimeout(function () { c.abort(); }, ms || 30000);
   return fetch(u, { signal: c ? c.signal : undefined, cache: 'no-store' }).then(function (r) { if (to) clearTimeout(to); if (!r.ok) throw new Error(r.status); return r.json(); });
 }
+// Live answers arrive one by one; swap them into the page once, after they settle, and only if something changed.
+function sig(j) { try { return JSON.stringify(j, function (k, v) { return k === 'generatedAt' ? undefined : v; }); } catch (e) { return String(Math.random()); } }
+var swapT = 0;
+function scheduleSwap() { clearTimeout(swapT); swapT = setTimeout(function () { render(true); }, 600); }
 function stampLive() {
   var el = $('stamp'); if (!el) return;
   el.textContent = liveOK ? 'Live · ' + new Date(liveAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Updated ' + agoText();
@@ -246,8 +250,8 @@ function load(kind, id) {
   if (pend[key]) return pend[key];
   var live = getJSON(API + '/data/' + file, 45000);
   live.then(function (j) {
-    var had = !!store[id]; store[id] = j; liveOK = true; liveAt = Date.now(); stampLive();
-    var nd0 = need(); if (had && st.range === id && ((kind === 'ga' && nd0.ga) || (kind === 'gsc' && nd0.gsc))) render(true);
+    var had = !!store[id], same = had && sig(store[id]) === sig(j); store[id] = j; liveOK = true; liveAt = Date.now(); stampLive();
+    var nd0 = need(); if (had && !same && st.range === id && ((kind === 'ga' && nd0.ga) || (kind === 'gsc' && nd0.gsc))) scheduleSwap();
   }, function () {});
   var stat = fetch('data/' + file + '?v=' + encodeURIComponent(META.generatedAt), { cache: 'force-cache' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
   var viaStatic = stat.then(function (j) { if (!store[id]) store[id] = j; return store[id]; }, function (e) { return live.then(function () { return store[id]; }, function () { throw e; }); });
@@ -643,8 +647,8 @@ function start() {
   stampLive();
   render();
   getJSON(API + '/data/live.json', 20000).then(function (j) {
-    LIVE = j; liveOK = true; liveAt = Date.now(); stampLive();
-    if (st.tab === 'Overview' || st.tab === 'Live') render(true);
+    var same = LIVE && sig(LIVE) === sig(j); LIVE = j; liveOK = true; liveAt = Date.now(); stampLive();
+    if (!same && (st.tab === 'Overview' || st.tab === 'Live')) scheduleSwap();
   }, function () {});
 }
 try { var sv = JSON.parse(localStorage.getItem('dash') || '{}'); if (sv.range) st.range = sv.range; if (typeof sv.cmp === 'boolean') st.cmp = sv.cmp; } catch (e) {}
