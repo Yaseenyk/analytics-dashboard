@@ -237,7 +237,8 @@ function getJSON(u, ms) {
 // Live answers arrive one by one; swap them into the page once, after they settle, and only if something changed.
 function sig(j) { try { return JSON.stringify(j, function (k, v) { return k === 'generatedAt' ? undefined : v; }); } catch (e) { return String(Math.random()); } }
 var swapT = 0;
-function scheduleSwap() { clearTimeout(swapT); swapT = setTimeout(function () { render(true); }, 600); }
+var painted = false;
+function scheduleSwap() { if (!painted) return; clearTimeout(swapT); swapT = setTimeout(function () { render(true); }, 600); }
 function stampLive() {
   var el = $('stamp'); if (!el) return;
   el.textContent = liveOK ? 'Live · ' + new Date(liveAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Updated ' + agoText();
@@ -429,7 +430,7 @@ function dailyTotal(r, met) { return dailyAll(r, met).map(function (p) { return 
 var view = {};
 function summary() {
   var t = rep('totals'), ses = sum(t, 'sessions'), usr = sum(t, 'activeUsers'), nu = sum(t, 'newUsers'), key = sum(t, 'keyEvents'), li = [];
-  li.push('<b>' + n(usr) + '</b> people visited <b>' + n(ses) + '</b> times (' + (usr ? (ses / usr).toFixed(1) : '0') + ' visits each), ' + rangeInfo().label.toLowerCase() + '. <b>' + Math.min(100, pct(nu, usr)).toFixed(0) + '%</b> were new.');
+  li.push('<b>' + n(usr) + '</b> ' + (usr === 1 ? 'person' : 'people') + ' visited <b>' + n(ses) + '</b> ' + (ses === 1 ? 'time' : 'times') + (usr > 1 ? ' (' + (ses / usr).toFixed(1) + ' visits each)' : '') + ', ' + rangeInfo().label.toLowerCase() + '. <b>' + Math.min(100, pct(nu, usr)).toFixed(0) + '%</b> ' + (usr === 1 ? 'was' : 'were') + ' new.');
   var src = sourcesAgg(), tot = src.reduce(function (s, x) { return s + x.sessions; }, 0);
   if (src.length) li.push('Most came from ' + src.slice(0, 3).map(function (x) { return '<b>' + esc(x.name) + '</b> (' + pct(x.sessions, tot).toFixed(0) + '%)'; }).join(', ') + '.');
   var ai = src.filter(function (x) { return x.cat === 'AI assistants'; }), aiN = ai.reduce(function (s, x) { return s + x.sessions; }, 0);
@@ -645,11 +646,20 @@ function initChrome(rs) {
 function start() {
   initChrome(META.ranges);
   stampLive();
-  render();
-  getJSON(API + '/data/live.json', 20000).then(function (j) {
+  // Paint once. Wait up to 3.5 s for the live answers the first screen needs (the published copy fills in if
+  // they are slow), so the page does not redraw each time one of them lands. Later arrivals swap in once.
+  var nd = need(), done = false;
+  forceLive = true;
+  var liveP = getJSON(API + '/data/live.json', 20000).then(function (j) {
     var same = LIVE && sig(LIVE) === sig(j); LIVE = j; liveOK = true; liveAt = Date.now(); stampLive();
     if (!same && (st.tab === 'Overview' || st.tab === 'Live')) scheduleSwap();
   }, function () {});
+  var ps = [liveP];
+  if (nd.ga) ps.push(load('ga', st.range).catch(function () {}));
+  if (nd.gsc) ps.push(load('gsc', st.range).catch(function () {}));
+  function go() { if (done) return; done = true; forceLive = false; painted = true; render(); }
+  Promise.all(ps).then(go);
+  setTimeout(go, 3500);
 }
 try { var sv = JSON.parse(localStorage.getItem('dash') || '{}'); if (sv.range) st.range = sv.range; if (typeof sv.cmp === 'boolean') st.cmp = sv.cmp; } catch (e) {}
 var hp = location.hash.replace(/^#/, '').split('/'); if (hp[0] && TABS.some(function (t) { return t[0] === hp[0]; })) st.tab = hp[0]; if (hp[1]) st.range = hp[1]; if (hp[2]) st.site = decodeURIComponent(hp[2]);
