@@ -100,7 +100,7 @@ export default function Tools() {
         {meta ? (
           <>
             <p className="sub">
-              Generated {new Date(meta.generatedAt).toLocaleString()} from GA4 property {meta.property} and Search Console. The published copy is rebuilt every 2 hours by GitHub Actions, and each page asks the live Worker for fresh numbers when you open it.
+              Generated {new Date(meta.generatedAt).toLocaleString([], { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })} from GA4 property {meta.property} and Search Console. The published copy is rebuilt every 2 hours by GitHub Actions, and each page asks the live Worker for fresh numbers when you open it.
             </p>
             {meta.errors.length ? <p className="sub text-amber-300">API warnings:<br />{meta.errors.map((x, i) => <span key={i}>{x}<br /></span>)}</p> : <p className="sub">No API warnings.</p>}
           </>

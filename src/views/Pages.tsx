@@ -22,7 +22,7 @@ export default function Pages() {
           sort={1}
           fmt={[0, "n", "p", "n", "p"]}
           max={12}
-          build={(ga, site) => group(rep(ga, "landing"), [1], site).map((g) => [g.k[0], g.m[0], pct(g.m[1], g.m[0]), g.m[2], pct(g.m[2], g.m[0])])}
+          build={(ga, site) => group(rep(ga, "landing"), [1], site).map((g) => [g.k[0], g.m[0], Math.min(100, pct(g.m[1], g.m[0])), g.m[2], pct(g.m[2], g.m[0])])}
         />
         <GaTable
           title="How visitors arrive: landing page by source"

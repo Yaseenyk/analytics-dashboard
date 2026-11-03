@@ -75,7 +75,7 @@ export function GscKpi({ title, id, color, calc }: { title: string; id: string; 
 }
 
 export const grid4 = "grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4";
-export const cols2 = "grid grid-cols-1 gap-4 md:grid-cols-2";
+export const cols2 = "grid grid-cols-1 items-start gap-4 md:grid-cols-2";
 
 /** When Google has not finished processing the tags, one clear message replaces a page of empty blocks. */
 export function WaitingGate({ children }: { children: ReactNode }) {

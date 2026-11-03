@@ -61,8 +61,8 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
     <Card title={title} note={note} className={wide ? "md:col-span-2" : ""}>
       {(showFilter || rows.length > 1) && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {showFilter && <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter" aria-label={`Filter ${title}`} className="min-w-0 flex-1 basis-32" />}
-          <select aria-label="Sort by" value={col ?? 0} onChange={(e) => { setCol(+e.target.value); setDir(-1); }} className="md:hidden">
+          {showFilter && <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter" aria-label={`Filter ${title}`} className="min-w-0 basis-full md:flex-1 md:basis-32" />}
+          <select aria-label="Sort by" value={col ?? 0} onChange={(e) => { setCol(+e.target.value); setDir(-1); }} className="min-w-0 flex-1 md:hidden">
             {cols.map((c, i) => <option key={i} value={i}>Sort: {c}</option>)}
           </select>
           {showRows && (

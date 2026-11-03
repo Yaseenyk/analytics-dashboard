@@ -58,7 +58,7 @@ function Header() {
           <div className="min-w-0">
             <div className="eyebrow">{f.site === "all" ? "All sites" : SITES[f.site]}</div>
             <h1 className="m-0 truncate text-[21px] font-bold leading-tight tracking-tight">{tab.title}</h1>
-            <div className="mt-0.5 hidden text-[12.5px] text-dim sm:block">{span}</div>
+            <div className="mt-0.5 hidden text-[12.5px] text-dim sm:block">{tab.id === "live" ? "Last 30 minutes · updates every 30 seconds" : tab.id === "tools" ? "Link builder and tracking reference" : span}</div>
           </div>
         </div>
         <div className="flex flex-none items-center gap-2 font-mono text-[11.5px] text-dim">

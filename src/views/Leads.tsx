@@ -1,8 +1,10 @@
 "use client";
 
-import { COLORS } from "@/lib/config";
+import { useState } from "react";
+import { BRAND, COLORS } from "@/lib/config";
 import { useMeta } from "@/lib/data";
-import { classify, daily, group, n, rep, sum } from "@/lib/derive";
+import { classify, daily, dailyAll, group, label, n, rep, sum } from "@/lib/derive";
+import { useFilters } from "@/lib/filters";
 import { Card, Kpi, Sk, SkCard, SkKpi } from "@/components/ui";
 import { GaArea, GaTable, WaitingGate, cols2, grid4, useGaMemo } from "./kit";
 
@@ -65,12 +67,29 @@ function Funnel() {
 }
 
 export default function Leads() {
+  const [split, setSplit] = useState(false);
+  const f = useFilters();
   return (
     <WaitingGate>
       <EventKpis />
       <div className={cols2}>
         <Funnel />
-        <GaArea title="Leads and clicks per day" build={(ga, site) => daily(rep(ga, "keyEventsDaily"), "eventCount", site).map((s, i) => ({ ...s, color: s.color ?? COLORS[i % COLORS.length] }))} />
+        <GaArea
+          title="Leads and clicks per day"
+          extra={f.site === "all" ? (
+            <div className="flex gap-0.5 rounded-xl border border-line bg-card2 p-[3px]">
+              {([["Total", false], ["By site", true]] as [string, boolean][]).map(([lb, val]) => (
+                <button key={lb} type="button" onClick={() => setSplit(val)} aria-pressed={split === val} className={`rounded-[9px] px-3 py-1 text-[12.5px] ${split === val ? "bg-brand/10 font-semibold text-brand" : "text-mute"}`}>{lb}</button>
+              ))}
+            </div>
+          ) : undefined}
+          build={(ga, site) => {
+            const r = rep(ga, "keyEventsDaily");
+            return split && site === "all"
+              ? daily(r, "eventCount", site).map((s, i) => ({ ...s, color: s.color ?? COLORS[i % COLORS.length] }))
+              : [{ name: site === "all" ? "All sites" : label(site), color: BRAND, pts: dailyAll(r, "eventCount", site) }];
+          }}
+        />
         <GaTable
           title="Did they sign up? Leads by first source"
           cols={["First source", "Medium", "Campaign", "Form", "Leads"]}
