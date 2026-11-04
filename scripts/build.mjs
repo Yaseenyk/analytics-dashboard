@@ -25,6 +25,7 @@ const GSC_SITES = [
   'https://spotai.streamerosai.com/',
   'https://tools.streamerosai.com/',
   'https://calc.streamerosai.com/',
+  'https://images.streamerosai.com/',
   'https://streamerosai.com/',
 ];
 const KEY_EVENTS = ['whatsapp_click', 'email_click', 'phone_click', 'generate_lead', 'app_download', 'template_download', 'agreement_signed', 'calculator_use'];

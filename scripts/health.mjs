@@ -35,6 +35,7 @@ const SITE_PROPS = {
   'spotai.streamerosai.com': 'https://spotai.streamerosai.com/',
   'tools.streamerosai.com': 'https://tools.streamerosai.com/',
   'calc.streamerosai.com': 'https://calc.streamerosai.com/',
+  'images.streamerosai.com': 'https://images.streamerosai.com/',
 };
 
 async function sitemapUrls(host) {
