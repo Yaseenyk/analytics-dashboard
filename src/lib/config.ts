@@ -31,7 +31,7 @@ export const gscProperty = (host: string) => `https://${host}/`;
 /** Cloudflare Worker that answers the same files fresh from Google. `?api=off` turns it off. */
 export const DEFAULT_API = "https://analytics-api.yaseenyk.workers.dev";
 
-export const COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)", "var(--s6)", "var(--s7)", "var(--s8)", "var(--s9)"];
+export const COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)", "var(--s6)", "var(--s7)", "var(--s8)", "var(--s9)", "var(--s10)"];
 export const BRAND = "var(--brand)";
 export const SITE_COLOR: Record<string, string> = {
   streamerOS: COLORS[0],
@@ -43,6 +43,7 @@ export const SITE_COLOR: Record<string, string> = {
   "Money Calcs": COLORS[6],
   "Image Tools": COLORS[7],
   "Math Calcs": COLORS[8],
+  "Solar Guide": COLORS[9],
 };
 export const CAT_COLOR: Record<string, string> = {
   "Search engines": COLORS[0],
