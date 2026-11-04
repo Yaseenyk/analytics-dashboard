@@ -48,6 +48,8 @@
   ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
   button { touch-action: manipulation; }
   :focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; border-radius: 6px; }
+  summary:focus-visible, button:focus-visible, select:focus-visible { outline: none; }
+  summary:focus-visible { background: rgba(255, 255, 255, 0.04); }
   select {
     @apply appearance-none rounded-[10px] bg-card2 py-[7px] pl-3 pr-7 text-ink hover:bg-white/[.08];
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
