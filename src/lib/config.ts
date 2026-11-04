@@ -23,6 +23,7 @@ export const STREAMS: Record<string, string> = {
   "Salary Calculator": "Money Calcs",
   "Image Compression": "Image Tools",
   "Age Calculator": "Math Calcs",
+  "Solar Panel": "Solar Guide",
 };
 
 export const gscProperty = (host: string) => `https://${host}/`;
