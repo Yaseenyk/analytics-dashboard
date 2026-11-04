@@ -79,7 +79,7 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
           <thead>
             <tr>
               {cols.map((c, i) => (
-                <th key={c + i} aria-sort={th(i)} scope="col" className={`whitespace-nowrap border-b border-line py-2 text-[11.5px] font-medium ${i ? "w-px px-3" : "pr-3"} ${numeric(i) ? "text-right" : "text-left"}`}>
+                <th key={c + i} aria-sort={th(i)} scope="col" className={`whitespace-nowrap border-b border-line py-2 text-[11.5px] font-medium ${i ? "w-px min-w-[5rem] px-3" : "pr-3"} ${numeric(i) ? "text-right" : "text-left"}`}>
                   <button type="button" aria-describedby={id} onClick={() => { if (col === i) setDir(-dir); else { setCol(i); setDir(-1); } }} className={`inline-flex items-center gap-1 hover:text-ink ${col === i ? "text-brand" : "text-dim"}`}>
                     {c}
                     <span aria-hidden="true" className="text-[9px]">{col === i ? (dir > 0 ? "▲" : "▼") : ""}</span>
@@ -102,7 +102,7 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
                       )}
                     </td>
                   ) : (
-                    <td key={j} className={`w-px whitespace-nowrap px-3 py-2.5 align-top text-[12.5px] ${numeric(j) ? "text-right font-mono text-ink/90" : "text-left text-mute"}`}>
+                    <td key={j} className={`w-px min-w-[5rem] whitespace-nowrap px-3 py-2.5 align-top text-[12.5px] ${numeric(j) ? "text-right font-mono text-ink/90" : "text-left text-mute"}`}>
                       {fmtCell(c, fmt[j])}
                     </td>
                   ),
