@@ -117,7 +117,7 @@ function Nav() {
         </div>
         <nav aria-label="Sections" className="flex flex-col gap-0.5">
           {TABS.map((t) => (
-            <Link key={t.id} href={t.href} aria-current={tab.id === t.id ? "page" : undefined} className={`flex items-center gap-2.5 rounded-[10px] px-2.5 py-[9px] ${tab.id === t.id ? "bg-brand/10 font-semibold text-brand" : "text-mute hover:bg-card2 hover:text-ink"}`}>
+            <Link key={t.id} href={t.href} aria-current={tab.id === t.id ? "page" : undefined} className={`flex items-center gap-2.5 rounded-[10px] px-2.5 py-[9px] outline-none focus-visible:bg-white/10 ${tab.id === t.id ? "bg-brand/10 font-semibold text-brand" : "text-mute hover:bg-card2 hover:text-ink"}`}>
               <Icon name={t.icon} />
               {t.short === "Leads" ? "Leads and clicks" : t.id === "search" ? "Search (Google)" : t.id === "live" ? "Live now" : t.short}
             </Link>
