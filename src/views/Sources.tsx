@@ -2,7 +2,17 @@
 
 import { CAT_COLOR, COLORS } from "@/lib/config";
 import { classify, group, pct, rep, sourcesAgg } from "@/lib/derive";
-import { GaDonut, GaTable, WaitingGate, cols2 } from "./kit";
+import { GaDonut, GaRank, GaTable, WaitingGate, cols2 } from "./kit";
+
+const unset = (v: string) => !v || v === "(not set)" || v === "(not provided)" || v === "(none)";
+/** Host of a referrer URL, so every page on one site adds up to one row. */
+const hostOf = (u: string) => {
+  try {
+    return new URL(u).hostname.replace(/^www\./, "");
+  } catch {
+    return u;
+  }
+};
 
 function Explainer() {
   return (
@@ -34,6 +44,13 @@ export default function Sources() {
             return Object.keys(cats).map((k) => [k, cats[k]] as [string, number]).sort((a, b) => b[1] - a[1]);
           }}
         />
+        <GaRank
+          title="Visits by source"
+          max={12}
+          note="Who sent your visitors, for example LinkedIn, DEV, Google or direct."
+          empty="No visits in this period."
+          build={(ga, site) => sourcesAgg(ga, site).map((x) => [x.name, x.sessions] as [string, number]).sort((a, b) => b[1] - a[1])}
+        />
         <GaTable
           title="AI assistants"
           cols={["Assistant", "Visits", "People", "Leads and clicks"]}
@@ -58,13 +75,33 @@ export default function Sources() {
           }}
         />
         <GaTable
+          title="Referring sites"
+          cols={["Site", "Views", "People"]}
+          bar={1}
+          fmt={[0, "n", "n"]}
+          max={12}
+          note="Every page of one site added together."
+          empty="No referring sites yet."
+          build={(ga, site) => {
+            const m = new Map<string, [number, number]>();
+            group(rep(ga, "referrers"), [1], site)
+              .filter((g) => !unset(g.k[0]))
+              .forEach((g) => {
+                const h = classify(hostOf(g.k[0]), "referral").name;
+                const o = m.get(h) || [0, 0];
+                m.set(h, [o[0] + g.m[0], o[1] + g.m[1]]);
+              });
+            return [...m].map(([h, v]) => [h, v[0], v[1]]);
+          }}
+        />
+        <GaTable
           title="Pages that linked to you"
           cols={["Referring page", "Views", "People"]}
           bar={1}
           fmt={[0, "n", "n"]}
           max={12}
           note="The exact page each visit came from, when the browser shares it."
-          build={(ga, site) => group(rep(ga, "referrers"), [1], site).filter((g) => g.k[0] && g.k[0] !== "(not set)").map((g) => [g.k[0], g.m[0], g.m[1]])}
+          build={(ga, site) => group(rep(ga, "referrers"), [1], site).filter((g) => !unset(g.k[0])).map((g) => [g.k[0], g.m[0], g.m[1]])}
         />
         <GaTable
           title="Campaigns (UTM and ?ref= tags)"
@@ -84,7 +121,7 @@ export default function Sources() {
           bar={3}
           fmt={[0, 0, 0, "n", "n"]}
           note="First touch: what brought a person the first time, not the latest visit."
-          build={(ga, site) => group(rep(ga, "firstTouch"), [1, 2, 3], site).map((g) => [classify(g.k[0], g.k[1]).name, g.k[1], g.k[2], g.m[0], g.m[2]])}
+          build={(ga, site) => group(rep(ga, "firstTouch"), [1, 2, 3], site).filter((g) => g.m[0] > 0).map((g) => [classify(g.k[0], g.k[1]).name, g.k[1], g.k[2], g.m[0], g.m[2]])}
         />
         <GaDonut title="Google Analytics channels" build={(ga, site) => group(rep(ga, "channels"), [1], site).map((x) => [x.k[0], x.m[0]] as [string, number])} />
         <GaTable
@@ -94,7 +131,7 @@ export default function Sources() {
           empty="No utm_content or utm_term traffic yet."
           build={(ga, site) =>
             group(rep(ga, "campaignContent"), [1, 2], site)
-              .filter((g) => g.k[0] !== "(not set)" || g.k[1] !== "(not set)")
+              .filter((g) => !unset(g.k[0]) || !unset(g.k[1]))
               .map((g) => [g.k[0], g.k[1], g.m[0], g.m[1]])
           }
         />
