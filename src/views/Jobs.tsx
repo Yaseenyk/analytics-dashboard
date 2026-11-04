@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getApiBase } from "@/lib/data";
 import { Card } from "@/components/ui";
 
@@ -14,12 +14,14 @@ interface Job {
   file: string;
   /** Name the Worker accepts for a re-run. Jobs without one are status only. */
   rerun?: "health" | "dashboard";
+  /** Shown next to the button: the server enforces it. */
+  cooldown?: string;
   note?: string;
 }
 
 const JOBS: Job[] = [
-  { id: "health", title: "Index health check", schedule: "Daily at 02:40 UTC (08:10 IST)", what: "Asks Google whether each page of all six sites is indexed, and why not.", repo: "Yaseenyk/analytics-dashboard", file: "health.yml", rerun: "health", note: "Takes about 10 minutes. The Health tab updates after the next dashboard rebuild finishes." },
-  { id: "dashboard", title: "Dashboard data and deploy", schedule: "Every 2 hours, and on every push", what: "Pulls Google Analytics, Search Console and Bing, then rebuilds and publishes this dashboard.", repo: "Yaseenyk/analytics-dashboard", file: "dashboard.yml", rerun: "dashboard", note: "Takes about 2 minutes." },
+  { id: "health", title: "Index health check", schedule: "Daily at 02:40 UTC (08:10 IST)", what: "Asks Google whether each page of all six sites is indexed, and why not.", repo: "Yaseenyk/analytics-dashboard", file: "health.yml", rerun: "health", cooldown: "once every 90 minutes", note: "Takes about 10 minutes. The Health tab updates after the next dashboard rebuild finishes." },
+  { id: "dashboard", title: "Dashboard data and deploy", schedule: "Every 2 hours, and on every push", what: "Pulls Google Analytics, Search Console and Bing, then rebuilds and publishes this dashboard.", repo: "Yaseenyk/analytics-dashboard", file: "dashboard.yml", rerun: "dashboard", cooldown: "once every 10 minutes", note: "Takes about 2 minutes." },
   { id: "portfolio", title: "Portfolio deploy", schedule: "Daily at 00:17 UTC, and on every push", what: "Rebuilds yk.streamerosai.com and releases pages and posts whose date has come.", repo: "Yaseenyk/portfolio", file: "deploy.yml" },
   { id: "linkedin", title: "LinkedIn poster", schedule: "Tue, Wed, Thu at 10:00 UTC", what: "Publishes the next LinkedIn post. A re-run would publish a real post, so this one is status only.", repo: "Yaseenyk/linkedin-bot", file: "" },
 ];
@@ -69,8 +71,6 @@ function useRuns(job: Job) {
   return { runs, failed, reload: load, active };
 }
 
-const KEY = "dash-owner-key";
-
 function state(r: Run) {
   if (r.status !== "completed") return { label: r.status === "queued" ? "Queued" : "Running", tone: "text-brand bg-brand/10", dot: "bg-brand animate-pulse" };
   if (r.conclusion === "success") return { label: "Succeeded", tone: "text-good bg-good/10", dot: "bg-good" };
@@ -78,7 +78,7 @@ function state(r: Run) {
   return { label: "Failed", tone: "text-bad bg-bad/10", dot: "bg-bad" };
 }
 
-function JobCard({ job, ownerKey, setOwnerKey }: { job: Job; ownerKey: string; setOwnerKey: (k: string) => void }) {
+function JobCard({ job }: { job: Job }) {
   const { runs, failed, reload, active } = useRuns(job);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -92,9 +92,8 @@ function JobCard({ job, ownerKey, setOwnerKey }: { job: Job; ownerKey: string; s
     try {
       const base = getApiBase();
       if (!base) throw new Error("The live service is switched off on this page (?api=off).");
-      const r = await fetch(`${base}/rerun/${job.rerun}`, { method: "POST", headers: { "X-Rerun-Key": ownerKey } });
+      const r = await fetch(`${base}/rerun/${job.rerun}`, { method: "POST" });
       const j = await r.json().catch(() => ({}));
-      if (r.status === 401) { setOwnerKey(""); throw new Error("That key was not accepted, so I removed it."); }
       if (!r.ok) throw new Error(j.error || `Failed (${r.status})`);
       setMsg({ ok: true, text: "Started. This card updates as it runs." });
       setTimeout(reload, 4000);
@@ -135,16 +134,10 @@ function JobCard({ job, ownerKey, setOwnerKey }: { job: Job; ownerKey: string; s
 
       {job.rerun && (
         <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-4">
-          {ownerKey ? (
-            <>
-              <button type="button" onClick={rerun} disabled={busy || active} className="rounded-[10px] bg-brand px-4 py-2 font-semibold text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
-                {active ? "Running…" : busy ? "Starting…" : "Re-run now"}
-              </button>
-              <button type="button" onClick={() => setOwnerKey("")} className="text-[12.5px] text-dim underline underline-offset-4 hover:text-ink">Lock</button>
-            </>
-          ) : (
-            <span className="text-[12.5px] text-dim">Re-run is for the site owner. Unlock it at the top of this page.</span>
-          )}
+          <button type="button" onClick={rerun} disabled={busy || active} className="rounded-[10px] bg-brand px-4 py-2 font-semibold text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
+            {active ? "Running…" : busy ? "Starting…" : "Re-run now"}
+          </button>
+          <span className="text-[12.5px] text-dim">Open to anyone, {job.cooldown}.</span>
           {msg && <span className={`text-[12.5px] ${msg.ok ? "text-good" : "text-bad"}`} role="status">{msg.text}</span>}
         </div>
       )}
@@ -153,42 +146,12 @@ function JobCard({ job, ownerKey, setOwnerKey }: { job: Job; ownerKey: string; s
 }
 
 export default function Jobs() {
-  const [key, setKey] = useState("");
-  const [draft, setDraft] = useState("");
-  const loaded = useRef(false);
-  useEffect(() => {
-    try {
-      setKey(localStorage.getItem(KEY) || "");
-    } catch {
-      /* storage blocked: the page still shows status */
-    }
-    loaded.current = true;
-  }, []);
-  const save = (k: string) => {
-    setKey(k);
-    try {
-      k ? localStorage.setItem(KEY, k) : localStorage.removeItem(KEY);
-    } catch {
-      /* ignore */
-    }
-  };
-
   return (
     <>
-      <Card title="Owner unlock" note="Everyone can see these jobs. Only someone with the key can start one: the key is checked by the server, not by this page. It is kept in this browser only.">
-        {key ? (
-          <p className="mt-3 text-[13px] text-good">Unlocked on this browser. Re-run buttons are active below.</p>
-        ) : (
-          <form onSubmit={(e) => { e.preventDefault(); if (draft.trim()) { save(draft.trim()); setDraft(""); } }} className="mt-3 flex flex-wrap gap-2">
-            <input type="password" autoComplete="off" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Owner key" aria-label="Owner key" className="min-w-0 flex-1 basis-56" />
-            <button type="submit" className="rounded-[10px] border border-line bg-card2 px-4 py-2 text-ink hover:border-brand/35 hover:text-brand">Unlock</button>
-          </form>
-        )}
-      </Card>
       <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
-        {JOBS.map((j) => <JobCard key={j.id} job={j} ownerKey={key} setOwnerKey={save} />)}
+        {JOBS.map((j) => <JobCard key={j.id} job={j} />)}
       </div>
-      <p className="sub">Status comes straight from GitHub and updates while a job is running.</p>
+      <p className="sub">Status comes straight from GitHub and updates while a job is running. The cooldowns protect Google&apos;s daily limits and are enforced by the server, not this page.</p>
     </>
   );
 }

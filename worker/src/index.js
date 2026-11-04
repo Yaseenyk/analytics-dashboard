@@ -246,34 +246,34 @@ async function build(kind, id, env) {
 }
 
 
-// ---- owner-only re-run of a GitHub Actions workflow ----
-// The dashboard is public, so this is the one write action and it is locked three ways: it answers only the dashboard's own
-// origin, it needs the owner's key (RERUN_KEY, a Worker secret), and it can start only the two workflows listed here.
-// GITHUB_TOKEN is a fine-grained token limited to this repository's Actions. Neither secret ever reaches the browser.
+// ---- re-run of a GitHub Actions workflow ----
+// Anyone who opens the dashboard can press Re-run; there is no login. What keeps it safe is a cooldown, because Google caps
+// how many pages the index check may inspect in a day and a stranger spamming the button could use that up. The cooldown is
+// read from GitHub's own record of the last run, so it holds for every IP address and every copy of this Worker.
+// GITHUB_TOKEN is a fine-grained token limited to this repository's Actions. It never reaches the browser.
 const REPO = 'Yaseenyk/analytics-dashboard';
-const RERUNS = { health: 'health.yml', dashboard: 'dashboard.yml' };
+const RERUNS = { health: { file: 'health.yml', cooldownMin: 90 }, dashboard: { file: 'dashboard.yml', cooldownMin: 10 } };
 const lastRerun = new Map();
-function sameKey(a, b) {
-  if (!a || !b || a.length !== b.length) return false;
-  let d = 0;
-  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return d === 0;
-}
 async function rerun(req, env, ch) {
   const json = (o, status) => new Response(JSON.stringify(o), { status, headers: { ...ch, 'Content-Type': 'application/json' } });
   const name = new URL(req.url).pathname.split('/').pop();
   if (req.headers.get('Origin') !== 'https://analytics.streamerosai.com') return json({ error: 'not allowed from this origin' }, 403);
-  if (!env.RERUN_KEY || !env.GITHUB_TOKEN) return json({ error: 'Re-run is not set up yet (missing RERUN_KEY or GITHUB_TOKEN).' }, 503);
-  if (!sameKey(req.headers.get('X-Rerun-Key') || '', env.RERUN_KEY)) return json({ error: 'wrong key' }, 401);
-  const file = RERUNS[name];
-  if (!file) return json({ error: 'unknown job' }, 404);
-  const last = lastRerun.get(name) || 0;
-  if (Date.now() - last < 60000) return json({ error: 'started a moment ago, wait a minute' }, 429);
+  if (!env.GITHUB_TOKEN) return json({ error: 'Re-run is not set up yet (the Worker has no GITHUB_TOKEN).' }, 503);
+  const job = RERUNS[name];
+  if (!job) return json({ error: 'unknown job' }, 404);
+  const gh = { Authorization: `Bearer ${env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'User-Agent': 'analytics-api', 'X-GitHub-Api-Version': '2022-11-28' };
+  // Two presses in the same second would both see "no run yet", so also hold this copy of the Worker for a short moment.
+  if (Date.now() - (lastRerun.get(name) || 0) < 15000) return json({ error: 'Started a moment ago.' }, 429);
   lastRerun.set(name, Date.now());
-  const res = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${file}/dispatches`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'User-Agent': 'analytics-api', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ref: 'main' }),
+  const runs = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${job.file}/runs?per_page=1`, { headers: gh });
+  const last = runs.ok ? (await runs.json()).workflow_runs?.[0] : null;
+  if (last) {
+    if (last.status !== 'completed') return json({ error: 'It is already running.' }, 409);
+    const age = (Date.now() - Date.parse(last.created_at)) / 60000;
+    if (age < job.cooldownMin) return json({ error: `It last ran ${Math.max(1, Math.round(age))} min ago. You can start it again in ${Math.ceil(job.cooldownMin - age)} min.` }, 429);
+  }
+  const res = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${job.file}/dispatches`, {
+    method: 'POST', headers: { ...gh, 'Content-Type': 'application/json' }, body: JSON.stringify({ ref: 'main' }),
   });
   if (res.status !== 204) return json({ error: `GitHub answered ${res.status}`, detail: (await res.text()).slice(0, 200) }, 502);
   return json({ ok: true, job: name }, 202);
@@ -284,7 +284,7 @@ const inflight = new Map();
 function cors(req) {
   const o = req.headers.get('Origin') || '';
   const h = { 'Vary': 'Origin' };
-  if (ORIGIN_OK.test(o)) { h['Access-Control-Allow-Origin'] = o; h['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'; h['Access-Control-Allow-Headers'] = 'X-Rerun-Key, Content-Type'; h['Access-Control-Max-Age'] = '86400'; }
+  if (ORIGIN_OK.test(o)) { h['Access-Control-Allow-Origin'] = o; h['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'; h['Access-Control-Allow-Headers'] = 'Content-Type'; h['Access-Control-Max-Age'] = '86400'; }
   return h;
 }
 export default {
