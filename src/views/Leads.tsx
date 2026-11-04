@@ -77,7 +77,7 @@ export default function Leads() {
         <GaArea
           title="Leads and clicks per day"
           extra={f.site === "all" ? (
-            <div className="flex gap-0.5 rounded-xl border border-line bg-card2 p-[3px]">
+            <div className="flex gap-0.5 rounded-xl bg-card2 p-[3px]">
               {([["Total", false], ["By site", true]] as [string, boolean][]).map(([lb, val]) => (
                 <button key={lb} type="button" onClick={() => setSplit(val)} aria-pressed={split === val} className={`rounded-[9px] px-3 py-1 text-[12.5px] ${split === val ? "bg-brand/10 font-semibold text-brand" : "text-mute"}`}>{lb}</button>
               ))}

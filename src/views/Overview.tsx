@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { BRAND, CAT_COLOR, COLORS, SITES, STREAMS, gscProperty } from "@/lib/config";
-import { useGA, useGSC, useLive, useLivePolling } from "@/lib/data";
+import { useGA, useGSC, useLive } from "@/lib/data";
 import {
   classify, daily, dailyAll, dailyTotal, dur, gscDaily, gscMerge, gscMissing, gscTotals, group, hasGA, ix, label, n, pct, rep, sourcesAgg, sum,
 } from "@/lib/derive";
@@ -16,7 +16,6 @@ function GaBanner() {
 }
 
 function LiveCard() {
-  useLivePolling();
   const f = useFilters();
   const e = useLive();
   if (!e.data) return <SkCard><Sk w={30} h={18} /></SkCard>;
@@ -66,7 +65,7 @@ function Summary() {
           <li>
             Most came from{" "}
             {v.src.slice(0, 3).map((x, i) => (
-              <span key={x.name}>{i ? ", " : ""}<b className="text-ink">{x.name}</b> ({pct(x.sessions, v.tot).toFixed(0)}%)</span>
+              <span key={x.name}>{i ? ", " : ""}<b className="text-ink">{x.name === "(not set)" ? "Unassigned" : x.name}</b> ({pct(x.sessions, v.tot).toFixed(0)}%)</span>
             ))}
             .
           </li>
@@ -92,7 +91,7 @@ function VisitsChart() {
     <GaArea
       title="Visits per day"
       extra={all ? (
-        <div className="flex gap-0.5 rounded-xl border border-line bg-card2 p-[3px]">
+        <div className="flex gap-0.5 rounded-xl bg-card2 p-[3px]">
           {[["Total", false], ["By site", true]].map(([lb, val]) => (
             <button key={String(lb)} type="button" onClick={() => setSplit(val as boolean)} aria-pressed={split === val} className={`rounded-[9px] px-3 py-1 text-[12.5px] ${split === val ? "bg-brand/10 font-semibold text-brand" : "text-mute"}`}>{String(lb)}</button>
           ))}

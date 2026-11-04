@@ -2,13 +2,12 @@
 
 import { SITES, STREAMS } from "@/lib/config";
 import { useFilters } from "@/lib/filters";
-import { useLive, useLivePolling } from "@/lib/data";
+import { useLive } from "@/lib/data";
 import { DataTable } from "@/components/DataTable";
 import { SkTable } from "@/components/ui";
 import { cols2 } from "./kit";
 
 export default function Live() {
-  useLivePolling(30000);
   const f = useFilters();
   const e = useLive();
   const l = e.data;
@@ -23,7 +22,7 @@ export default function Live() {
         <DataTable title="Where they are" cols={["Country", "Users"]} bar={1} fmt={[0, "n"]} empty="Nothing right now." rows={l.countries.rows.map((x) => [x[0] || "(unknown)", x[1]])} />
         <DataTable title="What they are doing" cols={["Event", "Site", "Count"]} bar={2} fmt={[0, 0, "n"]} empty="Nothing right now." rows={(l.events?.rows ?? []).filter((x) => mine(x[0])).map((x) => [x[1], nm(x[0]), x[2]])} />
       </div>
-      <p className="sub">Updates every 30 seconds while this page is open. Snapshot from {new Date(l.generatedAt).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}.{f.site !== "all" ? " Countries are not split by site." : ""}</p>
+      <p className="sub">Press the refresh button at the top for the latest. Snapshot from {new Date(l.generatedAt).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}.{f.site !== "all" ? " Countries are not split by site." : ""}</p>
     </>
   );
 }

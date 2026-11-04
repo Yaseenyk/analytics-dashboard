@@ -84,7 +84,7 @@ export function useStamp(): Stamp {
   );
 }
 
-/** Fetch the published copy and the live copy of one file. Safe to call many times. */
+/** Load the published copy (a static file, no API call). The live copy, which spends Google API calls, is fetched only when force is true, from the refresh button. */
 export function ensure(file: string, force = false) {
   if (inflight.has(file) && !force) return;
   inflight.add(file);
@@ -94,7 +94,7 @@ export function ensure(file: string, force = false) {
     if (!cur?.data || sig(cur.data) !== sig(j)) put(file, { data: j, error: false });
     setStamp({ liveAt: Date.now(), live: true });
   };
-  const live = base ? getJSON<unknown>(`${base}/data/${file}`, 45000).then(applyLive, () => {}) : Promise.resolve();
+  const live = base && force ? getJSON<unknown>(`${base}/data/${file}`, 45000).then(applyLive, () => {}) : Promise.resolve();
   const stat = force
     ? Promise.resolve()
     : getJSON<unknown>(`/data/${file}`, 30000).then(
@@ -156,13 +156,3 @@ export const useGSC = (range: string) => useSource<GSCFile>(`gsc-${range}.json`)
 export const useBing = (range: string) => useSource<BingFile>(`bing-${range}.json`);
 export const useHealth = () => useSource<HealthFile>("health.json");
 export const useLive = () => useSource<Live>("live.json");
-
-/** Keep the realtime numbers moving while the page is open and visible. */
-export function useLivePolling(everyMs = 60000) {
-  useEffect(() => {
-    const t = setInterval(() => {
-      if (document.visibilityState === "visible" && apiBase()) ensure("live.json", true);
-    }, everyMs);
-    return () => clearInterval(t);
-  }, [everyMs]);
-}

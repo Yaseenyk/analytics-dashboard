@@ -177,7 +177,7 @@ export default function Search() {
   const [src, setSrc] = useState<"google" | "bing">("google");
   return (
     <>
-      <div className="flex gap-0.5 self-start rounded-xl border border-line bg-card p-[3px] shadow-inset" role="group" aria-label="Search engine">
+      <div className="flex gap-0.5 self-start rounded-xl bg-card p-[3px] shadow-inset" role="group" aria-label="Search engine">
         {(["google", "bing"] as const).map((k) => (
           <button key={k} type="button" aria-pressed={src === k} onClick={() => setSrc(k)} className={`rounded-[9px] border px-4 py-1.5 ${src === k ? "border-brand/35 bg-brand/10 font-semibold text-brand" : "border-transparent text-mute hover:text-ink"}`}>
             {k === "google" ? "Google" : "Bing"}

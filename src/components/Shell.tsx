@@ -58,13 +58,13 @@ function Header() {
           <div className="min-w-0">
             <div className="eyebrow">{f.site === "all" ? "All sites" : SITES[f.site]}</div>
             <h1 className="m-0 truncate text-[21px] font-bold leading-tight tracking-tight">{tab.title}</h1>
-            <div className="mt-0.5 hidden text-[12.5px] text-dim sm:block">{tab.id === "live" ? "Last 30 minutes · updates every 30 seconds" : tab.id === "tools" ? "Link builder and tracking reference" : span}</div>
+            <div className="mt-0.5 hidden text-[12.5px] text-dim sm:block">{tab.id === "live" ? "Last 30 minutes · press refresh for the latest" : tab.id === "tools" ? "Link builder and tracking reference" : span}</div>
           </div>
         </div>
         <div className="flex flex-none items-center gap-2 font-mono text-[11.5px] text-dim">
           <span className={`h-[7px] w-[7px] rounded-full ${stamp.live ? "animate-pulseglow bg-good" : "bg-dim"}`} />
-          <span className="hidden whitespace-nowrap sm:inline">{stamp.busy ? "Refreshing…" : stamp.live ? `Live${time ? ` · ${time}` : ""}` : "Published copy"}</span>
-          <button type="button" onClick={refreshAll} aria-label="Refresh now" title="Fetch fresh data now" className="grid h-[30px] w-[30px] place-items-center rounded-full border border-line bg-card2 text-mute hover:border-brand/35 hover:text-brand">
+          <span className="hidden whitespace-nowrap sm:inline">{stamp.busy ? "Refreshing…" : stamp.live ? `Live${time ? ` · ${time}` : ""}` : "Saved copy · press refresh for live"}</span>
+          <button type="button" onClick={refreshAll} aria-label="Refresh now" title="Fetch fresh data now" className="grid h-[30px] w-[30px] place-items-center rounded-full bg-card2 text-mute hover:text-brand">
             <Icon name="refresh" className={`h-4 w-4 ${stamp.busy ? "animate-spin" : ""}`} />
           </button>
         </div>
@@ -80,9 +80,9 @@ function Header() {
               <select aria-label="Date range" value={f.range} onChange={(e) => f.setRange(e.target.value)} className="md:hidden">
                 {ranges.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
               </select>
-              <div className="hidden gap-0.5 overflow-x-auto rounded-xl border border-line bg-card p-[3px] shadow-inset md:flex">
+              <div className="hidden gap-0.5 overflow-x-auto rounded-xl bg-card p-[3px] shadow-inset md:flex">
                 {ranges.map((x) => (
-                  <button key={x.id} type="button" onClick={() => f.setRange(x.id)} aria-pressed={f.range === x.id} className={`whitespace-nowrap rounded-[9px] border px-3 py-1.5 ${f.range === x.id ? "border-brand/35 bg-brand/10 font-semibold text-brand" : "border-transparent text-mute hover:text-ink"}`}>
+                  <button key={x.id} type="button" onClick={() => f.setRange(x.id)} aria-pressed={f.range === x.id} className={`whitespace-nowrap rounded-[9px] px-3 py-1.5 ${f.range === x.id ? "bg-brand/10 font-semibold text-brand" : "text-mute hover:text-ink"}`}>
                     {x.label.replace("Last ", "")}
                   </button>
                 ))}
@@ -117,7 +117,7 @@ function Nav() {
         </div>
         <nav aria-label="Sections" className="flex flex-col gap-0.5">
           {TABS.map((t) => (
-            <Link key={t.id} href={t.href} aria-current={tab.id === t.id ? "page" : undefined} className={`flex items-center gap-2.5 rounded-[10px] border px-2.5 py-[9px] ${tab.id === t.id ? "border-brand/35 bg-brand/10 font-semibold text-brand" : "border-transparent text-mute hover:bg-card2 hover:text-ink"}`}>
+            <Link key={t.id} href={t.href} aria-current={tab.id === t.id ? "page" : undefined} className={`flex items-center gap-2.5 rounded-[10px] px-2.5 py-[9px] ${tab.id === t.id ? "bg-brand/10 font-semibold text-brand" : "text-mute hover:bg-card2 hover:text-ink"}`}>
               <Icon name={t.icon} />
               {t.short === "Leads" ? "Leads and clicks" : t.id === "search" ? "Search (Google)" : t.id === "live" ? "Live now" : t.short}
             </Link>
@@ -146,7 +146,7 @@ function Nav() {
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/15" />
             <div className="grid gap-1.5">
               {rest.map((t) => (
-                <Link key={t.id} href={t.href} onClick={() => setMore(false)} className="flex items-center gap-3 rounded-xl border border-line bg-card2 px-4 py-3 text-[14px]">
+                <Link key={t.id} href={t.href} onClick={() => setMore(false)} className="flex items-center gap-3 rounded-xl bg-card2 px-4 py-3 text-[14px]">
                   <Icon name={t.icon} />
                   {t.title}
                 </Link>
