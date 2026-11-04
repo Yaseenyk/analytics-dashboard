@@ -18,12 +18,20 @@ export function ndate(s: Cell): string {
   return /^\d{8}$/.test(t) ? `${t.slice(0, 4)}-${t.slice(4, 6)}-${t.slice(6)}` : t;
 }
 export type Fmt = 0 | "n" | "p" | "dur" | "pos";
+/** GA4's raw placeholders in plain words: "(not set)" is a missing tag, "(direct)" and "(none)" mean no source info. */
+export function nice(v: string): string {
+  return v
+    .replace(/\(direct\) \/ \(none\)/g, "direct / no source info")
+    .replace(/\(not set\)/g, "not tagged")
+    .replace(/\(direct\)/g, "direct")
+    .replace(/\(none\)/g, "none");
+}
 export function fmtCell(v: Cell, f?: Fmt): string {
   if (f === "n") return n(v);
   if (f === "p") return (+v).toFixed(1) + "%";
   if (f === "dur") return dur(+v);
   if (f === "pos") return (+v).toFixed(1);
-  return String(v ?? "");
+  return nice(String(v ?? ""));
 }
 
 /* ---- GA4 reports ------------------------------------------------------------------ */
@@ -209,7 +217,7 @@ export function classify(source: Cell, medium: Cell): { name: string; cat: strin
   }
   let cat: string;
   if (s === "(direct)" || s === "direct") {
-    name = "Direct";
+    name = "Direct / unknown";
     cat = "Direct";
   } else if (AI_RE.test(s)) cat = "AI assistants";
   else if (/^(Google|Bing|DuckDuckGo|Yahoo|Baidu|Yandex|Ecosia|Brave)$/.test(name || "")) cat = "Search engines";

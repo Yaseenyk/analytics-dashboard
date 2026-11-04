@@ -230,7 +230,7 @@ export default function Overview() {
           sourcesAgg(ga, site).forEach((x) => (cats[x.cat] = (cats[x.cat] || 0) + x.sessions));
           return Object.keys(cats).map((k) => [k, cats[k]] as [string, number]).sort((a, b) => b[1] - a[1]);
         }} />
-        <GaRank title="Top sources" max={6} build={(ga, site) => sourcesAgg(ga, site).map((x) => [x.name, x.sessions, `${n(x.sessions)} visits`])} />
+        <GaRank title="Top sources" max={6} note="Direct / unknown means the browser gave no source, for example a link opened in an app." build={(ga, site) => sourcesAgg(ga, site).map((x) => [x.name, x.sessions, `${n(x.sessions)} visits`])} />
       </div>
       <div className={cols2}>
         <GaRank title="Top pages" max={6} build={(ga, site) => group(rep(ga, "pages"), [1], site).map((x) => [x.k[0], x.m[0], `${n(x.m[0])} views`])} />

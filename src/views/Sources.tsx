@@ -4,9 +4,26 @@ import { CAT_COLOR, COLORS } from "@/lib/config";
 import { classify, group, pct, rep, sourcesAgg } from "@/lib/derive";
 import { GaDonut, GaTable, WaitingGate, cols2 } from "./kit";
 
+function Explainer() {
+  return (
+    <details className="group rounded-2xl border border-line bg-card/60 [&_summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 text-[13.5px] font-semibold text-mute group-open:text-ink">
+        What do &ldquo;Direct / unknown&rdquo; and &ldquo;not tagged&rdquo; mean?
+        <span aria-hidden="true" className="text-dim transition-transform group-open:rotate-180">⌄</span>
+      </summary>
+      <dl className="grid gap-4 px-5 pb-5 text-[13px] leading-relaxed text-mute md:grid-cols-3">
+        <div><dt className="font-semibold text-ink">Direct / unknown</dt><dd className="mt-1">The browser did not say where the visit came from. It can be a typed address or a bookmark, but also a link opened inside an app such as WhatsApp, Instagram, the LinkedIn app or an email app, which hide their origin. It is not proof that nobody shared your link.</dd></div>
+        <div><dt className="font-semibold text-ink">Not tagged</dt><dd className="mt-1">The link had no <code className="font-mono text-brand">utm_</code> tags, so there is no campaign name to show. Only links you tag appear under a campaign.</dd></div>
+        <div><dt className="font-semibold text-ink">How to shrink both</dt><dd className="mt-1">Tag links you share with the link builder on the Tools tab. Posts from the LinkedIn bot and the dev.to cross-posts are tagged automatically, so those show up by name.</dd></div>
+      </dl>
+    </details>
+  );
+}
+
 export default function Sources() {
   return (
     <WaitingGate>
+      <Explainer />
       <div className={cols2}>
         <GaDonut
           title="By type of source"
