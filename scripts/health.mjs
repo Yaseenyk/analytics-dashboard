@@ -33,6 +33,7 @@ const SITE_PROPS = {
   'streamerosai.com': 'https://streamerosai.com/',
   'fitrank.streamerosai.com': 'https://fitrank.streamerosai.com/',
   'spotai.streamerosai.com': 'https://spotai.streamerosai.com/',
+  'tools.streamerosai.com': 'https://tools.streamerosai.com/',
 };
 
 async function sitemapUrls(host) {

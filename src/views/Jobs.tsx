@@ -18,7 +18,7 @@ interface Job {
 }
 
 const JOBS: Job[] = [
-  { id: "health", title: "Index health check", schedule: "Daily at 02:40 UTC (08:10 IST)", what: "Asks Google whether each page of all five sites is indexed, and why not.", repo: "Yaseenyk/analytics-dashboard", file: "health.yml", rerun: "health", note: "Takes about 10 minutes. The Health tab updates after the next dashboard rebuild finishes." },
+  { id: "health", title: "Index health check", schedule: "Daily at 02:40 UTC (08:10 IST)", what: "Asks Google whether each page of all six sites is indexed, and why not.", repo: "Yaseenyk/analytics-dashboard", file: "health.yml", rerun: "health", note: "Takes about 10 minutes. The Health tab updates after the next dashboard rebuild finishes." },
   { id: "dashboard", title: "Dashboard data and deploy", schedule: "Every 2 hours, and on every push", what: "Pulls Google Analytics, Search Console and Bing, then rebuilds and publishes this dashboard.", repo: "Yaseenyk/analytics-dashboard", file: "dashboard.yml", rerun: "dashboard", note: "Takes about 2 minutes." },
   { id: "portfolio", title: "Portfolio deploy", schedule: "Daily at 00:17 UTC, and on every push", what: "Rebuilds yk.streamerosai.com and releases pages and posts whose date has come.", repo: "Yaseenyk/portfolio", file: "deploy.yml" },
   { id: "linkedin", title: "LinkedIn poster", schedule: "Tue, Wed, Thu at 10:00 UTC", what: "Publishes the next LinkedIn post. A re-run would publish a real post, so this one is status only.", repo: "Yaseenyk/linkedin-bot", file: "" },

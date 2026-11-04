@@ -18,6 +18,7 @@ const GSC_SITES = [
   'https://fitrank.streamerosai.com/',
   'https://campus.streamerosai.com/',
   'https://spotai.streamerosai.com/',
+  'https://tools.streamerosai.com/',
   'https://streamerosai.com/',
 ];
 const KEY_EVENTS = ['whatsapp_click', 'email_click', 'phone_click', 'generate_lead', 'app_download', 'template_download', 'agreement_signed', 'calculator_use'];
