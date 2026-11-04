@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { getApiBase } from "@/lib/data";
 import { Card } from "@/components/ui";
 
@@ -9,6 +9,8 @@ interface Job {
   title: string;
   schedule: string;
   what: string;
+  /** Section the card sits in. */
+  group: string;
   repo: string;
   /** Workflow file, or empty to read every workflow in the repo. */
   file: string;
@@ -16,16 +18,45 @@ interface Job {
   rerun?: "health" | "dashboard";
   /** Runs inside the Cloudflare Worker (its own status), not on GitHub. */
   worker?: boolean;
+  /** A Cloudflare cron with no status feed: shown for completeness. */
+  external?: boolean;
   /** Shown next to the button: the server enforces it. */
   cooldown?: string;
   note?: string;
 }
 
+const G_POST = "Posting and content";
+const G_DEPLOY = "Daily releases and site deploys";
+const G_CF = "Cloudflare Workers";
+const G_TOOLS = "Tool sites (their own repo)";
+const GROUPS = [G_POST, G_DEPLOY, G_CF, G_TOOLS];
+
 const JOBS: Job[] = [
-  { id: "health", title: "Index health check", schedule: "Daily at 02:40 UTC (08:10 IST)", what: "Asks Google whether each page of all nine sites is indexed, and why not.", repo: "Yaseenyk/analytics-dashboard", file: "", worker: true, rerun: "health", cooldown: "once every 90 minutes", note: "Runs on Cloudflare, in small batches every minute, so a full check takes about 20 minutes. The Health tab updates the moment it finishes." },
-  { id: "dashboard", title: "Dashboard data and deploy", schedule: "Every 2 hours, and on every push", what: "Pulls Google Analytics, Search Console and Bing, then rebuilds and publishes this dashboard.", repo: "Yaseenyk/analytics-dashboard", file: "dashboard.yml", rerun: "dashboard", cooldown: "once every 10 minutes", note: "Takes about 2 minutes." },
-  { id: "portfolio", title: "Portfolio deploy", schedule: "Daily at 00:17 UTC, and on every push", what: "Rebuilds yk.streamerosai.com and releases pages and posts whose date has come.", repo: "Yaseenyk/portfolio", file: "deploy.yml" },
-  { id: "linkedin", title: "LinkedIn poster", schedule: "Tue, Wed, Thu at 10:00 UTC", what: "Publishes the next LinkedIn post. A re-run would publish a real post, so this one is status only.", repo: "Yaseenyk/linkedin-bot", file: "" },
+  // ---- posting and content
+  { id: "linkedin", group: G_POST, title: "LinkedIn poster", schedule: "Tue, Wed, Thu at 10:00 UTC (15:30 IST)", what: "Publishes the next LinkedIn post from the bot's queue, on a fixed cycle of post, post, meme, post, poll.", repo: "Yaseenyk/linkedin-bot", file: "linkedin_poster.yml", note: "Status only: a re-run would publish a real post." },
+  { id: "sos-blogger", group: G_POST, title: "streamerOS blogger", schedule: "Mon and Thu at 09:00 UTC (14:30 IST)", what: "Writes one post for the next real search query on its topic list, using only facts from the site's knowledge base, and publishes it. A run that fails its own checks publishes nothing.", repo: "Yaseenyk/streamer-os-website", file: "ai_blogger.yml", note: "Status only: a re-run would publish a new post. The publish triggers the streamerOS deploy." },
+  { id: "devto-backfill", group: G_POST, title: "DEV.to cross-posting: backlog", schedule: "Tue and Fri at 04:30 UTC (10:00 IST)", what: "Cross-posts one older portfolio article to DEV.to per run, with tagged links. Never more than 2 new articles in any 7 days.", repo: "Yaseenyk/portfolio", file: "dev-to-backfill.yml", note: "Status only." },
+  { id: "devto-sync", group: G_POST, title: "DEV.to cross-posting: new posts", schedule: "On every push to the portfolio", what: "Cross-posts new or edited portfolio articles to DEV.to, inside the same 2-a-week limit.", repo: "Yaseenyk/portfolio", file: "dev-to-sync.yml", note: "Status only." },
+
+  // ---- daily releases and site deploys
+  { id: "portfolio", group: G_DEPLOY, title: "Portfolio deploy", schedule: "Daily at 00:17 UTC (05:47 IST), and on every push", what: "Rebuilds yk.streamerosai.com and releases pages and posts whose date has come.", repo: "Yaseenyk/portfolio", file: "deploy.yml" },
+  { id: "fitrank", group: G_DEPLOY, title: "FitRank deploy", schedule: "Daily at 00:30 UTC (06:00 IST), and on every push", what: "Rebuilds fitrank.streamerosai.com and releases scheduled blog stories on their date.", repo: "Yaseenyk/fitrank-website", file: "deploy.yml" },
+  { id: "spotai", group: G_DEPLOY, title: "SpotAI deploy", schedule: "Daily at 00:17 UTC (05:47 IST), and on every push", what: "Rebuilds spotai.streamerosai.com and releases scheduled guides on their date.", repo: "Yaseenyk/spotai-website", file: "deploy.yml" },
+  { id: "streameros", group: G_DEPLOY, title: "streamerOS deploy", schedule: "On every push", what: "Rebuilds streamerosai.com. The blogger's posts go live through this.", repo: "Yaseenyk/streamer-os-website", file: "nextjs.yml" },
+  { id: "campus", group: G_DEPLOY, title: "DefendIt deploy", schedule: "On every push", what: "Rebuilds campus.streamerosai.com.", repo: "Yaseenyk/campus-site", file: "deploy.yml" },
+  { id: "solar", group: G_DEPLOY, title: "Solar guide deploy", schedule: "On every push", what: "Rebuilds solar.streamerosai.com.", repo: "Yaseenyk/solar-site", file: "deploy.yml" },
+  { id: "dashboard", group: G_DEPLOY, title: "Dashboard data and deploy", schedule: "Every 2 hours, and on every push", what: "Pulls Google Analytics, Search Console and Bing, then rebuilds and publishes this dashboard.", repo: "Yaseenyk/analytics-dashboard", file: "dashboard.yml", rerun: "dashboard", cooldown: "once every 10 minutes", note: "Takes about 2 minutes." },
+
+  // ---- Cloudflare
+  { id: "health", group: G_CF, title: "Index health check", schedule: "Daily at 02:40 UTC (08:10 IST)", what: "Asks Google whether each page of all nine sites is indexed, and why not.", repo: "Yaseenyk/analytics-dashboard", file: "", worker: true, rerun: "health", cooldown: "once every 90 minutes", note: "Runs on Cloudflare, in small batches every minute, so a full check takes about 20 minutes. The Health tab updates the moment it finishes." },
+  { id: "reindex", group: G_CF, title: "Chat re-index", schedule: "Daily at 11:30 UTC (17:00 IST)", what: "Re-reads the live portfolio text and refreshes the search index behind the portfolio's chat assistant.", repo: "", file: "", external: true, note: "Runs on Cloudflare, which has no status feed for it yet, so there is no last-run time here." },
+  { id: "concierge", group: G_CF, title: "Chat assistant deploy", schedule: "On every push that changes the Worker", what: "Publishes the chat assistant's Worker to Cloudflare.", repo: "Yaseenyk/portfolio", file: "worker.yml" },
+
+  // ---- tool sites (separate session and repo)
+  { id: "tools", group: G_TOOLS, title: "tools.streamerosai.com deploy", schedule: "On every push", what: "Publishes the JSON and developer tools site.", repo: "Yaseenyk/sites-lab-yk", file: "deploy-tools.yml" },
+  { id: "calc", group: G_TOOLS, title: "calc.streamerosai.com deploy", schedule: "On every push", what: "Publishes the money calculators site.", repo: "Yaseenyk/sites-lab-yk", file: "deploy-calc.yml" },
+  { id: "images", group: G_TOOLS, title: "images.streamerosai.com deploy", schedule: "On every push", what: "Publishes the image tools site.", repo: "Yaseenyk/sites-lab-yk", file: "deploy-images.yml" },
+  { id: "math", group: G_TOOLS, title: "math.streamerosai.com deploy", schedule: "On every push", what: "Publishes the math calculators site.", repo: "Yaseenyk/sites-lab-yk", file: "deploy-math.yml" },
 ];
 
 interface Run {
@@ -36,6 +67,7 @@ interface Run {
   html_url: string;
   event: string;
   display_title: string;
+  path?: string;
 }
 
 function ago(iso: string): string {
@@ -46,31 +78,68 @@ function ago(iso: string): string {
   return h < 36 ? `${h} h ago` : `${Math.round(h / 24)} days ago`;
 }
 
+/* One GitHub request per repository, shared by every card for 60 seconds: with 18 jobs, one request each would run into GitHub's
+   limit for anonymous callers (60 an hour). Each run carries its workflow file in `path`, so a card picks out its own. */
+const repoCache = new Map<string, { at: number; p: Promise<Run[]> }>();
+function repoRuns(repo: string, force = false): Promise<Run[]> {
+  const hit = repoCache.get(repo);
+  if (hit && !force && Date.now() - hit.at < 60000) return hit.p;
+  const p = fetch(`https://api.github.com/repos/${repo}/actions/runs?per_page=100`, { headers: { Accept: "application/vnd.github+json" } }).then(async (r) => {
+    if (!r.ok) throw new Error(String(r.status));
+    return ((await r.json()).workflow_runs ?? []) as Run[];
+  });
+  repoCache.set(repo, { at: Date.now(), p });
+  p.catch(() => repoCache.delete(repo));
+  return p;
+}
+const ofJob = (all: Run[], job: Job) => (job.file ? all.filter((r) => r.path?.endsWith(`/${job.file}`)) : all).slice(0, 6);
+
+/* Each card reports its latest run here so the summary strip at the top can count them without asking GitHub again. */
+const lastRuns = new Map<string, Run | null>();
+const listeners = new Set<() => void>();
+const publish = (id: string, run: Run | null) => {
+  lastRuns.set(id, run);
+  listeners.forEach((l) => l());
+};
+const subscribe = (l: () => void) => {
+  listeners.add(l);
+  return () => {
+    listeners.delete(l);
+  };
+};
+const snapshot = () => JOBS.filter((j) => lastRuns.has(j.id)).map((j) => `${j.id}:${lastRuns.get(j.id)?.status ?? "none"}/${lastRuns.get(j.id)?.conclusion ?? ""}`).join("|");
+
 function useRuns(job: Job) {
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [failed, setFailed] = useState(false);
-  const load = useCallback(async () => {
-    try {
-      const path = job.file ? `workflows/${job.file}/runs` : "runs";
-      const r = await fetch(`https://api.github.com/repos/${job.repo}/actions/${path}?per_page=6`, { headers: { Accept: "application/vnd.github+json" } });
-      if (!r.ok) throw new Error(String(r.status));
-      const j = await r.json();
-      setRuns(j.workflow_runs as Run[]);
-      setFailed(false);
-    } catch {
-      setFailed(true);
-    }
-  }, [job.file, job.repo]);
+  const load = useCallback(
+    async (force = false) => {
+      try {
+        let mine = ofJob(await repoRuns(job.repo, force), job);
+        if (!mine.length && job.file) {
+          // A job that runs rarely can fall outside the newest 100 runs of a busy repository: ask for its workflow directly.
+          const r = await fetch(`https://api.github.com/repos/${job.repo}/actions/workflows/${job.file}/runs?per_page=6`, { headers: { Accept: "application/vnd.github+json" } });
+          if (r.ok) mine = ((await r.json()).workflow_runs ?? []) as Run[];
+        }
+        setRuns(mine);
+        publish(job.id, mine[0] ?? null);
+        setFailed(false);
+      } catch {
+        setFailed(true);
+      }
+    },
+    [job],
+  );
   useEffect(() => {
     load();
   }, [load]);
   const active = !!runs?.some((r) => r.status === "in_progress" || r.status === "queued");
   useEffect(() => {
     if (!active) return;
-    const t = setInterval(() => document.visibilityState === "visible" && load(), 20000);
+    const t = setInterval(() => document.visibilityState === "visible" && load(true), 20000);
     return () => clearInterval(t);
   }, [active, load]);
-  return { runs, failed, reload: load, active };
+  return { runs, failed, reload: () => load(true), active };
 }
 
 function state(r: Run) {
@@ -237,13 +306,77 @@ function WorkerJobCard({ job }: { job: Job }) {
   );
 }
 
+function ExternalJobCard({ job }: { job: Job }) {
+  return (
+    <Card title={job.title}>
+      <p className="sub">{job.what}</p>
+      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[13px]">
+        <dt className="text-dim">Schedule</dt>
+        <dd className="text-mute">{job.schedule}</dd>
+        <dt className="text-dim">Status</dt>
+        <dd>
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-white/5 px-2 py-0.5 font-mono text-[11.5px] font-semibold text-mute">
+            <i className="h-1.5 w-1.5 rounded-full bg-dim" />
+            Not reported
+          </span>
+        </dd>
+      </dl>
+      {job.note && <p className="sub">{job.note}</p>}
+    </Card>
+  );
+}
+
+/** Counts across the GitHub jobs, from what each card has already loaded. */
+function Summary() {
+  useSyncExternalStore(subscribe, snapshot, () => "");
+  const gh = JOBS.filter((j) => j.repo && !j.worker && !j.external);
+  const seen = gh.filter((j) => lastRuns.has(j.id));
+  const pick = (pred: (r: Run) => boolean) =>
+    seen.filter((j) => {
+      const r = lastRuns.get(j.id);
+      return !!r && pred(r);
+    });
+  const running = pick((r) => r.status !== "completed");
+  const ok = pick((r) => r.status === "completed" && r.conclusion === "success");
+  const bad = pick((r) => r.status === "completed" && r.conclusion !== "success" && r.conclusion !== "cancelled");
+  const none = seen.filter((j) => !lastRuns.get(j.id));
+  const chip = (label: string, n: number, tone: string) => (
+    <span className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[12px] font-semibold ${tone}`}>
+      {n} {label}
+    </span>
+  );
+  return (
+    <Card title={`${JOBS.length} automated jobs`}>
+      {seen.length < gh.length ? (
+        <p className="sub">
+          Reading GitHub… {seen.length} of {gh.length} loaded.
+        </p>
+      ) : (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {chip("succeeded last time", ok.length, "bg-good/10 text-good")}
+          {chip("failed last time", bad.length, bad.length ? "bg-bad/10 text-bad" : "bg-white/5 text-mute")}
+          {chip("running now", running.length, running.length ? "bg-brand/10 text-brand" : "bg-white/5 text-mute")}
+          {none.length > 0 && chip("never run", none.length, "bg-white/5 text-mute")}
+        </div>
+      )}
+      {bad.length > 0 && <p className="sub">Failed last time: {bad.map((j) => j.title).join(", ")}. A failed deploy is often GitHub being slow; open the card to see the run.</p>}
+    </Card>
+  );
+}
+
 export default function Jobs() {
   return (
-    <>
-      <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
-        {JOBS.map((j) => (j.worker ? <WorkerJobCard key={j.id} job={j} /> : <JobCard key={j.id} job={j} />))}
-      </div>
-      <p className="sub">Status comes straight from GitHub and updates while a job is running. The cooldowns protect Google&apos;s daily limits and are enforced by the server, not this page.</p>
-    </>
+    <div className="space-y-6">
+      <Summary />
+      {GROUPS.map((g) => (
+        <section key={g} aria-label={g}>
+          <h2 className="h2 mb-3">{g}</h2>
+          <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
+            {JOBS.filter((j) => j.group === g).map((j) => (j.worker ? <WorkerJobCard key={j.id} job={j} /> : j.external ? <ExternalJobCard key={j.id} job={j} /> : <JobCard key={j.id} job={j} />))}
+          </div>
+        </section>
+      ))}
+      <p className="sub">Status comes straight from GitHub and updates while a job is running. Posting jobs are status only, so nobody can publish by accident from here. The cooldowns protect Google&apos;s daily limits and are enforced by the server, not this page.</p>
+    </div>
   );
 }
