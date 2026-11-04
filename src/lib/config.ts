@@ -5,6 +5,7 @@ export const SITES: Record<string, string> = {
   "campus.streamerosai.com": "DefendIt",
   "spotai.streamerosai.com": "SpotAI",
   "tools.streamerosai.com": "Dev Tools",
+  "calc.streamerosai.com": "Money Calcs",
 };
 export const SITE_HOSTS = Object.keys(SITES);
 
@@ -16,6 +17,7 @@ export const STREAMS: Record<string, string> = {
   "Defend It": "DefendIt",
   "Spot AI": "SpotAI",
   "JSON Encoder": "Dev Tools",
+  "Salary Calculator": "Money Calcs",
 };
 
 export const gscProperty = (host: string) => `https://${host}/`;
@@ -32,6 +34,7 @@ export const SITE_COLOR: Record<string, string> = {
   DefendIt: COLORS[3],
   SpotAI: COLORS[4],
   "Dev Tools": COLORS[5],
+  "Money Calcs": COLORS[6],
 };
 export const CAT_COLOR: Record<string, string> = {
   "Search engines": COLORS[0],
