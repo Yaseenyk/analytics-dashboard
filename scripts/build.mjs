@@ -258,57 +258,6 @@ async function bingFetchAll() {
 }
 
 
-// ---------------------------------------------------------------- Index health (URL Inspection)
-// Is each page in Google's index, and if not, why? One inspection per sitemap URL. Google caps this API, and the answer
-// changes slowly, so it is recomputed about once a day; between runs the last published copy is reused.
-const SITE_PROPS = {
-  'yk.streamerosai.com': 'https://yk.streamerosai.com/',
-  'campus.streamerosai.com': 'https://campus.streamerosai.com/',
-  'streamerosai.com': 'https://streamerosai.com/',
-  'fitrank.streamerosai.com': 'https://fitrank.streamerosai.com/',
-  'spotai.streamerosai.com': 'https://spotai.streamerosai.com/',
-};
-const PUBLISHED = 'https://analytics.streamerosai.com/data';
-async function sitemapUrls(host) {
-  const out = [], seen = new Set(), todo = [`https://${host}/sitemap.xml`];
-  while (todo.length) {
-    const u = todo.pop();
-    if (seen.has(u)) continue;
-    seen.add(u);
-    const res = await fetch(u).catch(() => null);
-    if (!res || !res.ok) { if (u.endsWith('/sitemap.xml') && !seen.has(`https://${host}/sitemap-index.xml`)) todo.push(`https://${host}/sitemap-index.xml`); continue; }
-    const xml = await res.text();
-    for (const m of xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)) (m[1].endsWith('.xml') ? todo : out).push(m[1]);
-  }
-  return [...new Set(out)];
-}
-async function inspectUrl(siteUrl, inspectionUrl) {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await fetch('https://searchconsole.googleapis.com/v1/urlInspection/index:inspect', { method: 'POST', headers: auth, body: JSON.stringify({ inspectionUrl, siteUrl }) });
-    if (res.status === 429 || res.status >= 500) { await new Promise((r) => setTimeout(r, 1500 * (attempt + 1))); continue; }
-    if (!res.ok) return { u: inspectionUrl, s: `Could not inspect (${res.status})`, v: 'ERROR', c: null };
-    const r = (await res.json()).inspectionResult?.indexStatusResult ?? {};
-    return { u: inspectionUrl, s: r.coverageState || 'Unknown', v: r.verdict || 'UNKNOWN', c: r.lastCrawlTime ? r.lastCrawlTime.slice(0, 10) : null };
-  }
-  return { u: inspectionUrl, s: 'Could not inspect (busy)', v: 'ERROR', c: null };
-}
-async function indexHealth() {
-  const index = {};
-  for (const [host, property] of Object.entries(SITE_PROPS)) {
-    const urls = await sitemapUrls(host);
-    const rows = await pool(urls.map((u) => () => inspectUrl(property, u)), 3);
-    const byState = {};
-    rows.forEach((r) => (byState[r.s] = (byState[r.s] || 0) + 1));
-    const indexed = rows.filter((r) => r.v === 'PASS').length;
-    index[host] = {
-      property, inspected: rows.length, indexed, notIndexed: rows.length - indexed, byState,
-      urls: rows.filter((r) => r.v !== 'PASS').map((r) => [r.u, r.s, r.c]).slice(0, 150),
-    };
-    console.log(`Index health ${host}: ${indexed}/${rows.length} indexed`);
-  }
-  return index;
-}
-
 // ---------------------------------------------------------------- run
 fs.mkdirSync('public/data', { recursive: true });
 const write = (name, obj) => fs.writeFileSync(`public/data/${name}.json`, JSON.stringify(obj));
@@ -339,14 +288,10 @@ for (const range of RANGES) {
   write(`bing-${range.id}`, { range: range.id, days: range.days, generatedAt, sites, error: bing.error });
 }
 
-// Index health (daily) and Bing crawl stats (every run).
-const prior = await fetch(`${PUBLISHED}/health.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-const fresh = prior?.indexAt && Date.now() - new Date(prior.indexAt).getTime() < 20 * 3600e3 && !process.env.FORCE_HEALTH;
-let health = { generatedAt, indexAt: prior?.indexAt ?? null, index: prior?.index ?? {} };
-if (!fresh) {
-  try { health = { generatedAt, indexAt: generatedAt, index: await indexHealth() }; }
-  catch (e) { errors.push(`Index health: ${e.message}`); }
-}
+// Index health is computed by its own daily job (scripts/health.mjs) and committed as data/health.json; this run
+// adds Bing's latest crawl stats and publishes both.
+let health = { generatedAt, indexAt: null, index: {} };
+try { health = { ...health, ...JSON.parse(fs.readFileSync('data/health.json', 'utf8')), generatedAt }; } catch { /* first run: no file yet */ }
 const latest = (rows) => rows.slice().sort((a, b) => (bingDate(b.Date)?.getTime() ?? 0) - (bingDate(a.Date)?.getTime() ?? 0))[0];
 health.bing = Object.fromEntries(Object.entries(bing.raw).map(([h, r]) => {
   const c = latest(r.crawl || []);
