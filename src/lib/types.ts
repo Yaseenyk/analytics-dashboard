@@ -57,6 +57,23 @@ export interface BingFile {
   error?: string | null;
 }
 
+/** Index health: Google's URL Inspection results per site (refreshed daily) and Bing's latest crawl stats. */
+export interface HealthSite {
+  property: string;
+  inspected: number;
+  indexed: number;
+  notIndexed: number;
+  byState: Record<string, number>;
+  /** [url, status, last crawl date] for pages that are not indexed. */
+  urls: [string, string, string | null][];
+}
+export interface HealthFile {
+  generatedAt: string;
+  indexAt: string | null;
+  index: Record<string, HealthSite>;
+  bing?: Record<string, { date: string | null; crawled: number; errors: number; inIndex: number; c4xx: number; c5xx: number; blocked: number } | null>;
+}
+
 export interface Meta {
   generatedAt: string;
   property: string;
