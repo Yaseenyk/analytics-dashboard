@@ -1,0 +1,732 @@
+{
+ "generatedAt": "2026-11-04T09:14:23.168Z",
+ "indexAt": "2026-11-04T09:14:23.168Z",
+ "index": {
+  "yk.streamerosai.com": {
+   "property": "https://yk.streamerosai.com/",
+   "inspected": 68,
+   "indexed": 40,
+   "notIndexed": 28,
+   "byState": {
+    "Submitted and indexed": 40,
+    "URL is unknown to Google": 16,
+    "Discovered - currently not indexed": 12
+   },
+   "urls": [
+    [
+     "https://yk.streamerosai.com/roadmap/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/anthropic-roadmap/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/sandbox/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/projects/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/products/fitrank/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/products/streameros/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/products/linkedin-pipeline/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/products/ai-blogger/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/products/analytics-dashboard/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/solutions/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/solutions/ai-chatbot/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/solutions/freelance-website-developer/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/solutions/grocery-app-development/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/solutions/ecommerce-website-development-india/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/solutions/food-delivery-app-development/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/solutions/billing-software-for-small-business/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/solutions/clinic-management-software/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/solutions/ngo-website-development/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/solutions/taxi-booking-app-development/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/interview/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/blog/ai-engineer-portfolio-examples/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/blog/mern-stack-developer-vs-full-stack-developer/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/blog/when-usememo-actually-helps-in-react-19-and-how-to-measure-it/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/blog/my-journey-web-developer-to-ai-engineer/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/blog/shipped-5-products-solo-12-months/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/blog/ai-finops-playbook-stop-burning-money/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/blog/mastering-claude-architecture-context-windows-output-limits/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://yk.streamerosai.com/blog/llm-observability-opentelemetry-tracing/",
+     "Discovered - currently not indexed",
+     null
+    ]
+   ]
+  },
+  "campus.streamerosai.com": {
+   "property": "https://campus.streamerosai.com/",
+   "inspected": 66,
+   "indexed": 63,
+   "notIndexed": 3,
+   "byState": {
+    "Submitted and indexed": 63,
+    "URL is unknown to Google": 3
+   },
+   "urls": [
+    [
+     "https://campus.streamerosai.com/privacy/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://campus.streamerosai.com/guides/plant-disease-detection-using-machine-learning/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://campus.streamerosai.com/guides/final-year-project-report-sample/",
+     "URL is unknown to Google",
+     null
+    ]
+   ]
+  },
+  "streamerosai.com": {
+   "property": "https://streamerosai.com/",
+   "inspected": 96,
+   "indexed": 70,
+   "notIndexed": 26,
+   "byState": {
+    "Submitted and indexed": 70,
+    "URL is unknown to Google": 10,
+    "Crawled - currently not indexed": 6,
+    "Discovered - currently not indexed": 8,
+    "Not found (404)": 2
+   },
+   "urls": [
+    [
+     "https://streamerosai.com/features/aura-studio",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://streamerosai.com/features/viral-moments",
+     "Crawled - currently not indexed",
+     "2026-07-07"
+    ],
+    [
+     "https://streamerosai.com/features/sponsor-crm",
+     "Crawled - currently not indexed",
+     "2026-07-07"
+    ],
+    [
+     "https://streamerosai.com/features/live-cockpit",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://streamerosai.com/features/ai-sidekick",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://streamerosai.com/features/scene-switcher",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://streamerosai.com/vs/streamlabs",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://streamerosai.com/trust",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://streamerosai.com/vs/streamer-bot",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://streamerosai.com/vs/sammi",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://streamerosai.com/vs",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://streamerosai.com/for/youtube-live",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://streamerosai.com/for/vtubers",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://streamerosai.com/docs",
+     "Not found (404)",
+     "2026-07-13"
+    ],
+    [
+     "https://streamerosai.com/docs/installation",
+     "Not found (404)",
+     "2026-07-13"
+    ],
+    [
+     "https://streamerosai.com/changelog",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://streamerosai.com/blog/obs-automatic-scene-switcher-not-switching",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://streamerosai.com/blog/obs-dropped-frames-find-the-cpu-hog",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://streamerosai.com/blog/obs-high-cpu-usage-busy-chat-companion-apps",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://streamerosai.com/blog/obs-mic-too-quiet-measure-before-you-boost",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://streamerosai.com/blog/obs-websocket-connection-failed-three-failures",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://streamerosai.com/blog/twitch-chat-overlay-obs",
+     "Crawled - currently not indexed",
+     "2026-11-01"
+    ],
+    [
+     "https://streamerosai.com/blog/how-much-to-charge-for-stream-sponsorships",
+     "Crawled - currently not indexed",
+     "2026-07-07"
+    ],
+    [
+     "https://streamerosai.com/blog/how-to-read-chat-sentiment-in-real-time",
+     "Crawled - currently not indexed",
+     "2026-07-07"
+    ],
+    [
+     "https://streamerosai.com/blog/turn-twitch-vods-into-shorts-and-tiktoks",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://streamerosai.com/blog/popout-chat-masterclass",
+     "Crawled - currently not indexed",
+     "2026-09-11"
+    ]
+   ]
+  },
+  "fitrank.streamerosai.com": {
+   "property": "https://fitrank.streamerosai.com/",
+   "inspected": 52,
+   "indexed": 41,
+   "notIndexed": 11,
+   "byState": {
+    "Submitted and indexed": 41,
+    "Discovered - currently not indexed": 6,
+    "URL is unknown to Google": 5
+   },
+   "urls": [
+    [
+     "https://fitrank.streamerosai.com/results/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://fitrank.streamerosai.com/blog/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://fitrank.streamerosai.com/tools/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://fitrank.streamerosai.com/features/employee-value/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://fitrank.streamerosai.com/features/resume-reading/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://fitrank.streamerosai.com/tools/schedule-generator/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://fitrank.streamerosai.com/tools/employee-skill-matrix-template/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://fitrank.streamerosai.com/tools/notice-period-calculator/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://fitrank.streamerosai.com/blog/employee-skill-matrix/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://fitrank.streamerosai.com/blog/rotating-shifts-explained/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://fitrank.streamerosai.com/blog/automated-employee-scheduling-excel/",
+     "Discovered - currently not indexed",
+     null
+    ]
+   ]
+  },
+  "spotai.streamerosai.com": {
+   "property": "https://spotai.streamerosai.com/",
+   "inspected": 122,
+   "indexed": 58,
+   "notIndexed": 64,
+   "byState": {
+    "Submitted and indexed": 58,
+    "Discovered - currently not indexed": 42,
+    "URL is unknown to Google": 22
+   },
+   "urls": [
+    [
+     "https://spotai.streamerosai.com/bn/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/bn/features/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/bn/features/food-log/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/bn/features/leaderboard/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/bn/features/owners/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/bn/guides/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/bn/guides/calories-in-indian-food/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/bn/guides/gym-attendance-register/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/bn/guides/gym-fee-reminder-message/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/bn/install-iphone/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/features/ai-coach/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/features/food-log/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/features/leaderboard/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/features/owners/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/features/workouts/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/guides/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/guides/gym-attendance-register/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/guides/gym-fee-calculator/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/guides/gym-fee-reminder-message/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/hi/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/hi/features/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/hi/features/owners/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/hi/guides/gym-attendance-register/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/hi/install-iphone/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/hi/pricing/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/install-iphone/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/kn/features/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/kn/features/food-log/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/kn/features/leaderboard/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/kn/features/workouts/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/kn/for-gym-owners/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/kn/guides/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/kn/guides/calories-in-indian-food/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/kn/guides/gym-attendance-register/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/kn/install-iphone/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/mr/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/mr/features/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/mr/features/food-log/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/mr/features/leaderboard/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/mr/features/owners/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/mr/features/workouts/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/mr/guides/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/mr/guides/gym-attendance-register/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/mr/guides/gym-fee-reminder-message/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/mr/install-iphone/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/mr/pricing/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/pricing/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/privacy/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/ta/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/ta/features/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/ta/features/food-log/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/ta/features/leaderboard/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/ta/features/owners/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/ta/guides/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/ta/guides/gym-attendance-register/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/ta/install-iphone/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/ta/pricing/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/te/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/te/features/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/te/features/leaderboard/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/te/features/owners/",
+     "URL is unknown to Google",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/te/guides/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/te/guides/gym-attendance-register/",
+     "Discovered - currently not indexed",
+     null
+    ],
+    [
+     "https://spotai.streamerosai.com/te/install-iphone/",
+     "Discovered - currently not indexed",
+     null
+    ]
+   ]
+  }
+ }
+}
