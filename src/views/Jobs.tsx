@@ -22,7 +22,7 @@ interface Job {
 }
 
 const JOBS: Job[] = [
-  { id: "health", title: "Index health check", schedule: "Daily at 02:40 UTC (08:10 IST)", what: "Asks Google whether each page of all eight sites is indexed, and why not.", repo: "Yaseenyk/analytics-dashboard", file: "", worker: true, rerun: "health", cooldown: "once every 90 minutes", note: "Runs on Cloudflare, in small batches every minute, so a full check takes about 20 minutes. The Health tab updates the moment it finishes." },
+  { id: "health", title: "Index health check", schedule: "Daily at 02:40 UTC (08:10 IST)", what: "Asks Google whether each page of all nine sites is indexed, and why not.", repo: "Yaseenyk/analytics-dashboard", file: "", worker: true, rerun: "health", cooldown: "once every 90 minutes", note: "Runs on Cloudflare, in small batches every minute, so a full check takes about 20 minutes. The Health tab updates the moment it finishes." },
   { id: "dashboard", title: "Dashboard data and deploy", schedule: "Every 2 hours, and on every push", what: "Pulls Google Analytics, Search Console and Bing, then rebuilds and publishes this dashboard.", repo: "Yaseenyk/analytics-dashboard", file: "dashboard.yml", rerun: "dashboard", cooldown: "once every 10 minutes", note: "Takes about 2 minutes." },
   { id: "portfolio", title: "Portfolio deploy", schedule: "Daily at 00:17 UTC, and on every push", what: "Rebuilds yk.streamerosai.com and releases pages and posts whose date has come.", repo: "Yaseenyk/portfolio", file: "deploy.yml" },
   { id: "linkedin", title: "LinkedIn poster", schedule: "Tue, Wed, Thu at 10:00 UTC", what: "Publishes the next LinkedIn post. A re-run would publish a real post, so this one is status only.", repo: "Yaseenyk/linkedin-bot", file: "" },

@@ -36,6 +36,7 @@ const SITE_PROPS = {
   'tools.streamerosai.com': 'https://tools.streamerosai.com/',
   'calc.streamerosai.com': 'https://calc.streamerosai.com/',
   'images.streamerosai.com': 'https://images.streamerosai.com/',
+  'math.streamerosai.com': 'https://math.streamerosai.com/',
 };
 
 async function sitemapUrls(host) {

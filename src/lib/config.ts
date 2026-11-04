@@ -7,6 +7,7 @@ export const SITES: Record<string, string> = {
   "tools.streamerosai.com": "Dev Tools",
   "calc.streamerosai.com": "Money Calcs",
   "images.streamerosai.com": "Image Tools",
+  "math.streamerosai.com": "Math Calcs",
 };
 export const SITE_HOSTS = Object.keys(SITES);
 
@@ -20,6 +21,7 @@ export const STREAMS: Record<string, string> = {
   "JSON Encoder": "Dev Tools",
   "Salary Calculator": "Money Calcs",
   "Image Compression": "Image Tools",
+  "Age Calculator": "Math Calcs",
 };
 
 export const gscProperty = (host: string) => `https://${host}/`;
@@ -27,7 +29,7 @@ export const gscProperty = (host: string) => `https://${host}/`;
 /** Cloudflare Worker that answers the same files fresh from Google. `?api=off` turns it off. */
 export const DEFAULT_API = "https://analytics-api.yaseenyk.workers.dev";
 
-export const COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)", "var(--s6)", "var(--s7)", "var(--s8)"];
+export const COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)", "var(--s6)", "var(--s7)", "var(--s8)", "var(--s9)"];
 export const BRAND = "var(--brand)";
 export const SITE_COLOR: Record<string, string> = {
   streamerOS: COLORS[0],
@@ -38,6 +40,7 @@ export const SITE_COLOR: Record<string, string> = {
   "Dev Tools": COLORS[5],
   "Money Calcs": COLORS[6],
   "Image Tools": COLORS[7],
+  "Math Calcs": COLORS[8],
 };
 export const CAT_COLOR: Record<string, string> = {
   "Search engines": COLORS[0],
