@@ -96,7 +96,13 @@ async function accessToken(env) {
 async function post(env, url, body) {
   const token = await accessToken(env);
   for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    let res;
+    try {
+      // A Google call that never answers must not hold the whole report hostage.
+      res = await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(15000) });
+    } catch {
+      return { res: { ok: false, status: 598 }, json: { error: { message: 'timed out' } } };
+    }
     if (res.status === 429 || res.status >= 500) { await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
     return { res, json: await res.json().catch(() => ({})) };
   }
@@ -112,7 +118,8 @@ async function pool(tasks, limit) {
 
 // ---- GA4 ----
 const gaRange = (days, prev) => (prev ? { startDate: `${days * 2}daysAgo`, endDate: `${days + 1}daysAgo` } : { startDate: `${days}daysAgo`, endDate: 'today' });
-async function gaReport(env, label, spec, days, errors) {
+async function gaReport(env, label, spec, days, errors, deadline) {
+  if (Date.now() > deadline) { errors.push(`GA4 ${label}: skipped, out of time`); return { dims: spec.dims, mets: spec.mets, rows: [] }; }
   const body = {
     dateRanges: [gaRange(days, spec.prev)],
     dimensions: spec.dims.map((name) => ({ name })), metrics: spec.mets.map((name) => ({ name })),
@@ -225,7 +232,8 @@ async function build(kind, id, env) {
   if (!range) return null;
   if (kind === 'ga') {
     const names = Object.keys(PLAN);
-    const results = await pool(names.map((n) => () => gaReport(env, `${range.id}/${n}`, PLAN[n], range.days, errors)), 6);
+    const deadline = Date.now() + 40000;
+    const results = await pool(names.map((n) => () => gaReport(env, `${range.id}/${n}`, PLAN[n], range.days, errors, deadline)), 6);
     return { range: range.id, days: range.days, generatedAt, reports: Object.fromEntries(names.map((n, i) => [n, results[i]])), errors, live: true };
   }
   if (kind === 'gsc') {

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMeta } from "@/lib/data";
 import { Card } from "@/components/ui";
 import { cols2 } from "./kit";
+import { ShareKit } from "./ShareKit";
 
 const EVENTS: [string, string][] = [
   ["page_view", "Any page opens"],
@@ -77,6 +78,7 @@ export default function Tools() {
   return (
     <>
       <div className={cols2}>
+        <ShareKit />
         <UtmBuilder />
         <Card title="What is tracked" note="Every key event also carries first_source, first_medium and first_campaign: where that person first arrived from.">
           <div className="mt-3 overflow-x-auto">
