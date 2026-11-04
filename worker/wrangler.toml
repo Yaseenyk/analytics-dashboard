@@ -4,5 +4,13 @@ name = "analytics-api"
 main = "src/index.js"
 compatibility_date = "2026-06-01"
 
+# Job state for the index-health check (see src/index.js). A cron tick every minute does the next small batch.
+[[kv_namespaces]]
+binding = "DATA"
+id = "a467a4af3f19495586015857861420f1"
+
+[triggers]
+crons = ["* * * * *"]
+
 [observability]
 enabled = true

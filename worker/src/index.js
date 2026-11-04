@@ -246,18 +246,106 @@ async function build(kind, id, env) {
 }
 
 
-// ---- re-run of a GitHub Actions workflow ----
+// ---- index health, run by the Worker itself (cron + KV), no GitHub Actions ----
+// Asks Google's URL Inspection API whether each sitemap page is indexed. One call per page, so it is done in small batches:
+// a cron tick every minute inspects the next HEALTH_BATCH pages and saves its place in KV. (The free plan allows 50 outgoing
+// requests per invocation; a failed tick saves nothing, so the next tick simply repeats the same batch.) It starts every day
+// at 02:40 UTC, or when someone presses Re-run. Result: KV key health:file, served at /data/health.json.
+const HEALTH_SITES = {
+  'yk.streamerosai.com': 'https://yk.streamerosai.com/',
+  'campus.streamerosai.com': 'https://campus.streamerosai.com/',
+  'streamerosai.com': 'https://streamerosai.com/',
+  'fitrank.streamerosai.com': 'https://fitrank.streamerosai.com/',
+  'spotai.streamerosai.com': 'https://spotai.streamerosai.com/',
+  'tools.streamerosai.com': 'https://tools.streamerosai.com/',
+};
+const HEALTH_BATCH = 25;
+const HEALTH_COOLDOWN_MIN = 90;
+const kvJson = async (env, key) => { const v = await env.DATA.get(key); return v ? JSON.parse(v) : null; };
+
+async function sitemapUrlsFor(host) {
+  const out = [], seen = new Set(), todo = [`https://${host}/sitemap.xml`];
+  while (todo.length) {
+    const u = todo.pop();
+    if (seen.has(u)) continue;
+    seen.add(u);
+    const res = await fetch(u).catch(() => null);
+    if (!res || !res.ok) { if (u.endsWith('/sitemap.xml') && !seen.has(`https://${host}/sitemap-index.xml`)) todo.push(`https://${host}/sitemap-index.xml`); continue; }
+    const xml = await res.text();
+    for (const m of xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)) (m[1].endsWith('.xml') ? todo : out).push(m[1]);
+  }
+  return [...new Set(out)];
+}
+async function inspectOne(env, property, url) {
+  const { res, json } = await post(env, 'https://searchconsole.googleapis.com/v1/urlInspection/index:inspect', { inspectionUrl: url, siteUrl: property });
+  if (!res.ok) return [url, `Could not inspect (${res.status})`, 'ERROR', null];
+  const r = json.inspectionResult?.indexStatusResult ?? {};
+  return [url, r.coverageState || 'Unknown', r.verdict || 'UNKNOWN', r.lastCrawlTime ? r.lastCrawlTime.slice(0, 10) : null];
+}
+async function healthStart(env, trigger) {
+  await env.DATA.put('health:state', JSON.stringify({ stage: 'plan', startedAt: Date.now(), trigger, queue: [], results: {}, total: 0 }));
+  await env.DATA.put('health:lastStart', String(Date.now()));
+}
+async function healthTick(env) {
+  const st = await kvJson(env, 'health:state');
+  if (!st) return;
+  if (st.stage === 'plan') {
+    const lists = await Promise.all(Object.keys(HEALTH_SITES).map((h) => sitemapUrlsFor(h)));
+    st.queue = Object.keys(HEALTH_SITES).flatMap((h, i) => lists[i].map((u) => [h, u]));
+    st.total = st.queue.length;
+    st.stage = 'inspect';
+    await env.DATA.put('health:state', JSON.stringify(st));
+    return;
+  }
+  const batch = st.queue.splice(0, HEALTH_BATCH);
+  const rows = await pool(batch.map(([h, u]) => () => inspectOne(env, HEALTH_SITES[h], u)), 6);
+  batch.forEach(([h], i) => (st.results[h] = st.results[h] || []).push(rows[i]));
+  if (st.queue.length) { await env.DATA.put('health:state', JSON.stringify(st)); return; }
+  // Done: summarise per site and publish.
+  const index = {};
+  for (const [h, property] of Object.entries(HEALTH_SITES)) {
+    const r = st.results[h] || [];
+    const byState = {};
+    r.forEach((x) => (byState[x[1]] = (byState[x[1]] || 0) + 1));
+    const indexed = r.filter((x) => x[2] === 'PASS').length;
+    index[h] = { property, inspected: r.length, indexed, notIndexed: r.length - indexed, byState, urls: r.filter((x) => x[2] !== 'PASS').map((x) => [x[0], x[1], x[3]]).slice(0, 150) };
+  }
+  const prior = await fetch('https://analytics.streamerosai.com/data/health.json').then((x) => (x.ok ? x.json() : null)).catch(() => null);
+  const now = new Date().toISOString();
+  await env.DATA.put('health:file', JSON.stringify({ generatedAt: now, indexAt: now, index, ...(prior?.bing ? { bing: prior.bing } : {}) }));
+  await env.DATA.delete('health:state');
+}
+async function healthStatus(env) {
+  const st = await kvJson(env, 'health:state');
+  const file = await kvJson(env, 'health:file');
+  const last = Number(await env.DATA.get('health:lastStart')) || 0;
+  return {
+    running: !!st, stage: st?.stage ?? null, done: st ? st.total - st.queue.length : 0, total: st?.total ?? 0, startedAt: st?.startedAt ?? null, trigger: st?.trigger ?? null,
+    lastFinished: file?.indexAt ?? null, lastStart: last || null, cooldownMin: HEALTH_COOLDOWN_MIN,
+  };
+}
+
+// ---- re-run ----
 // Anyone who opens the dashboard can press Re-run; there is no login. What keeps it safe is a cooldown, because Google caps
 // how many pages the index check may inspect in a day and a stranger spamming the button could use that up. The cooldown is
 // read from GitHub's own record of the last run, so it holds for every IP address and every copy of this Worker.
 // GITHUB_TOKEN is a fine-grained token limited to this repository's Actions. It never reaches the browser.
 const REPO = 'Yaseenyk/analytics-dashboard';
-const RERUNS = { health: { file: 'health.yml', cooldownMin: 90 }, dashboard: { file: 'dashboard.yml', cooldownMin: 10 } };
+const RERUNS = { dashboard: { file: 'dashboard.yml', cooldownMin: 10 } };
 const lastRerun = new Map();
-async function rerun(req, env, ch) {
+async function rerun(req, env, ch, ctx) {
   const json = (o, status) => new Response(JSON.stringify(o), { status, headers: { ...ch, 'Content-Type': 'application/json' } });
   const name = new URL(req.url).pathname.split('/').pop();
   if (req.headers.get('Origin') !== 'https://analytics.streamerosai.com') return json({ error: 'not allowed from this origin' }, 403);
+  if (name === 'health') {
+    const st = await healthStatus(env);
+    if (st.running) return json({ error: `It is already running (${st.done} of ${st.total || '…'} pages checked).` }, 409);
+    const age = (Date.now() - (st.lastStart || 0)) / 60000;
+    if (age < HEALTH_COOLDOWN_MIN) return json({ error: `It started ${Math.max(1, Math.round(age))} min ago. You can start it again in ${Math.ceil(HEALTH_COOLDOWN_MIN - age)} min.` }, 429);
+    await healthStart(env, 'manual');
+    ctx.waitUntil(healthTick(env).catch(() => {}));
+    return json({ ok: true, job: 'health' }, 202);
+  }
   if (!env.GITHUB_TOKEN) return json({ error: 'Re-run is not set up yet (the Worker has no GITHUB_TOKEN).' }, 503);
   const job = RERUNS[name];
   if (!job) return json({ error: 'unknown job' }, 404);
@@ -288,12 +376,27 @@ function cors(req) {
   return h;
 }
 export default {
-  async fetch(req, env) {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil((async () => {
+      if (await env.DATA.get('health:state')) return healthTick(env);
+      const d = new Date(event.scheduledTime);
+      if (d.getUTCHours() === 2 && d.getUTCMinutes() === 40) { await healthStart(env, 'schedule'); return healthTick(env); }
+    })().catch((e) => console.log('health tick failed:', String((e && e.message) || e))));
+  },
+  async fetch(req, env, ctx) {
     const url = new URL(req.url);
     const ch = cors(req);
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: ch });
     if (url.pathname === '/health') return new Response('ok', { headers: ch });
-    if (req.method === 'POST' && url.pathname.startsWith('/rerun/')) return rerun(req, env, ch);
+    if (req.method === 'POST' && url.pathname.startsWith('/rerun/')) return rerun(req, env, ch, ctx);
+    if (url.pathname === '/status/health' && req.method === 'GET') {
+      return new Response(JSON.stringify(await healthStatus(env)), { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
+    if (url.pathname === '/data/health.json' && req.method === 'GET') {
+      const body = await env.DATA.get('health:file');
+      if (!body) return new Response('not found', { status: 404, headers: ch });
+      return new Response(body, { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' } });
+    }
     const m = url.pathname.match(/^\/data\/(meta|live|ga|gsc|bing)(?:-([a-z0-9]+))?\.json$/);
     if (!m || req.method !== 'GET') return new Response('not found', { status: 404, headers: ch });
     const kind = m[1], id = m[2] || '', key = kind + id;
