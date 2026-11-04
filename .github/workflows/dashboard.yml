@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 20
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment_retry.outputs.page_url || steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -42,5 +42,21 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: out
-      - id: deployment
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          timeout: 420000
+        continue-on-error: true
+      # GitHub's Pages backend sometimes accepts a deployment and never finishes it (4 Nov 2026: the same commit
+      # failed four times, then published with no change). Retry once, after the first attempt has fully aborted,
+      # instead of waiting for someone to re-run the job by hand.
+      - name: Wait for the first attempt to finish aborting
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 45
+      - name: Retry the deployment once
+        id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v5
+        with:
+          timeout: 420000
