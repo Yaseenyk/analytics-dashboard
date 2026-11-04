@@ -5,6 +5,7 @@ export const SITES: Record<string, string> = {
   "campus.streamerosai.com": "DefendIt",
   "spotai.streamerosai.com": "SpotAI",
   "tools.streamerosai.com": "Dev Tools",
+  "solar.streamerosai.com": "Solar Guide",
   "calc.streamerosai.com": "Money Calcs",
   "images.streamerosai.com": "Image Tools",
   "math.streamerosai.com": "Math Calcs",

@@ -34,6 +34,7 @@ const SITE_PROPS = {
   'fitrank.streamerosai.com': 'https://fitrank.streamerosai.com/',
   'spotai.streamerosai.com': 'https://spotai.streamerosai.com/',
   'tools.streamerosai.com': 'https://tools.streamerosai.com/',
+  'solar.streamerosai.com': 'https://solar.streamerosai.com/',
   'calc.streamerosai.com': 'https://calc.streamerosai.com/',
   'images.streamerosai.com': 'https://images.streamerosai.com/',
   'math.streamerosai.com': 'https://math.streamerosai.com/',

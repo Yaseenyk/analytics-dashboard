@@ -19,6 +19,7 @@ const GSC_SITES = [
   'https://campus.streamerosai.com/',
   'https://spotai.streamerosai.com/',
   'https://tools.streamerosai.com/',
+  'https://solar.streamerosai.com/',
   'https://calc.streamerosai.com/',
   'https://images.streamerosai.com/',
   'https://math.streamerosai.com/',
@@ -261,6 +262,7 @@ const HEALTH_SITES = {
   'fitrank.streamerosai.com': 'https://fitrank.streamerosai.com/',
   'spotai.streamerosai.com': 'https://spotai.streamerosai.com/',
   'tools.streamerosai.com': 'https://tools.streamerosai.com/',
+  'solar.streamerosai.com': 'https://solar.streamerosai.com/',
 };
 const HEALTH_BATCH = 25;
 const HEALTH_COOLDOWN_MIN = 90;
