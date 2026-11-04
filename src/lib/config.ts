@@ -70,6 +70,7 @@ export const TABS: Tab[] = [
   { id: "audience", href: "/audience/", title: "Audience", short: "Audience", icon: "audience" },
   { id: "health", href: "/health/", title: "Index health", short: "Health", icon: "health" },
   { id: "live", href: "/live/", title: "Live now", short: "Live", icon: "live" },
+  { id: "jobs", href: "/jobs/", title: "Jobs", short: "Jobs", icon: "jobs" },
   { id: "tools", href: "/tools/", title: "Tools", short: "Tools", icon: "tools" },
 ];
 export const PRIMARY_TABS = ["overview", "sources", "pages", "leads", "search"];
@@ -84,6 +85,7 @@ export const ICONS: Record<string, string> = {
   live: "M2 12h4l3-8 4 16 3-8h6",
   tools: "M14 6l4 4-9 9H5v-4zM13 7l4 4",
   health: "M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4",
+  jobs: "M12 3a9 9 0 100 18 9 9 0 000-18zM12 7v5l3 2",
   more: "M5 10.5a1.6 1.6 0 100 3 1.6 1.6 0 000-3zM12 10.5a1.6 1.6 0 100 3 1.6 1.6 0 000-3zM19 10.5a1.6 1.6 0 100 3 1.6 1.6 0 000-3z",
   refresh: "M20 11a8 8 0 10-2.3 5.7M20 5v6h-6",
 };

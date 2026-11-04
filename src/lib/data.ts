@@ -35,6 +35,7 @@ function sig(j: unknown) {
   }
 }
 
+export const getApiBase = () => apiBase();
 let api: string | null = null;
 function apiBase(): string {
   if (api !== null) return api;
