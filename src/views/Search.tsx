@@ -2,20 +2,20 @@
 
 import { useMemo, useState } from "react";
 import { COLORS } from "@/lib/config";
-import { useGSC } from "@/lib/data";
-import { gscDaily, gscList, gscMerge, gscMissing, gscTotals, label, n } from "@/lib/derive";
+import { useBing, useGSC } from "@/lib/data";
+import { bingDaily, bingList, bingMerge, bingTotals, gscDaily, gscList, gscMerge, gscMissing, gscTotals, label, n } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
 import type { Cell, Series } from "@/lib/types";
 import { AreaChart } from "@/components/charts";
 import { DataTable } from "@/components/DataTable";
-import { Card, Delta, Empty, ErrorCard, SkChart, SkKpi, SkTable } from "@/components/ui";
+import { Card, Delta, Empty, ErrorCard, Kpi, SkChart, SkKpi, SkTable } from "@/components/ui";
 import { grid4 } from "./kit";
 
 type Metric = "clicks" | "impr" | "ctr" | "pos";
 const DIMS: [string, string][] = [["queries", "Queries"], ["pages", "Pages"], ["countries", "Countries"], ["devices", "Devices"], ["daily", "Dates"], ["queryPage", "Query on page"]];
 const DIM_LABEL: Record<string, string> = { queries: "Query", pages: "Page", countries: "Country", devices: "Device" };
 
-export default function Search() {
+function GoogleSearch() {
   const f = useFilters();
   const e = useGSC(f.range);
   const [sm, setSm] = useState<Record<Metric, boolean>>({ clicks: true, impr: true, ctr: false, pos: false });
@@ -113,6 +113,78 @@ export default function Search() {
       <DataTable key={dim} title={DIMS.find((d) => d[0] === dim)?.[1] ?? ""} cols={table.cols} rows={table.rows} fmt={table.fmt} bar={table.bar} sort={table.sort} max={20} />
       {calc.missing.length > 0 && <p className="sub">Not connected: {calc.missing.map(label).join(", ")}. Add the service account as a user on those properties in Search Console.</p>}
       <p className="sub">Search Console data runs about 2 days behind. The published copy is rebuilt every 2 hours.</p>
+    </>
+  );
+}
+
+function BingSearch() {
+  const f = useFilters();
+  const e = useBing(f.range);
+  const b = e.data;
+  const [dim, setDim] = useState<"queries" | "pages">("queries");
+  const calc = useMemo(() => {
+    if (!b) return null;
+    return { list: bingList(b, f.site), a: bingTotals(b, f.site, false), p: bingTotals(b, f.site, true), gd: bingDaily(b, f.site), rows: bingMerge(b, f.site, dim) };
+  }, [b, f.site, dim]);
+
+  if (e.error && !b) return <Card title="Bing"><Empty msg="Bing data is not published yet. It appears after the next refresh." /></Card>;
+  if (!b || !calc) {
+    return (
+      <>
+        <div className={grid4}><SkKpi /><SkKpi /><SkKpi /><SkKpi /></div>
+        <SkChart />
+        <SkTable rows={6} />
+      </>
+    );
+  }
+  if (!calc.list.length) {
+    return (
+      <Card title="Bing Webmaster Tools">
+        <Empty msg={b.error ? `Bing data is not available: ${b.error}` : "No Bing data for this selection yet. New sites need a day or two after being added."} />
+      </Card>
+    );
+  }
+  const { a, p, gd } = calc;
+  const series: Series[] = [
+    { name: "Clicks", color: COLORS[0], fmt: "n", pts: gd.map((x) => [x.d, x.clicks] as [string, number]) },
+    { name: "Impressions", color: COLORS[1], fmt: "n", pts: gd.map((x) => [x.d, x.impr] as [string, number]) },
+  ];
+  return (
+    <>
+      <div className={grid4}>
+        <Kpi id="bing-clicks" title="Bing clicks" value={n(a.clicks)} delta={<Delta show={f.cmp} cur={a.clicks} prev={p.clicks} />} color={COLORS[0]} />
+        <Kpi id="bing-impr" title="Bing impressions" value={n(a.impr)} delta={<Delta show={f.cmp} cur={a.impr} prev={p.impr} />} color={COLORS[1]} />
+        <Kpi id="bing-ctr" title="Average CTR" value={a.ctr.toFixed(1) + "%"} delta={<Delta show={f.cmp} cur={a.ctr} prev={p.ctr} />} color={COLORS[2]} />
+        <Kpi id="bing-pos" title="Average position" value={a.pos ? a.pos.toFixed(1) : "–"} color={COLORS[3]} />
+      </div>
+      <AreaChart title="Bing performance" series={series} norm empty="Bing has no daily numbers for this period." note="Bing reports with a delay, and some of its history is weekly, so it will not match Search Console exactly." />
+      <div className="flex gap-1.5">
+        {(["queries", "pages"] as const).map((k) => (
+          <button key={k} type="button" onClick={() => setDim(k)} className={`pill ${dim === k ? "on" : ""}`}>{k === "queries" ? "Queries" : "Pages"}</button>
+        ))}
+      </div>
+      <DataTable key={dim} title={dim === "queries" ? "Bing queries" : "Bing pages"} cols={[dim === "queries" ? "Query" : "Page", "Clicks", "Impressions", "CTR", "Position"]} rows={calc.rows} fmt={[0, "n", "n", "p", "pos"]} bar={1} max={20} />
+      <p className="sub">
+        Copilot citations (the AI Performance report) are only in{" "}
+        <a className="text-brand underline underline-offset-4" href="https://www.bing.com/webmasters" target="_blank" rel="noopener noreferrer">Bing Webmaster Tools</a>
+        : Microsoft does not offer them through its API.
+      </p>
+    </>
+  );
+}
+
+export default function Search() {
+  const [src, setSrc] = useState<"google" | "bing">("google");
+  return (
+    <>
+      <div className="flex gap-0.5 self-start rounded-xl border border-line bg-card p-[3px] shadow-inset" role="group" aria-label="Search engine">
+        {(["google", "bing"] as const).map((k) => (
+          <button key={k} type="button" aria-pressed={src === k} onClick={() => setSrc(k)} className={`rounded-[9px] border px-4 py-1.5 ${src === k ? "border-brand/35 bg-brand/10 font-semibold text-brand" : "border-transparent text-mute hover:text-ink"}`}>
+            {k === "google" ? "Google" : "Bing"}
+          </button>
+        ))}
+      </div>
+      {src === "google" ? <GoogleSearch /> : <BingSearch />}
     </>
   );
 }

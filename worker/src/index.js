@@ -22,7 +22,7 @@ const GSC_SITES = [
 ];
 const KEY_EVENTS = ['whatsapp_click', 'email_click', 'phone_click', 'generate_lead', 'app_download', 'template_download', 'agreement_signed', 'calculator_use'];
 // Cache lifetimes in seconds. GA4 standard reports and Search Console move slowly; realtime is the live part.
-const TTL = { live: 45, ga: 300, gsc: 900, meta: 300 };
+const TTL = { live: 45, ga: 300, gsc: 900, bing: 900, meta: 300 };
 const ORIGIN_OK = /^(https:\/\/analytics\.streamerosai\.com|https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?)$/;
 
 const inList = (field, values) => ({ filter: { fieldName: field, inListFilter: { values } } });
@@ -156,6 +156,59 @@ async function gscSite(env, site, range) {
   return { ok: true, total: total.rows[0] ?? null, totalPrev: prevTotal.rows[0] ?? null, queries: queries.rows, pages: pages.rows, daily: daily.rows, countries: countries.rows, devices: devices.rows, queryPage: queryPage.rows };
 }
 
+// ---- Bing Webmaster Tools ----
+// The API key is a Worker secret (BING_API_KEY). One key covers every site verified in the account. Bing reports
+// less history than Google and some series are weekly, so the numbers are close to, not the same as, Search Console.
+const BING = 'https://ssl.bing.com/webmaster/api.svc/json';
+const bingDate = (v) => { const m = /\/Date\((-?\d+)/.exec(String(v || '')); return m ? new Date(+m[1]) : null; };
+async function bingGet(env, method, params) {
+  const u = new URL(`${BING}/${method}`);
+  u.searchParams.set('apikey', env.BING_API_KEY);
+  for (const [k, v] of Object.entries(params || {})) u.searchParams.set(k, v);
+  const res = await fetch(u);
+  if (!res.ok) return { status: res.status, rows: [], detail: (await res.text().catch(() => '')).slice(0, 300) };
+  const j = await res.json().catch(() => ({}));
+  return { status: 200, rows: Array.isArray(j.d) ? j.d : j.d ? [j.d] : [] };
+}
+function bingAgg(rows, keyOf, inRange) {
+  const map = new Map();
+  for (const r of rows) {
+    if (!inRange(r)) continue;
+    const k = keyOf(r); if (!k) continue;
+    const o = map.get(k) || { c: 0, i: 0, pw: 0 };
+    const imp = +r.Impressions || 0;
+    o.c += +r.Clicks || 0; o.i += imp; o.pw += (+r.AvgImpressionPosition || 0) * imp;
+    map.set(k, o);
+  }
+  return [...map.entries()].map(([k, o]) => [k, o.c, o.i, o.i ? +((100 * o.c) / o.i).toFixed(2) : 0, o.i ? +(o.pw / o.i).toFixed(1) : 0]).sort((a, b) => b[1] - a[1] || b[2] - a[2]);
+}
+async function bingSite(env, siteUrl, range) {
+  const now = Date.now(), from = now - range.days * DAY, prevFrom = from - range.days * DAY;
+  const [traffic, queries, pages] = await Promise.all([bingGet(env, 'GetRankAndTrafficStats', { siteUrl }), bingGet(env, 'GetQueryStats', { siteUrl }), bingGet(env, 'GetPageStats', { siteUrl })]);
+  if (traffic.status !== 200 && queries.status !== 200) return { ok: false, status: traffic.status };
+  const at = (r) => { const d = bingDate(r.Date); return d ? d.getTime() : 0; };
+  const cur = (r) => at(r) >= from && at(r) <= now, prev = (r) => at(r) >= prevFrom && at(r) < from;
+  const sum = (rows, f) => rows.filter(f).reduce((a, r) => [a[0] + (+r.Clicks || 0), a[1] + (+r.Impressions || 0)], [0, 0]);
+  const t = sum(traffic.rows, cur), tp = sum(traffic.rows, prev);
+  const posOf = (rows) => { const a = bingAgg(rows, () => 'x', cur)[0]; return a ? a[4] : 0; };
+  const total = [t[0], t[1], t[1] ? +((100 * t[0]) / t[1]).toFixed(2) : 0, posOf(queries.rows)];
+  const daily = bingAgg(traffic.rows, (r) => { const d = bingDate(r.Date); return d ? iso(d) : ''; }, cur).map((r) => [r[0], r[1], r[2]]).sort((a, b) => (a[0] < b[0] ? -1 : 1));
+  return {
+    ok: true, total, totalPrev: [tp[0], tp[1], tp[1] ? +((100 * tp[0]) / tp[1]).toFixed(2) : 0, 0], daily,
+    queries: bingAgg(queries.rows, (r) => r.Query, cur).slice(0, 250), pages: bingAgg(pages.rows, (r) => r.Query, cur).slice(0, 250),
+  };
+}
+async function bingBuild(env, range) {
+  if (!env.BING_API_KEY) return { range: range.id, days: range.days, generatedAt: new Date().toISOString(), sites: {}, error: 'BING_API_KEY is not set' };
+  const list = await bingGet(env, 'GetUserSites');
+  if (list.status !== 200) return null; // throttled or rejected: let the dashboard keep the published copy
+  const urls = list.rows.filter((r) => r.IsVerified !== false).map((r) => r.Url).filter(Boolean);
+  const results = await pool(urls.map((u) => () => bingSite(env, u, range)), 3);
+  const sites = {};
+  urls.forEach((u, i) => { try { sites[new URL(u).hostname] = { url: u, ...results[i] }; } catch { /* skip a malformed url */ } });
+  return { range: range.id, days: range.days, generatedAt: new Date().toISOString(), sites, listStatus: list.status, ...(list.detail ? { detail: list.detail } : {}) };
+}
+
 // ---- routes ----
 async function build(kind, id, env) {
   const generatedAt = new Date().toISOString();
@@ -179,6 +232,7 @@ async function build(kind, id, env) {
     const results = await pool(GSC_SITES.map((s) => () => gscSite(env, s, range)), 3);
     return { range: range.id, days: range.days, generatedAt, search: Object.fromEntries(GSC_SITES.map((s, i) => [s, results[i]])), ...gscDates(range.days, false), live: true };
   }
+  if (kind === 'bing') return bingBuild(env, range);
   return null;
 }
 
@@ -196,7 +250,7 @@ export default {
     const ch = cors(req);
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: ch });
     if (url.pathname === '/health') return new Response('ok', { headers: ch });
-    const m = url.pathname.match(/^\/data\/(meta|live|ga|gsc)(?:-([a-z0-9]+))?\.json$/);
+    const m = url.pathname.match(/^\/data\/(meta|live|ga|gsc|bing)(?:-([a-z0-9]+))?\.json$/);
     if (!m || req.method !== 'GET') return new Response('not found', { status: 404, headers: ch });
     const kind = m[1], id = m[2] || '', key = kind + id;
     const ttl = (TTL[kind] || 60) * 1000, hit = memo.get(key);

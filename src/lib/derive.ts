@@ -1,5 +1,5 @@
 import { SITES, SITE_COLOR, SITE_HOSTS, gscProperty } from "./config";
-import type { Cell, GAFile, GSCFile, GscSite, Rep, Series } from "./types";
+import type { BingFile, BingSite, Cell, GAFile, GSCFile, GscSite, Rep, Series } from "./types";
 
 /* ---- formatting ------------------------------------------------------------------ */
 export function n(x: unknown): string {
@@ -191,6 +191,56 @@ export function gscDaily(g: GSCFile | null | undefined, site: string): GscDay[] 
       const o = m[d];
       return { d, clicks: o.c, impr: o.i, ctr: o.i ? (100 * o.c) / o.i : 0, pos: o.i ? o.pw / o.i : 0 };
     });
+}
+
+/* ---- Bing Webmaster Tools ---------------------------------------------------------------- */
+export function bingList(b: BingFile | null | undefined, site: string): { host: string; s: BingSite }[] {
+  const sites = b?.sites ?? {};
+  const hosts = site === "all" ? SITE_HOSTS : [site];
+  return hosts.filter((h) => sites[h]?.ok).map((h) => ({ host: h, s: sites[h] }));
+}
+export function bingTotals(b: BingFile | null | undefined, site: string, prev: boolean): GscTotals {
+  let c = 0;
+  let i = 0;
+  let pw = 0;
+  bingList(b, site).forEach((x) => {
+    const t = prev ? x.s.totalPrev : x.s.total;
+    if (t) {
+      c += t[0];
+      i += t[1];
+      pw += (t[3] || 0) * t[1];
+    }
+  });
+  return { clicks: c, impr: i, ctr: i ? (100 * c) / i : 0, pos: i ? pw / i : 0 };
+}
+export function bingMerge(b: BingFile | null | undefined, site: string, kind: "queries" | "pages"): Cell[][] {
+  const map: Record<string, { k: Cell; c: number; i: number; pw: number }> = {};
+  bingList(b, site).forEach((x) =>
+    (x.s[kind] ?? []).forEach((r) => {
+      const key = String(r[0]);
+      const o = (map[key] = map[key] || { k: r[0], c: 0, i: 0, pw: 0 });
+      o.c += +r[1];
+      o.i += +r[2];
+      o.pw += +r[4] * +r[2];
+    }),
+  );
+  return Object.values(map)
+    .map((o) => [o.k, o.c, o.i, o.i ? (100 * o.c) / o.i : 0, o.i ? o.pw / o.i : 0] as Cell[])
+    .sort((a, b) => +b[1] - +a[1] || +b[2] - +a[2]);
+}
+export function bingDaily(b: BingFile | null | undefined, site: string): GscDay[] {
+  const m: Record<string, { c: number; i: number }> = {};
+  bingList(b, site).forEach((x) =>
+    (x.s.daily ?? []).forEach((r) => {
+      const k = String(r[0]);
+      const o = (m[k] = m[k] || { c: 0, i: 0 });
+      o.c += +r[1];
+      o.i += +r[2];
+    }),
+  );
+  return Object.keys(m)
+    .sort()
+    .map((d) => ({ d, clicks: m[d].c, impr: m[d].i, ctr: m[d].i ? (100 * m[d].c) / m[d].i : 0, pos: 0 }));
 }
 
 /* ---- where visitors come from ---------------------------------------------------------- */

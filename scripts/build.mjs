@@ -199,6 +199,62 @@ async function gscSite(site, range) {
   };
 }
 
+
+// ---------------------------------------------------------------- Bing Webmaster Tools
+// One key covers every site verified in the account. Fetched here (GitHub's addresses) because Bing throttles
+// Cloudflare Workers' shared addresses. The API returns all history in one call, so each range is cut from that.
+const BING = 'https://ssl.bing.com/webmaster/api.svc/json';
+const bingDate = (v) => { const m = /\/Date\((-?\d+)/.exec(String(v || '')); return m ? new Date(+m[1]) : null; };
+async function bingGet(method, params) {
+  const u = new URL(`${BING}/${method}`);
+  u.searchParams.set('apikey', process.env.BING_API_KEY);
+  for (const [k, v] of Object.entries(params || {})) u.searchParams.set(k, v);
+  const res = await fetch(u);
+  if (!res.ok) return { status: res.status, rows: [], detail: (await res.text().catch(() => '')).slice(0, 200) };
+  const j = await res.json().catch(() => ({}));
+  return { status: 200, rows: Array.isArray(j.d) ? j.d : j.d ? [j.d] : [] };
+}
+function bingAgg(rows, keyOf, inRange) {
+  const map = new Map();
+  for (const r of rows) {
+    if (!inRange(r)) continue;
+    const k = keyOf(r); if (!k) continue;
+    const o = map.get(k) || { c: 0, i: 0, pw: 0 };
+    const imp = +r.Impressions || 0;
+    o.c += +r.Clicks || 0; o.i += imp; o.pw += (+r.AvgImpressionPosition || 0) * imp;
+    map.set(k, o);
+  }
+  return [...map.entries()].map(([k, o]) => [k, o.c, o.i, o.i ? +((100 * o.c) / o.i).toFixed(2) : 0, o.i ? +(o.pw / o.i).toFixed(1) : 0]).sort((a, b) => b[1] - a[1] || b[2] - a[2]);
+}
+function bingRange(raw, range) {
+  const now = Date.now(), from = now - range.days * DAY, prevFrom = from - range.days * DAY;
+  const at = (r) => { const d = bingDate(r.Date); return d ? d.getTime() : 0; };
+  const cur = (r) => at(r) >= from && at(r) <= now, prev = (r) => at(r) >= prevFrom && at(r) < from;
+  const sum = (rows, f) => rows.filter(f).reduce((a, r) => [a[0] + (+r.Clicks || 0), a[1] + (+r.Impressions || 0)], [0, 0]);
+  const t = sum(raw.traffic, cur), tp = sum(raw.traffic, prev);
+  const pos = bingAgg(raw.queries, () => 'x', cur)[0];
+  const ctr = (a) => (a[1] ? +((100 * a[0]) / a[1]).toFixed(2) : 0);
+  return {
+    ok: true, url: raw.url, total: [t[0], t[1], ctr(t), pos ? pos[4] : 0], totalPrev: [tp[0], tp[1], ctr(tp), 0],
+    daily: bingAgg(raw.traffic, (r) => { const d = bingDate(r.Date); return d ? iso(d) : ''; }, cur).map((r) => [r[0], r[1], r[2]]).sort((a, b) => (a[0] < b[0] ? -1 : 1)),
+    queries: bingAgg(raw.queries, (r) => r.Query, cur).slice(0, 250), pages: bingAgg(raw.pages, (r) => r.Query, cur).slice(0, 250),
+  };
+}
+async function bingFetchAll() {
+  if (!process.env.BING_API_KEY) return { raw: {}, error: 'BING_API_KEY is not set' };
+  const list = await bingGet('GetUserSites');
+  if (list.status !== 200) return { raw: {}, error: `Bing returned ${list.status}: ${list.detail || 'no detail'}` };
+  const raw = {}; const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+  for (const s of list.rows.filter((r) => r.IsVerified !== false && r.Url)) {
+    let host; try { host = new URL(s.Url).hostname; } catch { continue; }
+    const traffic = await bingGet('GetRankAndTrafficStats', { siteUrl: s.Url }); await pause(400);
+    const queries = await bingGet('GetQueryStats', { siteUrl: s.Url }); await pause(400);
+    const pages = await bingGet('GetPageStats', { siteUrl: s.Url }); await pause(400);
+    if (traffic.status === 200 || queries.status === 200) raw[host] = { url: s.Url, traffic: traffic.rows, queries: queries.rows, pages: pages.rows };
+  }
+  return { raw, error: Object.keys(raw).length ? null : 'Bing listed no readable sites' };
+}
+
 // ---------------------------------------------------------------- run
 fs.mkdirSync('public/data', { recursive: true });
 const write = (name, obj) => fs.writeFileSync(`public/data/${name}.json`, JSON.stringify(obj));
@@ -219,6 +275,14 @@ for (const range of RANGES) {
   const search = Object.fromEntries(GSC_SITES.map((s, i) => [s, results[i]]));
   GSC_SITES.forEach((s, i) => (gscStatus[s] = results[i].ok ? 'ok' : results[i].status));
   write(`gsc-${range.id}`, { range: range.id, days: range.days, generatedAt, search, ...gscDates(range.days, false) });
+}
+
+// Bing Webmaster Tools: one file per range. A failure writes a file that says why, so the page can show it.
+const bing = await bingFetchAll();
+if (bing.error) errors.push(`Bing: ${bing.error}`);
+for (const range of RANGES) {
+  const sites = Object.fromEntries(Object.entries(bing.raw).map(([h, raw]) => [h, bingRange(raw, range)]));
+  write(`bing-${range.id}`, { range: range.id, days: range.days, generatedAt, sites, error: bing.error });
 }
 
 const live = {

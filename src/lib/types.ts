@@ -39,6 +39,24 @@ export interface GSCFile {
   search: Record<string, GscSite>;
 }
 
+/** Bing Webmaster Tools, per site (host). Rows are [key, clicks, impressions, ctr, position]; daily is [date, clicks, impressions]. */
+export interface BingSite {
+  ok: boolean;
+  url?: string;
+  total?: number[];
+  totalPrev?: number[];
+  daily?: (string | number)[][];
+  queries?: Cell[][];
+  pages?: Cell[][];
+}
+export interface BingFile {
+  range: string;
+  days: number;
+  generatedAt: string;
+  sites: Record<string, BingSite>;
+  error?: string | null;
+}
+
 export interface Meta {
   generatedAt: string;
   property: string;

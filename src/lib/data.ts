@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { DEFAULT_API } from "./config";
-import type { GAFile, GSCFile, Live, Meta } from "./types";
+import type { BingFile, GAFile, GSCFile, Live, Meta } from "./types";
 
 /**
  * One tiny store, one entry per data file. A block subscribes to just the file it needs, so when a slow
@@ -153,6 +153,7 @@ function useSource<T>(file: string | null): Entry<T> {
 export const useMeta = () => useSource<Meta>("meta.json");
 export const useGA = (range: string) => useSource<GAFile>(`ga-${range}.json`);
 export const useGSC = (range: string) => useSource<GSCFile>(`gsc-${range}.json`);
+export const useBing = (range: string) => useSource<BingFile>(`bing-${range}.json`);
 export const useLive = () => useSource<Live>("live.json");
 
 /** Keep the realtime numbers moving while the page is open and visible. */
