@@ -56,7 +56,7 @@ function Header() {
         <div className="flex min-w-0 items-center gap-3">
           <Logo className="h-9 w-9 lg:hidden" />
           <div className="min-w-0">
-            <div className="eyebrow">{f.site === "all" ? "All sites" : SITES[f.site]}</div>
+            <div className="eyebrow">{tab.id === "solar" ? SITES["solar.streamerosai.com"] : f.site === "all" ? "All sites" : SITES[f.site]}</div>
             <h1 className="m-0 truncate text-[21px] font-bold leading-tight tracking-tight">{tab.title}</h1>
             <div className="mt-0.5 hidden text-[12.5px] text-dim sm:block">{tab.id === "live" ? "Last 30 minutes · press refresh for the latest" : tab.id === "tools" ? "Link builder and tracking reference" : span}</div>
           </div>
@@ -71,10 +71,12 @@ function Header() {
       </div>
       {tab.id !== "tools" && (
         <div className="-mx-4 mt-3 flex items-center gap-2 overflow-x-auto px-4 pb-0.5 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-          <select aria-label="Site" value={f.site} onChange={(e) => f.setSite(e.target.value)}>
-            <option value="all">All sites</option>
-            {Object.entries(SITES).map(([h, nm]) => <option key={h} value={h}>{nm}</option>)}
-          </select>
+          {tab.id !== "solar" && (
+            <select aria-label="Site" value={f.site} onChange={(e) => f.setSite(e.target.value)}>
+              <option value="all">All sites</option>
+              {Object.entries(SITES).map(([h, nm]) => <option key={h} value={h}>{nm}</option>)}
+            </select>
+          )}
           {tab.id !== "live" && (
             <>
               <select aria-label="Date range" value={f.range} onChange={(e) => f.setRange(e.target.value)} className="md:hidden">
