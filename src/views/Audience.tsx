@@ -2,10 +2,27 @@
 
 import { group, ix, rep } from "@/lib/derive";
 import { Card, Sk, SkCard } from "@/components/ui";
+import WorldMap from "@/components/WorldMap";
 
 /** GA4 sends "(not set)" or a blank when it cannot place a visitor (privacy tools, VPNs, bots). That is not a missing tag. */
 const place = (v: string) => (!v || v === "(not set)" ? "Location unknown" : v);
 import { GaDonut, GaRank, GaTable, WaitingGate, cols2, useGaMemo } from "./kit";
+
+function CountryMap() {
+  const { v } = useGaMemo((ga, site) => {
+    const r = rep(ga, "countries");
+    return group(r, [ix(r, "country")], site).map((g) => [g.k[0], g.m[0]] as [string, number]);
+  });
+  if (!v) {
+    return (
+      <SkCard className="space-y-3">
+        <Sk w={24} h={14} />
+        <Sk h={200} />
+      </SkCard>
+    );
+  }
+  return <WorldMap title="Where your visitors are" note="Visits by country. More colour means more visits." rows={v} unit="visits" />;
+}
 
 const two = (title: string, name: string, dim: string) => (
   <GaDonut
@@ -57,6 +74,9 @@ export default function Audience() {
   return (
     <WaitingGate>
       <div className={cols2.replace("items-start", "items-stretch")}>
+        <div className="md:col-span-2">
+          <CountryMap />
+        </div>
         {two("Devices", "devices", "deviceCategory")}
         <GaDonut
           title="New vs returning people"
