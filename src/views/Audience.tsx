@@ -2,6 +2,9 @@
 
 import { group, ix, rep } from "@/lib/derive";
 import { Card, Sk, SkCard } from "@/components/ui";
+
+/** GA4 sends "(not set)" or a blank when it cannot place a visitor (privacy tools, VPNs, bots). That is not a missing tag. */
+const place = (v: string) => (!v || v === "(not set)" ? "Location unknown" : v);
 import { GaDonut, GaRank, GaTable, WaitingGate, cols2, useGaMemo } from "./kit";
 
 const two = (title: string, name: string, dim: string) => (
@@ -53,7 +56,7 @@ const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export default function Audience() {
   return (
     <WaitingGate>
-      <div className={cols2}>
+      <div className={cols2.replace("items-start", "items-stretch")}>
         {two("Devices", "devices", "deviceCategory")}
         <GaDonut
           title="New vs returning people"
@@ -73,7 +76,7 @@ export default function Audience() {
           max={10}
           build={(ga, site) => {
             const r = rep(ga, "countries");
-            return group(r, [ix(r, "country")], site).map((g) => [g.k[0], g.m[0], g.m[1], g.m[2]]);
+            return group(r, [ix(r, "country")], site).map((g) => [place(g.k[0]), g.m[0], g.m[1], g.m[2]]);
           }}
         />
         <GaTable
@@ -84,7 +87,7 @@ export default function Audience() {
           max={10}
           build={(ga, site) => {
             const r = rep(ga, "cities");
-            return group(r, [ix(r, "city"), ix(r, "country")], site).map((g) => [g.k[0], g.k[1], g.m[0], g.m[1]]);
+            return group(r, [ix(r, "city"), ix(r, "country")], site).map((g) => [place(g.k[0]), place(g.k[1]), g.m[0], g.m[1]]);
           }}
         />
         <GaTable
@@ -94,7 +97,7 @@ export default function Audience() {
           fmt={[0, "n", "n"]}
           build={(ga, site) => {
             const r = rep(ga, "languages");
-            return group(r, [ix(r, "language")], site).map((g) => [g.k[0], g.m[0], g.m[1]]);
+            return group(r, [ix(r, "language")], site).map((g) => [place(g.k[0]), g.m[0], g.m[1]]);
           }}
         />
         <GaRank
