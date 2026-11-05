@@ -12,8 +12,83 @@ import { Card } from "@/components/ui";
 const BRANDS = /streameros|yaseen|khatib|fitrank|defendit|campus|spotai|solar|calc|tools|image|math/i;
 /** "How to pick a GPU | streamerOS" -> "How to pick a GPU": drop a trailing site name, keep everything else. */
 export function cleanTitle(t: string): string {
-  const m = /^(.*\S)\s*[|–—-]\s*([^|–—-]{2,40})$/.exec(t);
+  const m = /^(.*\S)\s*[|·–—-]\s*([^|·–—-]{2,40})$/.exec(t);
   return m && BRANDS.test(m[2]) ? m[1] : t;
+}
+
+/** One opening line per site and kind of page: who the page helps and how, in plain words. It never claims more than the
+    site itself says on its home page; the page's own description follows it. Edit the text before posting if you like. */
+const OPENERS: Record<string, { who: string; home: string; rules: [RegExp, string][]; other: string }> = {
+  "streamerosai.com": {
+    who: "If you're starting to stream on Twitch or YouTube with OBS",
+    home: "this is a Windows app that switches your OBS scenes from live chat, on your own PC:",
+    rules: [[/^\/vs\//, "and weighing your options, this is an honest comparison:"], [/^\/blog\/|^\/guides\//, "this might save you some setup time:"], [/^\/features\//, "this is one thing it does:"]],
+    other: "this might be useful:",
+  },
+  "yk.streamerosai.com": {
+    who: "If you're hiring for, or building, production AI systems (RAG, agents, real-time)",
+    home: "here is my portfolio with working demos and write-ups:",
+    rules: [[/^\/blog\//, "I wrote this from real work, not theory:"], [/^\/solutions\//, "this is how I'd approach it:"], [/^\/hire\//, "this is how to work with me:"]],
+    other: "this might be useful:",
+  },
+  "fitrank.streamerosai.com": {
+    who: "If you manage staff rotas or shift assignments",
+    home: "this is an AI scheduler whose every answer a manager can check and overrule:",
+    rules: [[/^\/blog\//, "this might help:"], [/^\/solutions\/|^\/use-cases\//, "here is how it would work in your case:"]],
+    other: "this might be useful:",
+  },
+  "campus.streamerosai.com": {
+    who: "If you're a BCA, MCA or B.Tech student with a final year project due",
+    home: "this might take some of the stress out of it:",
+    rules: [[/^\/templates\//, "these templates are free, no sign-up:"], [/^\/question-bank\//, "practise your viva with these:"], [/^\/guides\//, "this guide might help:"], [/^\/projects\//, "here is a project explained line by line:"]],
+    other: "this might be useful:",
+  },
+  "spotai.streamerosai.com": {
+    who: "If you run a gym in India, or train at one",
+    home: "this is an AI gym app with form checks on your phone and a simple owner view:",
+    rules: [[/^\/blog\/|^\/guides\//, "this might be useful:"], [/calculator/, "a free calculator for this:"], [/^\/features\//, "this is one thing it does:"]],
+    other: "this might be useful:",
+  },
+  "tools.streamerosai.com": {
+    who: "If you work with JSON or Base64 and would rather not paste your data into a random website",
+    home: "these tools run in your browser and upload nothing:",
+    rules: [],
+    other: "this one runs in your browser and uploads nothing:",
+  },
+  "solar.streamerosai.com": {
+    who: "If you're thinking about rooftop solar under PM Surya Ghar",
+    home: "this is an independent guide with every figure sourced:",
+    rules: [],
+    other: "this part of the guide might help (every figure is sourced):",
+  },
+  "calc.streamerosai.com": {
+    who: "If you need a quick money calculation (pay raise, salary to hourly, overtime, currency)",
+    home: "these are free and instant:",
+    rules: [],
+    other: "this one is free and instant:",
+  },
+  "images.streamerosai.com": {
+    who: "If you need to shrink an image to a set size or change its format without uploading it anywhere",
+    home: "these run in your browser:",
+    rules: [],
+    other: "this one runs in your browser, nothing is uploaded:",
+  },
+  "math.streamerosai.com": {
+    who: "If you need a quick everyday calculation (percentage, age, days between dates)",
+    home: "these are free and show the formula:",
+    rules: [],
+    other: "this one is free and shows the formula:",
+  },
+};
+/** The opening line for a page: "If you're ..., this might help:". Empty for a site we have no words for. */
+export function usefulIntro(host: string, url: string): string {
+  const o = OPENERS[host];
+  if (!o) return "";
+  let path = "/";
+  try { path = new URL(url).pathname || "/"; } catch { /* keep "/" */ }
+  if (path === "/") return `${o.who}, ${o.home}`;
+  const hit = o.rules.find(([re]) => re.test(path));
+  return `${o.who}, ${hit ? hit[1] : o.other}`;
 }
 
 interface Parts {
@@ -74,9 +149,10 @@ export function ShareKit() {
     if (gsc) gscMerge(gsc, host, "pages", 1).forEach((r) => impr.set(String(r[0]).replace(/\/$/, ""), +r[3]));
     const list = pages.map(([url, title, text]) => {
       const path = url.replace(/^https?:\/\/[^/]+/, "") || "/";
-      return { id: url, label: path === "/" ? "Home page" : path, url, title: cleanTitle(title) || SITES[host], text, impr: impr.get(url.replace(/\/$/, "")) ?? 0 };
+      const intro = usefulIntro(host, url);
+      return { id: url, label: path === "/" ? "/ (home page)" : path, url, title: cleanTitle(title) || SITES[host], text: [intro, text || cleanTitle(title)].filter(Boolean).join("\n"), impr: impr.get(url.replace(/\/$/, "")) ?? 0 };
     });
-    list.sort((x, y) => y.impr - x.impr || (x.label === "Home page" ? -1 : y.label === "Home page" ? 1 : x.label.localeCompare(y.label)));
+    list.sort((x, y) => y.impr - x.impr || (x.label.startsWith("/ ") ? -1 : y.label.startsWith("/ ") ? 1 : x.label.localeCompare(y.label)));
     return [...list, CUSTOM];
   }, [crawl.data, gsc, host]);
   const base = items.find((i) => i.id === item) ?? items[0];
@@ -96,7 +172,7 @@ export function ShareKit() {
   };
   const noPages = !!crawl.data && !(crawl.data.sites[host]?.pages?.length);
   return (
-    <Card title="Share kit" note="Pick a site, a page and where you will post it. The message is the page's own title and description, so it says only what the page says; edit it as you like. Pages Google already shows most come first.">
+    <Card title="Share kit" note="Pick a site, a page and where you will post it. The message opens with who the page helps and how, then the page's own description, so it reads as a tip, not an advert. Edit anything before copying. Pages Google already shows most come first.">
       <div className="mt-3 space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
@@ -106,12 +182,13 @@ export function ShareKit() {
             </select>
           </label>
           <label className="block">
-            <span className="mb-1 block text-[12.5px] text-mute">Page ({items.length - 1})</span>
-            <select value={base.id} onChange={(e) => pick(e.target.value)} className="w-full">
-              {items.map((i) => <option key={i.id} value={i.id}>{i.label}{i.impr ? ` · ${i.impr} impressions` : ""}</option>)}
+            <span className="mb-1 block text-[12.5px] text-mute">Page URL ({items.length - 1} pages)</span>
+            <select value={base.id} onChange={(e) => pick(e.target.value)} className="w-full font-mono text-[12.5px]">
+              {items.map((i) => <option key={i.id} value={i.id}>{i.label}{i.impr ? `  (${i.impr} impressions)` : ""}</option>)}
             </select>
           </label>
         </div>
+        {base.id !== "custom" && <code className="block break-all font-mono text-[11.5px] text-dim">{cur.url}</code>}
         {!crawl.data && !crawl.error && <p className="sub">Loading the page list…</p>}
         {(crawl.error && !crawl.data) || noPages ? <p className="sub">No page list for this site yet: it fills in after the nightly site check. Use Custom page for now.</p> : null}
         <div>

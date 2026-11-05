@@ -120,7 +120,10 @@ async function checkUrl(url, fromSitemap, metas) {
   if (!t || !t[1].trim()) return issue('no-title', 'the page has no title');
   return null;
 }
-const unesc = (x) => String(x || '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
+const unesc = (x) => String(x || '')
+  .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+  .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(+d))
+  .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 /** [title, description] from a page's head, so the share kit can describe the page in its own words. */
 function pageMeta(html) {
   const t = /<title[^>]*>([^<]*)<\/title>/i.exec(html);

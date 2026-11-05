@@ -76,7 +76,7 @@ describe("recordHealth", () => {
 /* A tiny fake site: / links to /ok, /missing, /old and a page that is not in the sitemap. */
 const PAGES: Record<string, { status: number; body?: string; location?: string }> = {
   "https://x.test/": { status: 200, body: '<title>Home</title><a href="/ok">a</a><a href="/orphan">o</a><a href="/missing">m</a><a href="/logo.png">i</a><a href="https://other.test/z">e</a>' },
-  "https://x.test/ok": { status: 200, body: '<title>Fine &amp; dandy</title><meta name="description" content="A page that is fine.">' },
+  "https://x.test/ok": { status: 200, body: '<title>Fine &amp; dandy</title><meta name="description" content="A page that&#x27;s fine.">' },
   "https://x.test/old": { status: 301, location: "/ok" },
   "https://x.test/missing": { status: 404 },
   "https://x.test/hidden": { status: 200, body: '<title>H</title><meta name="robots" content="noindex, follow">' },
@@ -112,7 +112,7 @@ describe("site crawl", () => {
     expect((await read("alerts"))[0]).toMatchObject({ kind: "broken", level: "bad" });
     // every sitemap page that loaded as HTML is listed with its own title and description, for the share kit
     const pages = Object.fromEntries(s.pages.map((p: string[]) => [p[0].replace("https://x.test", ""), p.slice(1)]));
-    expect(pages["/ok"]).toEqual(["Fine & dandy", "A page that is fine."]);
+    expect(pages["/ok"]).toEqual(["Fine & dandy", "A page that's fine."]);
     expect(pages["/untitled"]).toEqual(["", ""]);
     expect(pages["/orphan"]).toBeUndefined(); // not in the sitemap
     expect(pages["/missing"]).toBeUndefined(); // 404

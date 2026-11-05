@@ -265,6 +265,9 @@ const HEALTH_SITES = {
   'spotai.streamerosai.com': 'https://spotai.streamerosai.com/',
   'tools.streamerosai.com': 'https://tools.streamerosai.com/',
   'solar.streamerosai.com': 'https://solar.streamerosai.com/',
+  'calc.streamerosai.com': 'https://calc.streamerosai.com/',
+  'images.streamerosai.com': 'https://images.streamerosai.com/',
+  'math.streamerosai.com': 'https://math.streamerosai.com/',
 };
 const HEALTH_BATCH = 25;
 const HEALTH_COOLDOWN_MIN = 90;
