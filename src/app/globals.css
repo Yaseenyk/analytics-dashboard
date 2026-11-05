@@ -61,7 +61,7 @@
   }
   select option { background: #11161d; color: #f4f4f5; }
   input[type="text"], input:not([type]) {
-    @apply rounded-[10px] border border-line bg-card2 px-3 py-[7px] text-ink placeholder:text-dim hover:border-line2;
+    @apply rounded-[10px] border border-line bg-card2 px-3 py-[7px] text-ink placeholder:text-dim;
   }
 }
 
@@ -70,7 +70,7 @@
     @apply min-w-0 rounded-2xl border border-line bg-card p-4 shadow-inset transition-[transform,border-color,box-shadow] duration-300 sm:p-5;
   }
   @media (hover: hover) {
-    .card:hover { transform: translateY(-2px); border-color: rgb(var(--brand-rgb) / 0.32); box-shadow: inset 0 1px 1px rgba(255,255,255,.05), 0 10px 30px -12px rgb(var(--brand-rgb) / 0.28); }
+    .card:hover { transform: translateY(-2px); }
   }
   .h2 { @apply m-0 text-[15px] font-semibold tracking-tight; }
   .sub { @apply mt-1 text-[12.5px] leading-relaxed text-dim; }
@@ -119,14 +119,10 @@
 .line-draw { stroke-dasharray: 1; animation: drawline 1.3s cubic-bezier(.45,0,.2,1) backwards; }
 
 /* Sidebar */
-.side-edge { background: linear-gradient(180deg, transparent, rgb(var(--brand-rgb) / .9), #a855f7, transparent) 0 0 / 100% 200%; animation: flowdown 5s linear infinite; }
-.logo-ring { background: conic-gradient(from 0deg, #22d3ee, #a855f7, #22d3ee); animation: spin 6s linear infinite; filter: blur(7px); opacity: .55; }
-.logo-wrap:hover .logo-ring { opacity: .9; animation-duration: 1.6s; }
-.logo-bar { transform-origin: bottom; transform-box: fill-box; animation: barup .7s cubic-bezier(.34,1.56,.64,1) backwards; }
+.logo-wrap:hover .logo-bar { transform-origin: bottom; transform-box: fill-box; animation: barup .7s cubic-bezier(.34,1.56,.64,1) backwards; }
 .logo-bar:nth-of-type(3) { animation-delay: .12s; }
 .logo-bar:nth-of-type(4) { animation-delay: .24s; }
 .nav-item { opacity: 1; animation: navin .55s cubic-bezier(.22,1,.36,1) backwards; animation-delay: calc(var(--i) * 55ms + 120ms); }
-.nav-item .nav-label { transition: transform .25s cubic-bezier(.22,1,.36,1); }
 .nav-item:hover .nav-label { transform: translateX(4px); }
 .nav-pill::after { content: ""; position: absolute; inset: 0; overflow: hidden; border-radius: inherit; background: linear-gradient(100deg, transparent 30%, rgb(var(--brand-rgb) / .22) 50%, transparent 70%); background-size: 250% 100%; animation: pillsweep 3.2s ease-in-out infinite; }
 @keyframes pillsweep { from { background-position: 150% 0; } to { background-position: -50% 0; } }
@@ -165,3 +161,10 @@
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .card:hover { transform: none; }
 }
+
+/* Collapsible sidebar. */
+.shell-grid { transition: grid-template-columns .4s cubic-bezier(.22,1,.36,1); }
+.nav-label { display: inline-block; overflow: hidden; white-space: nowrap; max-width: 160px; transition: max-width .4s cubic-bezier(.22,1,.36,1), opacity .25s, margin .4s cubic-bezier(.22,1,.36,1), transform .25s cubic-bezier(.22,1,.36,1); }
+.side-collapsed .nav-label { max-width: 0; opacity: 0; margin-left: -10px; }
+.side-collapsed .side-hide { opacity: 0; max-width: 0; }
+.side-hide { overflow: hidden; white-space: nowrap; max-width: 160px; transition: max-width .4s cubic-bezier(.22,1,.36,1), opacity .25s; }

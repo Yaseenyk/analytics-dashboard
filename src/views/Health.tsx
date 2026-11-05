@@ -10,7 +10,6 @@ import { DataTable } from "@/components/DataTable";
 import { Card, ErrorCard, Sk, SkCard, SkTable } from "@/components/ui";
 import { cols2 } from "./kit";
 import { IndexTracker } from "./IndexTracker";
-import { AlertsCard } from "./Alerts";
 import { CrawlIssues, IndexHistory, SpeedCard } from "./HealthExtras";
 
 function Explainer() {
@@ -42,7 +41,7 @@ function SiteCards() {
         if (!h) return <SkCard key={host} className="space-y-3"><Sk w={40} h={14} /><Sk w={30} h={28} /><Sk h={8} /></SkCard>;
         const pct = s && s.inspected ? Math.round((100 * s.indexed) / s.inspected) : 0;
         return (
-          <button key={host} type="button" onClick={() => f.setSite(host)} className="card animate-fadein text-left transition-colors hover:border-brand/35">
+          <button key={host} type="button" onClick={() => f.setSite(host)} className="card animate-fadein text-left transition-colors">
             <div className="flex items-baseline justify-between gap-2">
               <h3 className="m-0 text-[15px] font-semibold">{SITES[host]}</h3>
               <span className="font-mono text-[11.5px] text-dim">{host}</span>
@@ -102,7 +101,6 @@ function Tables() {
 export default function Health() {
   return (
     <>
-      <AlertsCard />
       <Explainer />
       <SiteCards />
       <IndexHistory />

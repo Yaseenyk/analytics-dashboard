@@ -8,7 +8,6 @@ import {
 } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
 import { Banner, Card, Delta, Sk, SkCard, SkText, Wait } from "@/components/ui";
-import { AlertsCard } from "./Alerts";
 import { GaArea, GaDonut, GaKpi, GaRank, GscKpi, GscRank, cols2, grid4, useGaMemo, useGscMemo } from "./kit";
 
 function GaBanner() {
@@ -126,7 +125,7 @@ function SiteCard({ host }: { host: string }) {
     </div>
   );
   return (
-    <button type="button" onClick={() => f.setSite(host)} className="card animate-fadein text-left transition-colors hover:border-brand/35">
+    <button type="button" onClick={() => f.setSite(host)} className="card animate-fadein text-left transition-colors">
       <h3 className="m-0 text-[15px] font-semibold">{SITES[host]}</h3>
       <div className="mb-3 font-mono text-[11.5px] text-dim">{host}</div>
       <div className="grid grid-cols-3 gap-x-3 gap-y-2.5">
@@ -203,7 +202,6 @@ export default function Overview() {
   return (
     <>
       <GaBanner />
-      <AlertsCard limit={3} recentDays={7} quiet />
       <LiveCard />
       <div className={grid4}>
         <GaKpi title="People" id="people" color={COLORS[0]} calc={(ga, site, cmp) => {

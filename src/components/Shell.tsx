@@ -7,6 +7,7 @@ import { useEffect, useId, useState, type ReactNode } from "react";
 import { DEFAULT_RANGES, PRIMARY_TABS, SITES, TABS } from "@/lib/config";
 import { refreshAll, useMeta, useStamp } from "@/lib/data";
 import { FiltersProvider, useFilters } from "@/lib/filters";
+import { NotificationBell } from "@/views/Alerts";
 import { Icon } from "./ui";
 
 const loadMotion = () => import("./motionFeatures").then((r) => r.default);
@@ -67,6 +68,7 @@ function Header() {
         <div className="flex flex-none items-center gap-2 font-mono text-[11.5px] text-dim">
           <span className={`h-[7px] w-[7px] rounded-full ${stamp.live ? "animate-pulseglow bg-good" : "bg-dim"}`} />
           <span className="hidden whitespace-nowrap sm:inline">{stamp.busy ? "Refreshing…" : stamp.live ? `Live${time ? ` · ${time}` : ""}` : "Saved copy · press refresh for live"}</span>
+          <NotificationBell />
           <button type="button" onClick={refreshAll} aria-label="Refresh now" title="Fetch fresh data now" className="group grid h-[30px] w-[30px] place-items-center rounded-full bg-card2 text-mute transition-[color,transform] duration-300 hover:rotate-180 hover:text-brand active:scale-90">
             <Icon name="refresh" className={`h-4 w-4 ${stamp.busy ? "animate-spin" : ""}`} />
           </button>
@@ -86,7 +88,7 @@ function Header() {
               <div className="hidden gap-0.5 overflow-x-auto rounded-xl bg-card p-[3px] shadow-inset md:flex">
                 {ranges.map((x) => (
                   <button key={x.id} type="button" onClick={() => f.setRange(x.id)} aria-pressed={f.range === x.id} className={`relative whitespace-nowrap rounded-[9px] px-3 py-1.5 transition-colors ${f.range === x.id ? "font-semibold text-brand" : "text-mute hover:text-ink"}`}>
-                    {f.range === x.id && <m.span layoutId="range-pill" aria-hidden="true" transition={{ type: "spring", stiffness: 450, damping: 32 }} className="absolute inset-0 rounded-[9px] bg-brand/10 shadow-[inset_0_0_0_1px_rgb(var(--brand-rgb)/0.2)]" />}
+                    {f.range === x.id && <m.span layoutId="range-pill" aria-hidden="true" transition={{ type: "spring", stiffness: 450, damping: 32 }} className="absolute inset-0 rounded-[9px] bg-brand/10" />}
                     <span className="relative">{x.label.replace("Last ", "")}</span>
                   </button>
                 ))}
@@ -104,21 +106,32 @@ function Header() {
   );
 }
 
-function Nav() {
+function Nav({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const tab = useTab();
+  const [flip, setFlip] = useState(0); // bumps on every open/close so the logo plays its animation
   const [more, setMore] = useState(false);
   const primary = TABS.filter((t) => PRIMARY_TABS.includes(t.id));
   const rest = TABS.filter((t) => !PRIMARY_TABS.includes(t.id));
   return (
     <>
-      <aside className="sticky top-0 hidden h-screen flex-col gap-0.5 border-r border-line p-3 pt-5 lg:flex">
-        <span aria-hidden="true" className="side-edge pointer-events-none absolute inset-y-0 -right-px w-px" />
-        <div className="logo-wrap flex items-center gap-2.5 px-2.5 pb-5">
-          <m.span className="relative grid h-[34px] w-[34px] flex-none cursor-pointer place-items-center" whileHover={{ rotate: [0, -10, 10, -6, 0], scale: 1.12 }} whileTap={{ scale: 0.9 }} transition={{ duration: 0.6 }}>
-            <span aria-hidden="true" className="logo-ring absolute -inset-[3px] rounded-[12px]" />
-            <Logo className="relative h-[34px] w-[34px]" />
-          </m.span>
-          <div>
+      <aside className={`sticky top-0 hidden h-screen flex-col gap-0.5 overflow-hidden border-r border-line p-3 pt-5 lg:flex ${collapsed ? "side-collapsed" : ""}`}>
+        <div className="logo-wrap flex items-center gap-2.5 px-[3px] pb-5">
+          <m.button
+            key={flip}
+            type="button"
+            onClick={() => { setFlip((x) => x + 1); onToggle(); }}
+            aria-label={collapsed ? "Open the sidebar" : "Close the sidebar"}
+            title={collapsed ? "Open the sidebar" : "Close the sidebar"}
+            className="grid h-[34px] w-[34px] flex-none cursor-pointer place-items-center rounded-[10px] outline-none focus-visible:bg-white/10"
+            initial={flip ? { rotate: collapsed ? 180 : -180, scale: 0.55 } : false}
+            animate={{ rotate: 0, scale: 1 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.88 }}
+            transition={{ type: "spring", stiffness: 260, damping: 15 }}
+          >
+            <Logo className="h-[34px] w-[34px]" />
+          </m.button>
+          <div className="side-hide">
             <b className="block text-[15px]">Analytics</b>
             <span className="text-xs text-dim">Yaseen Khatib</span>
           </div>
@@ -126,16 +139,17 @@ function Nav() {
         <nav aria-label="Sections" className="relative flex flex-col gap-0.5">
           {TABS.map((t, i) => {
             const on = tab.id === t.id;
+            const label = t.short === "Leads" ? "Leads and clicks" : t.id === "search" ? "Search (Google)" : t.id === "live" ? "Live now" : t.short;
             return (
-              <Link key={t.id} href={t.href} style={{ "--i": i } as React.CSSProperties} aria-current={on ? "page" : undefined} className={`nav-item group relative flex h-10 items-center gap-2.5 rounded-[10px] px-2.5 outline-none transition-colors duration-200 focus-visible:bg-white/10 ${on ? "font-semibold text-brand" : "text-mute hover:text-ink"}`}>
+              <Link key={t.id} href={t.href} title={collapsed ? label : undefined} style={{ "--i": i } as React.CSSProperties} aria-current={on ? "page" : undefined} className={`nav-item group relative flex h-10 items-center gap-2.5 rounded-[10px] px-[13px] outline-none transition-colors duration-200 focus-visible:bg-white/10 ${on ? "font-semibold text-brand" : "text-mute hover:text-ink"}`}>
                 {on && (
-                  <m.span layoutId="nav-pill" aria-hidden="true" transition={{ type: "spring", stiffness: 420, damping: 30, mass: 0.8 }} className="nav-pill absolute inset-0 rounded-[10px] bg-brand/10 shadow-[inset_0_0_0_1px_rgb(var(--brand-rgb)/0.18),0_0_22px_-6px_rgb(var(--brand-rgb)/0.5)]" />
+                  <m.span layoutId="nav-pill" aria-hidden="true" transition={{ type: "spring", stiffness: 420, damping: 30, mass: 0.8 }} className="nav-pill absolute inset-0 rounded-[10px] bg-brand/10" />
                 )}
                 {!on && <span aria-hidden="true" className="absolute inset-0 rounded-[10px] bg-white/[.045] opacity-0 transition-opacity duration-200 group-hover:opacity-100" />}
-                <m.span className="nav-ico relative z-10 grid place-items-center" whileHover={{ scale: 1.28, rotate: -9 }} whileTap={{ scale: 0.85 }} transition={{ type: "spring", stiffness: 500, damping: 14 }}>
+                <m.span className="nav-ico relative z-10 grid flex-none place-items-center" whileHover={{ scale: 1.28, rotate: -9 }} whileTap={{ scale: 0.85 }} transition={{ type: "spring", stiffness: 500, damping: 14 }}>
                   <Icon name={t.icon} />
                 </m.span>
-                <span className="nav-label relative z-10">{t.short === "Leads" ? "Leads and clicks" : t.id === "search" ? "Search (Google)" : t.id === "live" ? "Live now" : t.short}</span>
+                <span className="nav-label relative z-10">{label}</span>
               </Link>
             );
           })}
@@ -146,7 +160,7 @@ function Nav() {
       <nav aria-label="Sections" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-line bg-black/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
         {primary.map((t) => (
           <Link key={t.id} href={t.href} aria-current={tab.id === t.id ? "page" : undefined} className={`relative flex flex-col items-center gap-1 py-2 text-[10.5px] ${tab.id === t.id ? "text-brand" : "text-dim"}`}>
-            {tab.id === t.id && <m.span layoutId="tab-dot" aria-hidden="true" transition={{ type: "spring", stiffness: 420, damping: 30 }} className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-brand shadow-[0_0_10px_rgb(var(--brand-rgb))]" />}
+            {tab.id === t.id && <m.span layoutId="tab-dot" aria-hidden="true" transition={{ type: "spring", stiffness: 420, damping: 30 }} className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-brand" />}
             <m.span whileTap={{ scale: 0.8 }} transition={{ type: "spring", stiffness: 500, damping: 16 }}><Icon name={t.icon} /></m.span>
             {t.short}
           </Link>
@@ -181,10 +195,8 @@ function FootNote() {
   const stamp = useStamp();
   return (
     <div className="mt-auto p-2.5 font-mono text-[11.5px] leading-relaxed text-dim">
-      <span className="mb-1.5 flex items-center gap-2 text-good"><i className="live-dot" aria-hidden="true" />{stamp.live ? "live" : "synced"}</span>
-      GA4 + Search Console
-      <br />
-      {stamp.live ? "Fetched live on open" : "Rebuilt every 2 hours"}
+      <span className="mb-1.5 flex items-center gap-2 pl-[3px] text-good"><i className="live-dot flex-none" aria-hidden="true" /><span className="side-hide">{stamp.live ? "live" : "synced"}</span></span>
+      <div className="side-hide">GA4 + Search Console<br />{stamp.live ? "Fetched live on open" : "Rebuilt every 2 hours"}</div>
     </div>
   );
 }
@@ -219,6 +231,11 @@ function useSpotlight() {
 
 export function Shell({ children }: { children: ReactNode }) {
   useSpotlight();
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    try { setCollapsed(localStorage.getItem("side-collapsed") === "1"); } catch { /* private window */ }
+  }, []);
+  const toggle = () => setCollapsed((c) => { try { localStorage.setItem("side-collapsed", c ? "0" : "1"); } catch { /* ignore */ } return !c; });
   return (
     <MotionConfig reducedMotion="user">
       <LazyMotion features={loadMotion} strict>
@@ -227,8 +244,8 @@ export function Shell({ children }: { children: ReactNode }) {
             <i className="orb orb-a" />
             <i className="orb orb-b" />
           </div>
-          <div className="min-h-screen lg:grid lg:grid-cols-[224px_minmax(0,1fr)]">
-            <Nav />
+          <div className="shell-grid min-h-screen lg:grid lg:grid-cols-[var(--side)_minmax(0,1fr)]" style={{ "--side": collapsed ? "72px" : "224px" } as React.CSSProperties}>
+            <Nav collapsed={collapsed} onToggle={toggle} />
             <main className="min-w-0 px-4 pb-[calc(88px+env(safe-area-inset-bottom))] sm:px-7 lg:pb-14">
               <Header />
               <Page>{children}</Page>

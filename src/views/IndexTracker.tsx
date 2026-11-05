@@ -64,7 +64,7 @@ function Row({ url, status, right }: { url: string; status?: string; right: Reac
   );
 }
 
-const btn = "rounded-md border border-line px-2.5 py-1 font-mono text-[11.5px] font-semibold text-mute transition-colors hover:border-brand/40 hover:text-ink";
+const btn = "rounded-md border border-line px-2.5 py-1 font-mono text-[11.5px] font-semibold text-mute transition-colors hover:text-ink";
 
 export function IndexTracker() {
   const f = useFilters();
@@ -97,7 +97,7 @@ export function IndexTracker() {
   return (
     <div className="space-y-4">
       {flash && (
-        <p role="status" className="rounded-lg border border-brand/30 bg-brand/10 px-3 py-2 text-[12.5px] text-ink">
+        <p role="status" className="rounded-lg bg-brand/10 px-3 py-2 text-[12.5px] text-ink">
           {flash}
         </p>
       )}
