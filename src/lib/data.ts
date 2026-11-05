@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { DEFAULT_API } from "./config";
-import type { AlertItem, BingFile, CrawlFile, GAFile, GSCFile, HealthFile, HistoryRow, Live, Meta, RankFile, SpeedFile } from "./types";
+import type { AlertItem, BingFile, CrawlFile, GAFile, GSCFile, HealthFile, HistoryRow, Live, Meta, OptimizerFile, RankFile, SpeedFile } from "./types";
 
 /**
  * One tiny store, one entry per data file. A block subscribes to just the file it needs, so when a slow
@@ -100,7 +100,7 @@ export function ensure(file: string, force = false) {
   // Search Console and Bing numbers are final only 2 to 3 days later, so the published copy (rebuilt every 2 hours) is as
   // fresh as they get. The Worker's one-shot fetch of 11 properties x 8 reports also exceeds its 50-subrequest limit, which
   // showed up as sites with no search data after a refresh. So those files are never asked for live; Refresh re-reads the published copy.
-  const staticOnly = /^(gsc|bing)-/.test(file);
+  const staticOnly = /^(gsc|bing)-|^optimizer\.json$/.test(file);
   const live = base && !staticOnly && (force || LIVE_FIRST.has(file)) ? getJSON<unknown>(`${base}/data/${file}`, 45000).then(applyLive, () => {}) : Promise.resolve();
   const stat = (force && !staticOnly) || LIVE_FIRST.has(file)
     ? Promise.resolve()
@@ -169,3 +169,4 @@ export const useAlerts = () => useSource<AlertItem[]>("alerts.json");
 export const useRanks = () => useSource<RankFile>("ranks.json");
 export const useCrawl = () => useSource<CrawlFile>("crawl.json");
 export const useSpeed = () => useSource<SpeedFile>("speed.json");
+export const useOptimizer = () => useSource<OptimizerFile>("optimizer.json");

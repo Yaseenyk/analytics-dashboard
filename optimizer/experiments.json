@@ -1,0 +1,44 @@
+{
+  "experiments": [
+    {
+      "id": "2026-11-05-streamerosai-blog-obs-advanced-scene-switcher-guide",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/blog/obs-advanced-scene-switcher-guide",
+      "q": "advanced scene switcher",
+      "type": "description",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": 8.4,
+        "ctr": 0,
+        "impr": 20,
+        "clicks": 0
+      },
+      "before": "OBS Advanced Scene Switcher setup: install it, build a first macro, copy five recipes, fix it not switching, and see the one trigger it lacks.",
+      "after": "Advanced Scene Switcher (free OBS plugin) — download and install on Windows, macOS or Linux. Setup, build macros, five recipes and troubleshooting.",
+      "rationale": "The query is the plugin name; results that show direct downloads, platform support and version information look more relevant. Our page already contains install steps and platform support, but the current description highlights recipes and a limitation rather than signalling that the page helps users get and run the plugin. Updating the meta description to mention download, install and platforms uses facts already on the page and should improve CTR for that query. Note: the overall ranking gap versus the official forum and GitHub likely reflects authority/backlinks; this change targets CTR rather than authority.",
+      "evidence": [
+        "https://obsproject.com/forum/resources/advanced-scene-switcher.395/",
+        "https://www.wares.gg/apps/advanced-scene-switcher",
+        "https://github.com/WarmUpTill/SceneSwitcher/releases"
+      ],
+      "competitors": [
+        {
+          "url": "https://obsproject.com/forum/resources/advanced-scene-switcher.395/",
+          "does_better": "Official plugin resource page with direct downloads, version, supported platforms and release history — matches users looking for the plugin itself."
+        },
+        {
+          "url": "https://www.wares.gg/apps/advanced-scene-switcher",
+          "does_better": "Software listing shows platforms, latest version notes and download artifacts; presents compatibility and release details up-front."
+        },
+        {
+          "url": "https://github.com/WarmUpTill/SceneSwitcher/releases",
+          "does_better": "Release notes and changelog page showing latest versions and important compatibility notes; authoritative for updates."
+        }
+      ],
+      "authorityGap": true,
+      "gap": "Searchers for \"advanced scene switcher\" expect the plugin download, platform support and quick install instructions. Our meta description doesn't call out download or platforms, so competitors (official forum, package listings, GitHub) look more relevant in results."
+    }
+  ]
+}

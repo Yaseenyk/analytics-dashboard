@@ -142,3 +142,37 @@ export interface SpeedFile {
   generatedAt: string;
   runs: SpeedRun[];
 }
+
+/** The weekly content optimizer: one measured change per page, judged against Search Console after 28 days. */
+export interface Experiment {
+  id: string;
+  host: string;
+  repo: string;
+  page: string;
+  q: string;
+  type: "title" | "description" | "section" | "faq" | "internal_link" | "none";
+  created: string;
+  status: "report" | "proposed" | "live" | "done" | "declined";
+  baseline: { pos: number; ctr: number; impr: number; clicks: number };
+  before: string;
+  after: string;
+  rationale: string;
+  evidence: string[];
+  competitors?: { url: string; does_better: string }[];
+  authorityGap?: boolean;
+  gap?: string;
+  pr?: { url: string; number: number; file: string };
+  note?: string;
+  liveSince?: string;
+  judgeAfter?: string;
+  verdict?: "better" | "worse" | "same" | "inconclusive";
+  delta?: { pos: number; ctr: number; clicks: number } | null;
+  judged?: string;
+  revertPr?: string;
+}
+export interface OptimizerFile {
+  generatedAt: string;
+  lastRun: { date: string; proposed: number; judged: number; mode: "dry" | "pr" | "report"; costUsd: number; log: string[] };
+  experiments: Experiment[];
+  learnings: Record<string, { date: string; type: string; q: string; page: string; verdict: string; note?: string }[]>;
+}

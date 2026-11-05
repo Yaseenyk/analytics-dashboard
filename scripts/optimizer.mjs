@@ -48,7 +48,9 @@ export function classify(pos, impr) {
 }
 /** Candidate pages, best first: near rows with real impressions, one per page, none with an open experiment, capped per site and overall. */
 export function pickCandidates(keywords, experiments, { maxChanges = 5, maxPerSite = 2, minImpr = 20 } = {}) {
-  const busy = new Set(experiments.filter((e) => e.status === "proposed" || e.status === "live").map((e) => e.page));
+  // open or measuring experiments block the page; a report-only proposal blocks it for two weeks so it is not paid for again
+  const recent = Date.now() - 14 * DAY;
+  const busy = new Set(experiments.filter((e) => e.status === "proposed" || e.status === "live" || (e.status === "report" && Date.parse(e.created) > recent)).map((e) => e.page));
   const perSite = {};
   const seen = new Set();
   const out = [];

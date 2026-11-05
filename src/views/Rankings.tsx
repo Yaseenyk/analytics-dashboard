@@ -9,6 +9,7 @@ import { AreaChart } from "@/components/charts";
 import { DataTable } from "@/components/DataTable";
 import { ErrorCard, SkChart, SkTable } from "@/components/ui";
 import { useGscMemo } from "./kit";
+import { OptimizerCard } from "./Optimizer";
 
 function Tracked() {
   const e = useRanks();
@@ -53,6 +54,7 @@ export default function Rankings() {
     <>
       <Tracked />
       <QuickWins />
+      <OptimizerCard />
     </>
   );
 }
