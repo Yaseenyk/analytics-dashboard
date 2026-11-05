@@ -91,6 +91,7 @@ export function newNumbers(proposal, ourText) {
 /** Visible text of an HTML page, trimmed for a prompt. */
 export function extractText(html, max = 7000) {
   const t = html
+    .replace(/<head[\s\S]*?<\/head>/gi, " ")
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<nav[\s\S]*?<\/nav>/gi, " ")
@@ -99,7 +100,7 @@ export function extractText(html, max = 7000) {
     .replace(/<\/(p|li|h[1-6]|tr|div)>/gi, "\n")
     .replace(/<[^>]+>/g, " ")
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ")
-    .replace(/[ \t]+/g, " ").replace(/\n\s*\n+/g, "\n").trim();
+    .replace(/[ \t]+/g, " ").split("\n").map((l) => l.trim()).filter(Boolean).join("\n");
   return t.length > max ? t.slice(0, max) + " …" : t;
 }
 export const pageTitle = (html) => ((/<title[^>]*>([^<]*)<\/title>/i.exec(html) || [])[1] || "").replace(/\s+/g, " ").trim();

@@ -17,7 +17,7 @@ describe("pickCandidates", () => {
   const kw = { sites: { "streamerosai.com": { rows: [row({ page: "/a", impr: 500, ctr: 0.5 }), row({ page: "/b", impr: 300 }), row({ page: "/c", impr: 200 }), row({ page: "/d", impr: 50, status: "top" }), row({ page: "/e", impr: 5 })] }, "yk.streamerosai.com": { rows: [row({ page: "/p", impr: 400 })] } } };
   it("takes near rows with enough impressions, best first, capped per site", () => {
     const c = pickCandidates(kw, [], { maxChanges: 5, maxPerSite: 2 });
-    expect(c.map((x) => x.page)).toEqual(["/a", "/p", "/b"]);
+    expect(c.map((x: { page: string }) => x.page)).toEqual(["/a", "/p", "/b"]);
   });
   it("skips pages with an open experiment and one page is one candidate", () => {
     const c = pickCandidates({ sites: { s: { rows: [row({ page: "/a", q: "x" }), row({ page: "/a", q: "y", impr: 90 })] } } }, [{ page: "/b", status: "live" }], { maxChanges: 5 });
