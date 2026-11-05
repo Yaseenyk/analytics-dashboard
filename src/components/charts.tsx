@@ -96,8 +96,8 @@ export function AreaChart({ title, series, norm, extra, empty = "Nothing here ye
             const line = pts.map((p) => p.join(",")).join(" ");
             return (
               <g key={si}>
-                <polygon fill={`url(#${gid}-${si})`} points={`${P.l},${H - P.b} ${line} ${X(xs.length - 1)},${H - P.b}`} />
-                <polyline fill="none" style={{ stroke: color(s, si) }} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" points={line} />
+                <polygon className="fade-slow" fill={`url(#${gid}-${si})`} points={`${P.l},${H - P.b} ${line} ${X(xs.length - 1)},${H - P.b}`} />
+                <polyline className="line-draw" pathLength={1} fill="none" style={{ stroke: color(s, si) }} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" points={line} />
               </g>
             );
           })}
@@ -145,12 +145,12 @@ export function Rank({ title, items, max = 7, empty = "Nothing here yet.", note 
     <Card title={title} note={note}>
       {items.length ? (
         <div className="mt-3 space-y-2.5">
-          {items.slice(0, max).map((i) => (
-            <div key={i[0]} className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
+          {items.slice(0, max).map((i, ix) => (
+            <div key={i[0]} style={{ "--r": ix } as React.CSSProperties} className="row-in grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
               <span className="truncate text-[13px]" title={i[0]}>{i[0]}</span>
               <span className="font-mono text-[12px] text-mute">{i[2] ?? n(i[1])}</span>
               <div className="col-span-2 h-1.5 overflow-hidden rounded-full bg-white/5">
-                <div className="h-full rounded-full" style={{ width: `${Math.max(2, (100 * i[1]) / top)}%`, background: BRAND }} />
+                <div className="bar-grow h-full rounded-full" style={{ width: `${Math.max(2, (100 * i[1]) / top)}%`, background: BRAND, animationDelay: `${ix * 60 + 150}ms` }} />
               </div>
             </div>
           ))}
@@ -178,7 +178,7 @@ export function Donut({ title, items, colorOf, empty = "Nothing here yet." }: { 
           {top.map((it, i) => {
             const p = (100 * it[1]) / tot;
             const el = (
-              <circle key={it[0]} r="15.9155" cx="21" cy="21" fill="none" style={{ stroke: cof(it[0], i) }} strokeWidth="5" strokeDasharray={`${p.toFixed(2)} ${(100 - p).toFixed(2)}`} strokeDashoffset={off.toFixed(2)}>
+              <circle key={it[0]} className="donut-seg" r="15.9155" cx="21" cy="21" fill="none" style={{ stroke: cof(it[0], i), animationDelay: `${i * 90}ms` }} strokeWidth="5" strokeDasharray={`${p.toFixed(2)} ${(100 - p).toFixed(2)}`} strokeDashoffset={off.toFixed(2)}>
                 <title>{`${it[0]}: ${n(it[1])}`}</title>
               </circle>
             );

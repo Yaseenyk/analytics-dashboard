@@ -56,7 +56,7 @@ function Funnel() {
           <div key={nm} className="grid grid-cols-[110px_1fr_auto] items-center gap-3">
             <span className="text-[12.5px] text-dim">{nm}</span>
             <div className="h-2.5 overflow-hidden rounded-full bg-white/5">
-              <div className="h-full rounded-full bg-gradient-to-r from-brand to-purple" style={{ width: `${Math.min(100, Math.max(1, (100 * val) / (v.ses || 1)))}%` }} />
+              <div className="h-full rounded-full bg-gradient-to-r from-brand to-purple bar-grow" style={{ width: `${Math.min(100, Math.max(1, (100 * val) / (v.ses || 1)))}%` }} />
             </div>
             <b className="font-mono text-[13px]">{n(val)}</b>
           </div>

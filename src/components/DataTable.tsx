@@ -90,14 +90,14 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
           </thead>
           <tbody>
             {vis.map((r, ri) => (
-              <tr key={ri} className="border-b border-line last:border-0 hover:bg-white/[.025]">
+              <tr key={ri} style={{ "--r": ri } as React.CSSProperties} className="row-in border-b border-line transition-colors last:border-0 hover:bg-white/[.04]">
                 {r.map((c, j) =>
                   j === 0 ? (
                     <td key={j} className="max-w-0 py-2.5 pr-3" title={String(c)}>
                       <div className="truncate">{fmtCell(c, fmt[0])}</div>
                       {bar != null && (
                         <div aria-hidden="true" className="mt-1.5 h-[3px] overflow-hidden rounded-full bg-white/[.06]">
-                          <div className="h-full rounded-full bg-brand/70" style={{ width: `${pctOf(r)}%` }} />
+                          <div className="bar-grow h-full rounded-full bg-brand/70" style={{ width: `${pctOf(r)}%`, animationDelay: `${Math.min(ri, 12) * 28 + 200}ms` }} />
                         </div>
                       )}
                     </td>
@@ -117,7 +117,7 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
       {/* phone: each row becomes a card */}
       <ul className="mt-3 space-y-2 md:hidden">
         {vis.map((r, ri) => (
-          <li key={ri} className="overflow-hidden rounded-xl border border-line bg-card2/60">
+          <li key={ri} style={{ "--r": ri } as React.CSSProperties} className="row-in overflow-hidden rounded-xl border border-line bg-card2/60">
             <div className="p-3">
               <div className="break-words text-[13.5px] font-medium">{fmtCell(r[0], fmt[0])}</div>
               <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2">
@@ -129,7 +129,7 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
                 ))}
               </dl>
             </div>
-            {bar != null && <div aria-hidden="true" className="h-[3px] bg-white/[.05]"><div className="h-full bg-brand/70" style={{ width: `${pctOf(r)}%` }} /></div>}
+            {bar != null && <div aria-hidden="true" className="h-[3px] bg-white/[.05]"><div className="bar-grow h-full bg-brand/70" style={{ width: `${pctOf(r)}%` }} /></div>}
           </li>
         ))}
       </ul>

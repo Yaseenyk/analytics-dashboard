@@ -53,7 +53,7 @@ function SiteCards() {
                   {n(s.indexed)}<span className="text-[15px] font-medium text-dim"> of {n(s.inspected)} pages in Google</span>
                 </div>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[.06]" role="img" aria-label={`${pct}% indexed`}>
-                  <div className="h-full rounded-full bg-gradient-to-r from-brand to-purple" style={{ width: `${Math.max(pct, s.indexed ? 3 : 0)}%` }} />
+                  <div className="h-full rounded-full bg-gradient-to-r from-brand to-purple bar-grow" style={{ width: `${Math.max(pct, s.indexed ? 3 : 0)}%` }} />
                 </div>
                 <div className="mt-2 font-mono text-[12px] text-mute">{pct}% indexed · {n(s.notIndexed)} not yet</div>
               </>

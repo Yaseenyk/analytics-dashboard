@@ -83,7 +83,7 @@ export function Delta({ cur, prev, invert, show }: { cur: number; prev: number; 
   const good = invert ? p < 0 : p > 0;
   const tone = flat ? "bg-white/5 text-dim" : good ? "bg-good/10 text-good" : "bg-bad/10 text-bad";
   return (
-    <span className={`mt-1.5 inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[11px] font-semibold ${tone}`}>
+    <span className={`pop mt-1.5 inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[11px] font-semibold ${tone}`}>
       {p > 0 ? "▲ " : p < 0 ? "▼ " : ""}
       {Math.abs(p).toFixed(0)}%
     </span>
@@ -103,17 +103,44 @@ export function Spark({ vals, color = BRAND, id }: { vals: number[]; color?: str
           <stop offset="1" style={{ stopColor: color }} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <polygon fill={`url(#${id})`} points={`0,30 ${pts.join(" ")} 100,30`} />
-      <polyline fill="none" style={{ stroke: color }} strokeWidth="1.6" vectorEffect="non-scaling-stroke" points={pts.join(" ")} />
+      <polygon className="fade-slow" fill={`url(#${id})`} points={`0,30 ${pts.join(" ")} 100,30`} />
+      <polyline className="line-draw" pathLength={1} fill="none" style={{ stroke: color }} strokeWidth="1.6" vectorEffect="non-scaling-stroke" points={pts.join(" ")} />
     </svg>
   );
+}
+
+/** Counts a number up from zero when it first appears (and again when it changes). Keeps its suffix: 1.2k, 45.0%, 3m 20s. */
+function CountUp({ value }: { value: string }) {
+  const m = /^(\d[\d,]*\.?\d*)(.*)$/.exec(value);
+  const [shown, setShown] = useState(value);
+  useEffect(() => {
+    if (!m || (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)) {
+      setShown(value);
+      return;
+    }
+    const target = parseFloat(m[1].replace(/,/g, ""));
+    const dec = m[1].includes(".") ? m[1].split(".")[1].length : 0;
+    const comma = m[1].includes(",") || (!m[1].includes(".") && target >= 1000);
+    const t0 = performance.now();
+    let raf = 0;
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / 900);
+      const v = target * (1 - Math.pow(1 - k, 3));
+      const txt = dec ? v.toFixed(dec) : comma ? Math.round(v).toLocaleString("en-US") : String(Math.round(v));
+      setShown(txt + m[2]);
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <>{shown}</>;
 }
 
 export function Kpi({ title, value, delta, spark, color, id, note }: { title: string; value: ReactNode; delta?: ReactNode; spark?: number[]; color?: string; id: string; note?: ReactNode }) {
   return (
     <div className="card animate-fadein !p-3.5 sm:!p-5">
       <div className="truncate text-[12px] text-mute sm:text-[12.5px]">{title}</div>
-      <div className="mt-1 text-[24px] font-bold leading-tight tracking-tight sm:text-[28px]">{value}</div>
+      <div className="mt-1 text-[24px] font-bold leading-tight tracking-tight sm:text-[28px]">{typeof value === "string" ? <CountUp value={value} /> : value}</div>
       {delta}
       {note}
       {spark && <Spark vals={spark} color={color} id={`sp-${id}`} />}

@@ -29,7 +29,7 @@ const config: Config = {
         fadein: { from: { opacity: "0", transform: "translateY(4px)" }, to: { opacity: "1", transform: "none" } },
         pulseglow: { "0%,100%": { boxShadow: "0 0 3px rgba(34,197,94,.1)" }, "50%": { boxShadow: "0 0 12px rgba(34,197,94,.55)" } },
       },
-      animation: { shimmer: "shimmer 1.6s infinite", fadein: "fadein .25s ease both", pulseglow: "pulseglow 3s ease-in-out infinite" },
+      animation: { shimmer: "shimmer 1.6s infinite", fadein: "fadein .25s ease backwards", pulseglow: "pulseglow 3s ease-in-out infinite" },
     },
   },
   plugins: [],

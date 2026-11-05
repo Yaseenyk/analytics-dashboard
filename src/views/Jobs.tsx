@@ -291,7 +291,7 @@ function WorkerJobCard({ job }: { job: Job }) {
       </dl>
       {running && st && st.total > 0 && (
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[.06]" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-          <div className="h-full rounded-full bg-gradient-to-r from-brand to-purple transition-all" style={{ width: `${pct}%` }} />
+          <div className="h-full rounded-full bg-gradient-to-r from-brand to-purple bar-grow transition-all" style={{ width: `${pct}%` }} />
         </div>
       )}
       {job.note && <p className="sub">{job.note}</p>}
