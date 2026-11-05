@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 // @ts-expect-error plain JavaScript, no type declarations
 import { applyReplace, classify, extractText, judge, locate, newNumbers, pageTitle, pickCandidates } from "../scripts/optimizer.mjs";
 
-const row = (o: Partial<{ q: string; page: string; clicks: number; impr: number; ctr: number; pos: number; status: string }>) => ({ q: "obs settings", page: "https://streamerosai.com/blog/a", clicks: 2, impr: 100, ctr: 2, pos: 8, status: "near", ...o });
+const row = (o: Partial<{ host: string; q: string; page: string; clicks: number; impr: number; ctr: number; pos: number; status: string }>) => ({ q: "obs settings", page: "https://streamerosai.com/blog/a", clicks: 2, impr: 100, ctr: 2, pos: 8, status: "near", ...o });
 
 describe("classify", () => {
   it("buckets by position, and needs impressions to say anything", () => {
@@ -15,9 +15,24 @@ describe("classify", () => {
 
 describe("pickCandidates", () => {
   const kw = { sites: { "streamerosai.com": { rows: [row({ page: "/a", impr: 500, ctr: 0.5 }), row({ page: "/b", impr: 300 }), row({ page: "/c", impr: 200 }), row({ page: "/d", impr: 50, status: "top" }), row({ page: "/e", impr: 5 })] }, "yk.streamerosai.com": { rows: [row({ page: "/p", impr: 400 })] } } };
-  it("takes near rows with enough impressions, best first, capped per site", () => {
+  it("takes near rows first, then far, capped per site, never top pages", () => {
     const c = pickCandidates(kw, [], { maxChanges: 5, maxPerSite: 2 });
     expect(c.map((x: { page: string }) => x.page)).toEqual(["/a", "/p", "/b"]);
+    const far = pickCandidates({ sites: { s: { rows: [row({ page: "/far", status: "far", pos: 30, impr: 40 }), row({ page: "/near", impr: 15 })] } } }, [], { maxPerSite: 5 });
+    expect(far.map((x: { page: string }) => x.page)).toEqual(["/near", "/far"]);
+  });
+  it("adds not-indexed pages from the index check after the ranked ones, and skips recent reports", () => {
+    const health = { index: { s: { urls: [["https://s/x", "Crawled - currently not indexed", null], ["https://s/y", "Discovered - currently not indexed", null], ["https://s/z", "URL is unknown to Google", null]] } } };
+    const c = pickCandidates({ sites: { s: { rows: [row({ host: "s", page: "https://s/a" })] } } }, [], { maxPerSite: 5 }, health);
+    expect(c.map((x: { page: string; kind: string }) => [x.page, x.kind])).toEqual([["https://s/a", "rank"], ["https://s/x", "index"], ["https://s/y", "index"]]);
+    const again = pickCandidates({ sites: {} }, [{ page: "https://s/x", status: "report", created: new Date().toISOString().slice(0, 10) }], { maxPerSite: 5 }, health);
+    expect(again.map((x: { page: string }) => x.page)).toEqual(["https://s/y"]);
+  });
+  it("judges an index experiment by whether the page got in", () => {
+    const exp = { kind: "index", baseline: {}, created: "2026-11-01", liveSince: "2026-11-10" };
+    expect(judge(exp, null, "2026-12-10", true)?.verdict).toBe("better");
+    expect(judge(exp, null, "2026-12-10", false)).toBeNull();
+    expect(judge(exp, null, "2027-02-01", false)?.verdict).toBe("inconclusive");
   });
   it("skips pages with an open experiment and one page is one candidate", () => {
     const c = pickCandidates({ sites: { s: { rows: [row({ page: "/a", q: "x" }), row({ page: "/a", q: "y", impr: 90 })] } } }, [{ page: "/b", status: "live" }], { maxChanges: 5 });

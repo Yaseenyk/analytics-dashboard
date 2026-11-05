@@ -1,7 +1,7 @@
 name: Content optimizer
 
-# Weekly: read keywords.json (what Google shows us for), pick a few pages just off page one, read what outranks them,
-# propose ONE change per page as a pull request in that site's repo, and judge last month's changes against Search Console.
+# Weekly: up to 5 pages per site that rank low or are not indexed (never a page already in the top 3), one measured
+# change each as a pull request in that site's repo, and a verdict on last month's changes from Search Console.
 # It never pushes content to main. Without OPTIMIZER_GITHUB_TOKEN it only writes reports.
 on:
   schedule:
@@ -38,8 +38,8 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
           # Indexed sites are frozen until this date (no pull requests before it; reports still run).
           FREEZE_UNTIL: "2026-11-18"
-          MAX_CHANGES: "5"
-          MAX_PER_SITE: "2"
+          MAX_CHANGES: "40"
+          MAX_PER_SITE: "5"
       - name: Save experiments, learnings and the report
         run: |
           git config user.name "analytics-bot"

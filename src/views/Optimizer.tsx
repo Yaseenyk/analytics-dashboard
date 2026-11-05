@@ -25,7 +25,7 @@ function Row({ e }: { e: Experiment }) {
       </button>
       {open && (
         <div className="mt-2 space-y-2 rounded-[10px] bg-card2 p-3 text-[12.5px] leading-relaxed text-mute">
-          <div><b className="text-ink">Query:</b> &ldquo;{e.q}&rdquo; · position {e.baseline.pos}, {e.baseline.impr} impressions, CTR {e.baseline.ctr}% when proposed</div>
+          {e.q ? <div><b className="text-ink">Query:</b> &ldquo;{e.q}&rdquo; · position {e.baseline.pos}, {e.baseline.impr} impressions, CTR {e.baseline.ctr}% when proposed</div> : <div><b className="text-ink">Goal:</b> get the page indexed. Google said: {e.state}</div>}
           {e.gap && <div><b className="text-ink">Gap:</b> {e.gap}</div>}
           {!!e.competitors?.length && (
             <div>

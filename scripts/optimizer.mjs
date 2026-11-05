@@ -28,6 +28,8 @@ export const SITES = {
   "math.streamerosai.com": { repo: "Yaseenyk/sites-lab-yk", indexed: true, reportOnly: true },
 };
 const KEYWORDS_URL = "https://analytics.streamerosai.com/data/keywords.json";
+const HEALTH_URL = "https://analytics.streamerosai.com/data/health.json";
+const CRAWL_URL = "https://analytics-api.yaseenyk.workers.dev/data/crawl.json";
 const EXP_FILE = "optimizer/experiments.json";
 const LEARN_DIR = "optimizer/learnings";
 const REPORT_DIR = "optimizer/reports";
@@ -46,30 +48,43 @@ export function classify(pos, impr) {
   if (pos <= 20) return "near";
   return "far";
 }
-/** Candidate pages, best first: near rows with real impressions, one per page, none with an open experiment, capped per site and overall. */
-export function pickCandidates(keywords, experiments, { maxChanges = 5, maxPerSite = 2, minImpr = 20 } = {}) {
-  // open or measuring experiments block the page; a report-only proposal blocks it for two weeks so it is not paid for again
+/** Candidate pages per site, best first: ranking at 4-20, then 20+, then pages Google crawled but did not index, then pages
+    it discovered but never crawled (those need links). Pages that already rank in the top 3 are never touched; a page with an
+    open or measuring experiment, or a report less than two weeks old, is skipped. */
+export function pickCandidates(keywords, experiments, { maxChanges = 40, maxPerSite = 5, minImpr = 10 } = {}, health = null) {
   const recent = Date.now() - 14 * DAY;
   const busy = new Set(experiments.filter((e) => e.status === "proposed" || e.status === "live" || (e.status === "report" && Date.parse(e.created) > recent)).map((e) => e.page));
+  const norm = (u) => u.replace(/\/$/, "");
   const perSite = {};
   const seen = new Set();
   const out = [];
+  const take = (r) => {
+    const key = norm(r.page);
+    if (out.length >= maxChanges || seen.has(key) || busy.has(r.page) || busy.has(key) || busy.has(key + "/") || (perSite[r.host] || 0) >= maxPerSite) return;
+    seen.add(key);
+    perSite[r.host] = (perSite[r.host] || 0) + 1;
+    out.push(r);
+  };
   const rows = [];
-  for (const [host, s] of Object.entries(keywords.sites || {})) for (const r of s.rows || []) rows.push({ host, ...r });
-  rows
-    .filter((r) => r.status === "near" && r.impr >= minImpr && !busy.has(r.page))
-    .map((r) => ({ ...r, score: r.impr * (1 - Math.min(1, r.ctr / 10)) }))
-    .sort((a, b) => b.score - a.score)
-    .forEach((r) => {
-      if (out.length >= maxChanges || seen.has(r.page) || (perSite[r.host] || 0) >= maxPerSite) return;
-      seen.add(r.page);
-      perSite[r.host] = (perSite[r.host] || 0) + 1;
-      out.push(r);
-    });
+  for (const [host, s] of Object.entries(keywords.sites || {})) for (const r of s.rows || []) rows.push({ host, kind: "rank", ...r });
+  const ranked = rows.filter((r) => r.impr >= minImpr && (r.status === "near" || r.status === "far")).map((r) => ({ ...r, score: r.impr * (1 - Math.min(1, r.ctr / 10)) }));
+  ranked.filter((r) => r.status === "near").sort((a, b) => b.score - a.score).forEach(take);
+  ranked.filter((r) => r.status === "far").sort((a, b) => b.score - a.score).forEach(take);
+  // pages Google knows about but has not indexed: the index check lists them as [url, state, last crawl]
+  const CRAWLED = /crawled - currently not indexed/i, DISCOVERED = /discovered - currently not indexed/i;
+  for (const re of [CRAWLED, DISCOVERED]) {
+    for (const [host, site] of Object.entries(health?.index || {})) {
+      for (const [url, state] of site.urls || []) if (re.test(state)) take({ host, kind: "index", page: url, q: null, state, clicks: 0, impr: 0, ctr: 0, pos: null, status: "unindexed" });
+    }
+  }
   return out;
 }
 /** Verdict for a live experiment from its baseline and the current row for the same page and query. */
-export function judge(exp, row, onDate = today()) {
+export function judge(exp, row, onDate = today(), indexedNow = null) {
+  if (exp.kind === "index") {
+    if (indexedNow === true) return { verdict: "better", delta: null, note: "The page is now in Google." };
+    return Date.parse(onDate) - Date.parse(exp.liveSince || exp.created) > GIVE_UP_DAYS * DAY ? { verdict: "inconclusive", note: "Still not indexed after ten weeks." } : null;
+  }
   if (!row) return Date.parse(onDate) - Date.parse(exp.liveSince || exp.created) > GIVE_UP_DAYS * DAY ? { verdict: "inconclusive", note: "Google stopped showing this page for the query." } : null;
   if (row.impr < 10) return null; // not enough data yet
   const dPos = exp.baseline.pos - row.pos; // positive = moved up
@@ -166,8 +181,9 @@ const CHANGE = schema("change", {
   rationale: { type: "string" },
   evidence_urls: { type: "array", items: { type: "string" } },
 });
-async function propose(cand, ourHtml, competitors, learnings) {
+async function propose(cand, ourHtml, competitors, learnings, sitePages = []) {
   const ourText = extractText(ourHtml);
+  if (cand.kind === "index") return proposeIndex(cand, ourHtml, ourText, learnings, sitePages);
   const comp = competitors.map((c, i) => `COMPETITOR ${i + 1}: ${c.url}\nTITLE: ${pageTitle(c.html)}\n${extractText(c.html, 5000)}`).join("\n\n");
   const learned = learnings.length ? `What has worked on this site before (verdicts from Search Console):\n${learnings.slice(-12).map((l) => `- ${l.type}: ${l.verdict}${l.note ? ` (${l.note})` : ""}`).join("\n")}` : "No verdicts for this site yet.";
   const input = `You improve one web page so it ranks better for one Google query, with evidence, and you never invent facts.
@@ -196,6 +212,36 @@ Rules:
   if (nums.length) { p.change_type = "none"; p.rationale = `Rejected by the numbers check: the proposal introduced ${nums.join(", ")}, which the page does not have. ${p.rationale}`; }
   if (p.change_type === "title" && p.new_text.length > 70) p.new_text = p.new_text.slice(0, 70).trim();
   if (p.change_type === "description" && p.new_text.length > 170) p.new_text = p.new_text.slice(0, 170).trim();
+  return p;
+}
+
+/** For a page Google crawled or discovered but did not index: make it worth indexing (a real section) or point links at it. */
+async function proposeIndex(cand, ourHtml, ourText, learnings, sitePages) {
+  const learned = learnings.length ? `Verdicts on this site so far:\n${learnings.slice(-12).map((l) => `- ${l.type}: ${l.verdict}${l.note ? ` (${l.note})` : ""}`).join("\n")}` : "No verdicts for this site yet.";
+  const pages = sitePages.slice(0, 40).map((p) => `- ${p[0]} — ${p[1]}`).join("\n");
+  const input = `You help one page get indexed by Google, without inventing facts.
+
+OUR PAGE: ${cand.page}
+GOOGLE SAYS: ${cand.state}  (${/crawled/i.test(cand.state) ? "Google read it and chose not to keep it: it looks thin, repeated or low-value next to other pages" : "Google knows the URL but has not fetched it: nothing important links to it"})
+OUR TITLE: ${pageTitle(ourHtml)}
+OUR DESCRIPTION: ${pageDescription(ourHtml)}
+OUR PAGE TEXT:
+${ourText}
+
+OTHER PAGES ON THIS SITE (url — title), which could link to it:
+${pages || "(unknown)"}
+
+${learned}
+
+Rules:
+- Propose exactly ONE change: "section" (one missing section that makes the page clearly useful on its own, Markdown, <= 200 words, built only from what the page already says or general know-how with no figures), "faq" (one question and answer, Markdown), "internal_link" (pick the one existing page above most related to this one; current_text = that page's URL exactly as listed; new_text = the anchor text, 3 to 8 words, describing our page), or "none" if the page is a duplicate of another and should rather be merged (say which in rationale).
+- Prefer internal_link when Google has never fetched the page; prefer section when it was crawled and rejected.
+- Never add a statistic, price, date, version, name or claim that is not already on the page.
+- Keep the page's plain voice. evidence_urls may be empty. Set gap_summary to one sentence on why Google is skipping it. competitor_notes must be an empty array. likely_authority_gap false.`;
+  const { text } = await openai({ input, text: CHANGE });
+  const p = JSON.parse(text);
+  const nums = newNumbers(p.new_text || "", ourText + " " + pageTitle(ourHtml));
+  if (nums.length) { p.change_type = "none"; p.rationale = `Rejected by the numbers check: the proposal introduced ${nums.join(", ")}, which the page does not have. ${p.rationale}`; }
   return p;
 }
 
@@ -249,8 +295,15 @@ async function openPr({ token, repo, id, title, body, edit }) {
   fs.rmSync(dir, { recursive: true, force: true });
   return { ok: true, url: pr.html_url, number: pr.number, file: path.relative(dir, result.file) };
 }
-function editFor(p, ourHtml) {
+function editFor(p, ourHtml, target, sourceTitle) {
   return (files) => {
+    if (p.change_type === "internal_link") {
+      const t = (sourceTitle || "").replace(/\s*[|·–—-]\s*[^|·–—-]{2,40}$/, "");
+      const f = t && locate(files.filter((x) => /\.mdx?$/i.test(x)), t);
+      if (!f) return { ok: false, reason: "could not find the linking page's Markdown file by its title" };
+      fs.writeFileSync(f, fs.readFileSync(f, "utf8").replace(/\s*$/, "") + `\n\nSee also: [${p.new_text.trim()}](${target})\n`);
+      return { ok: true, file: f };
+    }
     if (p.change_type === "title" || p.change_type === "description") {
       const f = locate(files, p.current_text);
       if (!f) return { ok: false, reason: `could not find the current ${p.change_type} exactly once in the repo` };
@@ -284,13 +337,17 @@ async function main() {
   const dry = !!process.env.DRY_RUN || process.argv.includes("--dry");
   const token = (process.env.OPTIMIZER_GITHUB_TOKEN || "").trim();
   const freezeUntil = process.env.FREEZE_UNTIL || "";
-  const maxChanges = +(process.env.MAX_CHANGES || 5), maxPerSite = +(process.env.MAX_PER_SITE || 2);
+  const maxChanges = +(process.env.MAX_CHANGES || 40), maxPerSite = +(process.env.MAX_PER_SITE || 5);
   const date = today();
   const log = [];
   const say = (m) => { console.log(m); log.push(m); };
   say(`optimizer ${date}: ${dry ? "dry run" : token ? "pull requests on" : "no OPTIMIZER_GITHUB_TOKEN: reports only"}${freezeUntil && date < freezeUntil ? `, indexed sites frozen until ${freezeUntil}` : ""}`);
 
   const keywords = await fetch(KEYWORDS_URL).then((r) => r.ok ? r.json() : Promise.reject(new Error(`keywords.json ${r.status}`)));
+  const health = await fetch(HEALTH_URL).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const crawl = await fetch(CRAWL_URL).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const indexedSet = new Set(Object.values(health?.index || {}).flatMap((s) => s.indexedUrls || []));
+  const pagesOf = (host) => (crawl?.sites?.[host]?.pages || []).filter((p) => indexedSet.has(p[0]) || indexedSet.has(p[0].replace(/\/$/, ""))).map((p) => [p[0], p[1]]);
   const state = readJson(EXP_FILE, { experiments: [] });
   const rowFor = (host, page, q) => (keywords.sites?.[host]?.rows || []).find((r) => r.page === page && r.q === q);
 
@@ -303,7 +360,7 @@ async function main() {
       else if (pr && pr.state === "closed") { e.status = "declined"; say(`declined: ${e.id}`); }
     }
     if (e.status !== "live" || date < e.judgeAfter) continue;
-    const v = judge(e, rowFor(e.host, e.page, e.q), date);
+    const v = judge(e, e.kind === "index" ? null : rowFor(e.host, e.page, e.q), date, e.kind === "index" ? indexedSet.has(e.page) || indexedSet.has(e.page.replace(/\/$/, "")) : null);
     if (!v) continue;
     e.status = "done"; e.verdict = v.verdict; e.delta = v.delta || null; e.judged = date;
     const L = learningsOf(e.host);
@@ -318,7 +375,7 @@ async function main() {
   }
 
   // ---- 2. propose
-  const cands = pickCandidates(keywords, state.experiments, { maxChanges, maxPerSite });
+  const cands = pickCandidates(keywords, state.experiments, { maxChanges, maxPerSite }, health);
   say(`${cands.length} candidate page(s)`);
   const proposals = [];
   for (const c of cands) {
@@ -328,15 +385,20 @@ async function main() {
     try {
       const ourHtml = await fetchPage(c.page);
       if (!ourHtml) { say(`skip ${c.page}: could not fetch`); continue; }
-      const urls = await topResults(c.q, c.host);
       const competitors = [];
-      for (const u of urls) { if (competitors.length >= 3) break; const html = await fetchPage(u); if (html) competitors.push({ url: u, html }); }
-      const p = await propose(c, ourHtml, competitors, learningsOf(c.host).items);
+      if (c.kind !== "index") {
+        const urls = await topResults(c.q, c.host);
+        for (const u of urls) { if (competitors.length >= 3) break; const html = await fetchPage(u); if (html) competitors.push({ url: u, html }); }
+      }
+      const p = await propose(c, ourHtml, competitors, learningsOf(c.host).items, pagesOf(c.host));
+      let sourceTitle = "";
+      if (p.change_type === "internal_link") { const src = await fetchPage(p.current_text); sourceTitle = src ? pageTitle(src) : ""; if (!sourceTitle) { p.rationale = `No usable linking page (${p.current_text}). ${p.rationale}`; p.change_type = "none"; } }
       const id = `${date}-${c.host.split(".")[0]}-${(new URL(c.page).pathname.replace(/\W+/g, "-").replace(/^-|-$/g, "") || "home").slice(0, 40)}`;
-      const rec = { id, host: c.host, repo: site?.repo || "", page: c.page, q: c.q, type: p.change_type, created: date, status: "report", baseline: { pos: c.pos, ctr: c.ctr, impr: c.impr, clicks: c.clicks }, before: p.current_text, after: p.new_text, rationale: p.rationale, evidence: p.evidence_urls, competitors: p.competitor_notes, authorityGap: p.likely_authority_gap, gap: p.gap_summary };
+      const rec = { id, host: c.host, repo: site?.repo || "", page: c.page, q: c.q, kind: c.kind, state: c.state || null, type: p.change_type, created: date, status: "report", baseline: { pos: c.pos, ctr: c.ctr, impr: c.impr, clicks: c.clicks }, before: p.current_text, after: p.new_text, rationale: p.rationale, evidence: p.evidence_urls, competitors: p.competitor_notes, authorityGap: p.likely_authority_gap, gap: p.gap_summary };
       if (p.change_type !== "none" && canPr) {
-        const body = `**Query:** "${c.q}" · position ${c.pos}, ${c.impr} impressions, ${c.clicks} clicks, CTR ${c.ctr}% (28 days)\n\n**What outranks us:**\n${(p.competitor_notes || []).map((n) => `- ${n.url}: ${n.does_better}`).join("\n")}\n\n**Change (${p.change_type}):** ${p.rationale}\n\n**Before:**\n\n${p.current_text}\n\n**After:**\n\n${p.new_text}\n\nOne change only, so the effect can be measured. The optimizer judges it against Search Console after ${JUDGE_AFTER_DAYS} days and opens a revert if it made things worse. Experiment \`${id}\`.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)`;
-        const r = await openPr({ token, repo: site.repo, id, title: `seo(optimizer): ${p.change_type} for "${c.q}"`, body, edit: editFor(p, ourHtml) }).catch((x) => ({ ok: false, reason: x.message }));
+        const head = c.kind === "index" ? `**Goal:** get ${c.page} indexed. Google says: ${c.state}. ${p.gap_summary}` : `**Query:** "${c.q}" · position ${c.pos}, ${c.impr} impressions, ${c.clicks} clicks, CTR ${c.ctr}% (28 days)\n\n**What outranks us:**\n${(p.competitor_notes || []).map((n) => `- ${n.url}: ${n.does_better}`).join("\n")}`;
+        const body = `${head}\n\n**Change (${p.change_type}):** ${p.rationale}\n\n**Before:**\n\n${p.current_text}\n\n**After:**\n\n${p.new_text}\n\nOne change only, so the effect can be measured. The optimizer judges it against Search Console after ${JUDGE_AFTER_DAYS} days and opens a revert if it made things worse. Experiment \`${id}\`.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)`;
+        const r = await openPr({ token, repo: site.repo, id, title: c.kind === "index" ? `seo(optimizer): ${p.change_type} to get ${new URL(c.page).pathname} indexed` : `seo(optimizer): ${p.change_type} for "${c.q}"`, body, edit: editFor(p, ourHtml, c.page, sourceTitle) }).catch((x) => ({ ok: false, reason: x.message }));
         if (r.ok) { rec.status = "proposed"; rec.pr = { url: r.url, number: r.number, file: r.file }; say(`PR: ${r.url}`); }
         else { rec.note = `no pull request: ${r.reason}`; say(`report only for ${c.page}: ${r.reason}`); }
       } else if (p.change_type === "none") say(`no change for ${c.page}: ${p.rationale.slice(0, 120)}`);
@@ -353,7 +415,7 @@ async function main() {
   const [pin, pout] = PRICE[(process.env.OPENAI_MODEL || "gpt-5-mini").trim()] || [1, 5];
   const cost = (usage.input * pin + usage.output * pout) / 1e6;
   say(`OpenAI: ${usage.calls} calls, ${usage.input} in / ${usage.output} out tokens, about $${cost.toFixed(3)}`);
-  const md = [`# Optimizer run ${date}`, "", ...log.map((l) => `- ${l}`), "", "## Proposals", "", ...proposals.map((p) => `### ${p.host} · "${p.q}"\n\n${p.page}\n\nPosition ${p.baseline.pos}, ${p.baseline.impr} impressions, CTR ${p.baseline.ctr}%. ${p.gap}\n\n${(p.competitors || []).map((c) => `- ${c.url}: ${c.does_better}`).join("\n")}\n\n**${p.type}** — ${p.rationale}\n\nBefore: ${p.before}\n\nAfter: ${p.after}\n\n${p.pr ? `Pull request: ${p.pr.url}` : p.note || "Report only."}\n`), "", "## Judged", "", ...judged.map((e) => `- ${e.id}: ${e.verdict} ${JSON.stringify(e.delta || {})}${e.revertPr ? ` · revert: ${e.revertPr}` : ""}`)].join("\n");
+  const md = [`# Optimizer run ${date}`, "", ...log.map((l) => `- ${l}`), "", "## Proposals", "", ...proposals.map((p) => `### ${p.host} · ${p.kind === "index" ? `not indexed (${p.state})` : `"${p.q}"`}\n\n${p.page}\n\n${p.kind === "index" ? "" : `Position ${p.baseline.pos}, ${p.baseline.impr} impressions, CTR ${p.baseline.ctr}%. `}${p.gap}\n\n${(p.competitors || []).map((c) => `- ${c.url}: ${c.does_better}`).join("\n")}\n\n**${p.type}** — ${p.rationale}\n\nBefore: ${p.before}\n\nAfter: ${p.after}\n\n${p.pr ? `Pull request: ${p.pr.url}` : p.note || "Report only."}\n`), "", "## Judged", "", ...judged.map((e) => `- ${e.id}: ${e.verdict} ${JSON.stringify(e.delta || {})}${e.revertPr ? ` · revert: ${e.revertPr}` : ""}`)].join("\n");
   fs.mkdirSync(REPORT_DIR, { recursive: true });
   fs.writeFileSync(path.join(REPORT_DIR, `${date}.md`), md + "\n");
   const learn = {};

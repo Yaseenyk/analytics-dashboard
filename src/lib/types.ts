@@ -149,7 +149,9 @@ export interface Experiment {
   host: string;
   repo: string;
   page: string;
-  q: string;
+  q: string | null;
+  kind?: "rank" | "index";
+  state?: string | null;
   type: "title" | "description" | "section" | "faq" | "internal_link" | "none";
   created: string;
   status: "report" | "proposed" | "live" | "done" | "declined";
