@@ -285,6 +285,27 @@ for (const range of RANGES) {
   write(`gsc-${range.id}`, { range: range.id, days: range.days, generatedAt, search, ...gscDates(range.days, false) });
 }
 
+// keywords.json: every query Google shows one of our pages for, with position, clicks and the prior 28 days, per site.
+// Read by the weekly content optimizer (scripts/optimizer.mjs) and the Rankings tab. URL-prefix properties only: the
+// domain property would double count.
+{
+  const cur = gscDates(28, false), prev = gscDates(28, true);
+  const classify = (pos, impr) => (impr < 10 ? 'low' : pos <= 3 ? 'top' : pos <= 20 ? 'near' : 'far');
+  const sites = {};
+  for (const property of GSC_SITES.filter((x) => x.startsWith('https://'))) {
+    const host = new URL(property).hostname;
+    const [now, before] = await Promise.all([gsc(property, cur, ['query', 'page'], 1000), gsc(property, prev, ['query', 'page'], 1000)]);
+    if (now.status !== 200) { sites[host] = { property, ok: false, status: now.status, rows: [] }; continue; }
+    const prior = new Map(before.rows.map((r) => [`${r[0]}\u0001${r[1]}`, r]));
+    const rows = now.rows.map((r) => {
+      const b = prior.get(`${r[0]}\u0001${r[1]}`);
+      return { q: r[0], page: r[1], clicks: r[2], impr: r[3], ctr: r[4], pos: r[5], prevClicks: b ? b[2] : 0, prevImpr: b ? b[3] : 0, prevPos: b ? b[5] : null, status: classify(r[5], r[3]) };
+    }).sort((a, b) => b.impr - a.impr);
+    sites[host] = { property, ok: true, rows };
+  }
+  write('keywords', { generatedAt, window: cur, prior: prev, sites });
+}
+
 // Bing Webmaster Tools: one file per range. A failure writes a file that says why, so the page can show it.
 const bing = await bingFetchAll();
 if (bing.error) errors.push(`Bing: ${bing.error}`);
@@ -306,6 +327,8 @@ write('health', health);
 
 // Daily lab speed test (scripts/speed.mjs, its own workflow) is committed as data/speed.json; publish it with the rest.
 try { write('speed', JSON.parse(fs.readFileSync('data/speed.json', 'utf8'))); } catch { /* no speed test has run yet */ }
+// The weekly content optimizer (scripts/optimizer.mjs) commits data/optimizer.json; publish it for the Rankings tab.
+try { write('optimizer', JSON.parse(fs.readFileSync('data/optimizer.json', 'utf8'))); } catch { /* no optimizer run yet */ }
 
 const live = {
   generatedAt,
