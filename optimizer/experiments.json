@@ -39,6 +39,406 @@
       ],
       "authorityGap": true,
       "gap": "Searchers for \"advanced scene switcher\" expect the plugin download, platform support and quick install instructions. Our meta description doesn't call out download or platforms, so competitors (official forum, package listings, GitHub) look more relevant in results."
+    },
+    {
+      "id": "2026-11-05-fitrank-blog-what-is-rostering",
+      "host": "fitrank.streamerosai.com",
+      "repo": "Yaseenyk/fitrank-website",
+      "page": "https://fitrank.streamerosai.com/blog/what-is-rostering/",
+      "q": "rostering",
+      "kind": "rank",
+      "state": null,
+      "type": "faq",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": 36.8,
+        "ctr": 0,
+        "impr": 32,
+        "clicks": 0
+      },
+      "before": "## What is rostering? Meaning, types and how it differs from scheduling",
+      "after": "Q: What is rostering?\n\nA: Rostering is the process of assigning people to shifts, duties or work periods so the organisation has the right coverage at the right times. In practice it is the job of making the roster: deciding who covers which shift, when people are off, and ensuring every required hour has someone assigned.",
+      "rationale": "Users searching the single word 'rostering' often expect a direct, one‑sentence definition in the results. Competitors place a short definition or FAQ near the top; adding a labelled Q&A with a concise definition improves the chance of a featured snippet or richer SERP result and raises CTR. This change requires minimal content edits and keeps the existing voice and facts. Note that domain authority likely plays a role in ranking against ADP/Xenia, so an FAQ may improve clicks even if backlinks are still needed for rank.",
+      "evidence": [
+        "https://in.adp.com/resources/tools/glossary/rostering.aspx",
+        "https://www.xenia.team/articles/rostering",
+        "https://word.ws/rostering"
+      ],
+      "competitors": [
+        {
+          "url": "https://in.adp.com/resources/tools/glossary/rostering.aspx",
+          "does_better": "Provides a short, clear definition and an explicit 'What is rostering?' glossary entry and FAQ-style sections."
+        },
+        {
+          "url": "https://www.xenia.team/articles/rostering",
+          "does_better": "Uses a concise definitional lead and FAQ-like headings; tailored for searchers wanting a quick answer then detail."
+        },
+        {
+          "url": "https://word.ws/rostering",
+          "does_better": "Acts like a dictionary entry with a one-line definition that matches intent for single-word lookups."
+        }
+      ],
+      "authorityGap": true,
+      "gap": "Searchers for 'rostering' expect a short, dictionary-style definition or FAQ snippet. Competitors show concise definitional text and FAQs; our page opens with a paragraph but lacks a labelled Q&A/FAQ that could trigger a featured snippet and improve CTR."
+    },
+    {
+      "id": "2026-11-05-streamerosai-features-viral-moments",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/features/viral-moments",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Step 3 · Export\n## Export your markers to CSV.",
+      "after": "## How editors use the exported CSV\nWhat you get: every marked spike is exported as a row with its timestamp and the peak velocity recorded for that moment. No extra video files are produced—just the markers your editor needs.\n\nQuick editor workflow:\n- Export the session CSV after the stream ends.\n- Open the file in your video editor or a spreadsheet to see each marker timestamp and peak velocity.\n- Jump to each timestamp in the VOD, trim a few seconds before and after the spike, and assemble your highlights.\n\nIf you use Shorts Factory, import the markers directly so streamerOS can crop the marked moments into vertical clips (9:16) automatically.",
+      "rationale": "Adding a short, practical \"How editors use the exported CSV\" section turns an abstract feature description into a concrete, actionable workflow that editors and streamers can immediately apply; this increases on-page value and addresses Google's concern that the page is thin or low-value.",
+      "evidence": [
+        "https://streamerosai.com/features/viral-moments"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped this page because it describes a feature at a high level but lacks a concise, practical explanation of what the exported CSV contains and how an editor should use it, making the page feel thin and low-value."
+    },
+    {
+      "id": "2026-11-05-streamerosai-features-sponsor-crm",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/features/sponsor-crm",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "none",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "From first DM to signed deal in three steps.",
+      "after": "### Quick start: add your first sponsor\n1. Open Sponsor CRM in streamerOS and choose Add lead.\n2. Enter the brand name, your contact handle, an estimated deal value and the lead source (for example, Instagram DM). This lead is saved straight to SQLite on your own machine.\n3. Find the new card on the pipeline board and drag it through stages as conversations progress (Prospect → Contacted → Negotiating → Won/Lost).\n4. Click any card to open the lead inspector and add free-form notes or update the stage; every change writes back to your local database.\n\nUse this flow to stop leads from getting lost in DMs or spreadsheets and keep every deal tracked locally.",
+      "rationale": "Rejected by the numbers check: the proposal introduced 4, which the page does not have. Google flagged the page as low-value because it repeats features without a compact, actionable guide; adding a short quick-start section gives clear, immediate utility to visitors and reduces perceived thinness.",
+      "evidence": [
+        "https://streamerosai.com/features/sponsor-crm"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "The page is descriptive but lacks a concise, actionable quick-start that makes it immediately useful—Google likely marked it low-value for searchers wanting a how-to."
+    },
+    {
+      "id": "2026-11-05-streamerosai-blog-twitch-chat-overlay-obs",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/blog/twitch-chat-overlay-obs",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "After the 'Fixes for the usual problems' section.",
+      "after": "## Quick setup checklist\n- Choose your source: popout chat URL for the fastest setup, or a chat widget for a transparent overlay and custom styling.\n- In OBS: select the scene → Sources → + → Browser.\n- Paste the popout or widget URL into URL.\n- Set Width and Height in the source properties (e.g. 400 × 800 suggested) — set size here rather than scaling in the preview.\n- If the popout asks to sign in, right-click the source → Interact and sign in once off-air.\n- Tick “Shutdown source when not visible” to save CPU; enable “Refresh browser when scene becomes active” if chat stops updating.\n- Drag the Browser Source above your game capture so chat appears on top.\n\nThis checklist collects the page’s key steps so you can get a working overlay quickly.",
+      "rationale": "Adding a short, actionable checklist turns the explanatory content into immediate, step-by-step value that users (and Google) can recognise as distinct utility rather than generic prose. It uses only facts already present on the page and common OBS workflow tips.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely treated the page as thin or low-value because it explains options at a high level but lacks a concise, actionable checklist readers can use immediately to set up a chat overlay."
+    },
+    {
+      "id": "2026-11-05-streamerosai-blog-how-much-to-charge-for-stream-spons",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/blog/how-much-to-charge-for-stream-sponsorships",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "The page describes CPM math, illustrative rate ranges, what raises your rate, flat vs performance fees, and mentions backing your price with a media kit, but contains no concrete checklist of what to include in that media kit or what to send a brand.",
+      "after": "## What to include in your media kit\nMake it easy for brands to verify your CPM anchor by putting the right numbers and context in one place:\n\n- Duration-weighted average concurrent viewers (so long streams don't skew the number)\n- Peak concurrent viewers to show ceiling moments\n- Total watch time as the honest measure of attention you deliver\n- Recent stream highlights (titles, formats, and brief context) so a brand sees the fit\n- Engagement signals: chat activity, clips, and any repeat-viewer behavior you track\n- Clear list of deliverables you offer (read types, pinned links, clips, codes, exclusivity, usage rights)\n- Your preferred deal structures (flat fee, performance, or blended) and how you calculate the flat fee (CPM math)\n- Contact and timeline expectations so a brand can move from interest to contract\n\nA one-page, evidence-first media kit turns a feeling-based negotiation into a numbers conversation.",
+      "rationale": "Adding a concise, actionable media-kit checklist gives the page a practical asset brands and streamers can use right away, increasing unique utility and reducing the 'thin' signal that likely caused deindexing.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped this page because it reads as general guidance without a clear, actionable checklist that a streamer could use immediately to prove rates to a brand."
+    },
+    {
+      "id": "2026-11-05-streamerosai-blog-how-to-read-chat-sentiment-in-real-",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/blog/how-to-read-chat-sentiment-in-real-time",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## How streamerOS Reads Sentiment for You",
+      "after": "## Practical tips: reading and tuning live sentiment\n\nMake the sentiment read actually useful with a few simple rules you can apply immediately:\n\n- Use a short rolling window. The page mentions a \"minute or two\" — keep the analysis smoothed over that window so you see trends, not single messages.\n- Debounce before you act. Wait for a clear shift across several seconds or multiple messages rather than responding to one flurry.\n- Watch volume plus tone. Hype pairs high positive score with lots of messages; boredom is a flat score with low message rate. Use both signals together.\n- Reduce emote bias. Prefer signals weighted toward unique users or message diversity instead of raw message count to avoid spam spikes.\n- Keep it local. As noted above, running the classifier on your machine keeps latency low and the signal actionable in real time.\n\nFollow these and the sentiment line becomes a practical, glanceable cue you can trust mid‑stream.",
+      "rationale": "Adding a short, practical tips section gives readers immediate, actionable steps to use and tune live sentiment—turning a conceptual article into a how-to resource, which increases on-page value and reduces the \"thin/repetitive\" signal that likely caused Google to skip indexing.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "The page is largely conceptual and product-focused but lacks short, actionable, on-page guidance for streamers on how to tune and interpret live sentiment signals, so Google treats it as thin or low-value compared to more practical content."
+    },
+    {
+      "id": "2026-11-05-yk-anthropic-roadmap",
+      "host": "yk.streamerosai.com",
+      "repo": "Yaseenyk/portfolio",
+      "page": "https://yk.streamerosai.com/anthropic-roadmap/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "section",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "No 'How to use this roadmap' section currently present.",
+      "after": "## How to use this roadmap\nThis is a 15-part roadmap for taking Claude from first prompt to production. Two lessons are already published (Developer Core: context-window physics and Prompt Caching), totaling ~135 minutes so far. Start with the Developer Core lessons to learn context-window physics and output caps, then move to prompt structure and caching so you save tokens and latency on reuse.\n\nAfter that, follow the sequence implied by the roadmap topics: structural prompting, type-safe tool use, enterprise MCP aggregation, durable agent runtimes, evals, and autonomous cron routines. Read each lesson, try the examples in a conversation, and apply the caching and structural patterns to your own prompts before shipping to production. Use “Start a conversation” on this page when you want help applying a lesson.",
+      "rationale": "Adding a concise 'How to use this roadmap' section makes the page independently useful and clearly outlines the sequence of lessons and next steps, increasing the chance Google will fetch and index it. The section uses only topics and phrasing already present on the page.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but didn't fetch it, likely because the page is short, lacks a clear standalone section explaining how to use the roadmap, and has few internal links or signals."
+    },
+    {
+      "id": "2026-11-05-yk-products-fitrank",
+      "host": "yk.streamerosai.com",
+      "repo": "Yaseenyk/portfolio",
+      "page": "https://yk.streamerosai.com/products/fitrank/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "none",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "No section describing how to adopt or integrate FitRank into an existing team or codebase.",
+      "after": "## 06 · How to adopt FitRank\nA practical path to get this into your stack, using only the components described above:\n\n1. Define intake fields — skills, level, dates and must-haves — so the LLM only extracts structured fields, not free text rankings.\n2. Implement hard rules in code (availability, location, cost band, clearance) and record exclusion reason codes.\n3. Store profiles and task vectors in Postgres + pgvector; retrieve candidates via similarity blended with must-have coverage.\n4. Serve the distilled MiniLM student on CPU to score five bounded decisions per candidate (skill, level, domain, risk, overall).\n5. Combine code facts and model probabilities with simple thresholds to band candidates (shortlist / review / hidden); keep managers as the final approver.\n6. Capture accept/reject with reason codes and feed those labels back for retraining; hold out a fraction of tasks for honest evaluation.\n\nThese steps follow the system architecture and stack described earlier and keep all final assignments human-driven.",
+      "rationale": "Rejected by the numbers check: the proposal introduced 06, which the page does not have. Adding a concise, actionable \"How to adopt FitRank\" section makes the page clearly useful on its own (practical steps, concrete components and workflow), which helps both human readers and search engines understand the page purpose and increases the likelihood Google will fetch and index it.",
+      "evidence": [
+        "https://yk.streamerosai.com/products/fitrank/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it—likely because the page stands alone with no clear contextual links or a self-contained how-to section that makes it clearly useful to visitors and crawlers."
+    },
+    {
+      "id": "2026-11-05-yk-products-streameros",
+      "host": "yk.streamerosai.com",
+      "repo": "Yaseenyk/portfolio",
+      "page": "https://yk.streamerosai.com/products/streameros/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "section",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "",
+      "after": "## Why choose streamerOS\n\nstreamerOS is an ultra-lightweight, native desktop cockpit for Twitch and YouTube streamers. It collapses telemetry, multi-platform chat ingestion, and OBS scene automation into a single Rust binary that runs entirely on your machine, keeping chat off third-party relays (zero-leakage). That local-first design avoids the overhead of embedded-browser toolkits and yields a low idle footprint (≈1.8% CPU / 152 MB resident RAM). Automation is driven over OBS WebSocket v5 with a debounced, priority-resolved dispatcher to prevent trigger thrash. The UI uses a Tauri v2 WebView with a Next.js frontend, while tokio tasks and bounded channels handle real-time parsing and backpressure. In short: privacy-first, low-overhead, OBS-native automation for streamers who run games and broadcasts on the same PC.",
+      "rationale": "A short, self-contained \"Why choose\" section gives visitors and search engines a clear summary of the product's value and keywords without adding new claims. It uses only facts already present on the page (Rust core, Tauri, Next.js, OBS WebSocket v5, local-only chat, resource footprint) to make the page more obviously useful when Google next fetches it.",
+      "evidence": [
+        "https://yk.streamerosai.com/products/streameros/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google hasn't fetched the URL because nothing important on the site links to it, so the page appears discovered but not indexed."
+    },
+    {
+      "id": "2026-11-05-yk-solutions",
+      "host": "yk.streamerosai.com",
+      "repo": "Yaseenyk/portfolio",
+      "page": "https://yk.streamerosai.com/solutions/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "section",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## How an engagement runs",
+      "after": "### What you get at handover\n\n- Source code in your repository from the first commit — you own the code, not a licence.\n- A deployed system or clear deployment scripts so the app runs in your environment.\n- Documentation that explains the architecture, operational steps, and trade-offs.\n- A handover training session so your team can maintain or extend the system.\n- Weekly demos during development and staged payments tied to delivered milestones.\n- A written scope and fixed price agreed before work begins; any out-of-scope changes are quoted separately.\n\nThis list collects the concrete deliverables mentioned on the page so visitors immediately see what they will receive.",
+      "rationale": "Adding a short, explicit ‘what you get’ section uses only claims already on the page (source in your repo, deployment, documentation, training, demos, staged payments, fixed scope) and makes the page clearly useful on its own; that improves user clarity and gives crawlers a concise, indexable summary.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but has not fetched it because the page appears unlinked from important site pages and lacks a concise, standalone summary of what visitors receive."
+    },
+    {
+      "id": "2026-11-05-yk-interview",
+      "host": "yk.streamerosai.com",
+      "repo": "Yaseenyk/portfolio",
+      "page": "https://yk.streamerosai.com/interview/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "section",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## Interview brief: Yaseen Khatib\nObjective: Evaluate Yaseen Khatib for Lead MERN / AI Systems Architect.\n## Architectural Strengths to Probe\nAgentic Workflows: Ask about the IntegrateX Serialization Adapter. Prompt: “How did you achieve a 94% payload reduction when converting React Flow nodes into database records?”\nHigh-Performance MERN: Ask about state management at scale. Prompt: “Walk me through your decision framework for choosing Zustand over Redux in your workflow automation canvas.”\nAI Orchestration: Ask about transitioning from code-generation to system-design. Prompt: “How do you enforce contextual boundaries when using AI compilers across a full-stack Next.js and Node.js environment?”\n## Hiring FAQ\nWhat is Yaseen Khatib's core stack? Next.js 14 (App Router), Node.js, and strict TypeScript on the MERN stack, with a production AI layer: Agentic RAG pipelines, LLM orchestration, vector retrieval, and schema-enforced structured outputs.\nIs Yaseen available for hire? Yes — open to Lead/Senior Full-Stack and AI Engineering roles: remote, hybrid, or on-site. Based in Hyderabad (IST), effective across global time zones.\nWhat production AI systems has he shipped? streamerOS (a Rust desktop cockpit with live telemetry and OBS automation), IntegrateX (React Flow workflow automation with a serialization adapter that cut payloads 94%), Sable (a local-first AI financial agent), and the context-grounded RAG concierge on this site.\nHow do I contact him? Email contact@streamerosai.com, or connect via LinkedIn (https://www.linkedin.com/in/yaseen-yk) and GitHub (https://github.com/Yaseenyk). A machine-readable profile lives at /ai-briefing.json.",
+      "after": "## How to use this brief\nUse this document as a focused guide during technical interviews or hiring reviews. Start by asking the prompts under \"Architectural Strengths to Probe\" to reveal concrete trade-offs and implementation details. Map candidate responses to the following practical evaluation points:\n\n- System design and data modeling: look for clear serialization, state, and persistence strategies (see IntegrateX adapter prompt).\n- State-management choices: expect reasoning about scale, performance, and developer ergonomics (see Zustand vs Redux prompt).\n- AI system boundaries: evaluate how the candidate enforces context, schema, and orchestration across full‑stack environments.\n\nFor follow-up or to advance a candidate, use the contact details in the Hiring FAQ to schedule a deeper design review or request code/architecture samples.",
+      "rationale": "Adding a concise \"How to use this brief\" section makes the page immediately actionable for interviewers and signals clearer on-page intent and utility, which helps both human readers and search crawlers evaluate its relevance.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because the page is isolated and lacks a clearly useful standalone section or links that signal value to crawlers."
+    },
+    {
+      "id": "2026-11-05-fitrank-results",
+      "host": "fitrank.streamerosai.com",
+      "repo": "Yaseenyk/fitrank-website",
+      "page": "https://fitrank.streamerosai.com/results/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "none",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Pre-register",
+      "after": "FitRank benchmark results",
+      "rationale": "No usable linking page (Pre-register). Add a clear internal link from the existing Pre-register page (in the site nav) to /results/ with the descriptive anchor text so Google can find and fetch the page. When Google has only discovered a URL but not crawled it, adding a prominent internal link from an indexed, user-facing page is the most effective, low-risk fix — it doesn't introduce new claims and uses the site’s existing navigation.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because there are no important internal links pointing to the page."
+    },
+    {
+      "id": "2026-11-05-fitrank-blog",
+      "host": "fitrank.streamerosai.com",
+      "repo": "Yaseenyk/fitrank-website",
+      "page": "https://fitrank.streamerosai.com/blog/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "section",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "The page currently lists blog post titles and short descriptions but lacks a single helpful overview or reading guide.",
+      "after": "Quick guide: what to read first\n\nThis blog collects practical notes on everyday staffing problems in IT services. Read the short guide below to pick the post that matches your problem:\n\n- Shift scheduling: if you need rules and an example for filling hard shifts and avoiding empty slots.\n- Skill matrix: if you want a workable format, what it means, and when Excel stops scaling (includes a free Excel template).\n- Resource allocation: if finding the right person for a project still takes days and you want to know why skills-based matching is hard.\n- Rostering & rotating shifts: for definitions, types and common 8- and 12-hour rotation patterns.\n- Excel automation: to see what scheduling Excel can handle and where to move beyond it.\n- Staffing vs scheduling & Bench management: to decide which software to use and how to reduce bench cost.\n\nPre-register or contact sales to try FitRank.",
+      "rationale": "Adding a concise, useful overview turns a thin list into a standalone, query-friendly page that helps users and search engines understand intent and relevance; it increases unique on-page content without inventing facts and encourages internal linking and clicks to the individual posts.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "The page is mostly a list of post titles and short blurbs with no unifying overview or substantial on-page content and appears poorly linked, so Google sees little unique value and hasn't fetched it."
+    },
+    {
+      "id": "2026-11-05-fitrank-tools",
+      "host": "fitrank.streamerosai.com",
+      "repo": "Yaseenyk/fitrank-website",
+      "page": "https://fitrank.streamerosai.com/tools/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "section",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## Free scheduling tools\nSmall free tools: two for the schedule grid itself (one fills a week in your browser, the other is a spreadsheet you keep), a skill matrix template and a notice period calculator. No sign-up, nothing uploaded. FitRank is for the harder question of who fits an open task, and why.",
+      "after": "## How to use these free scheduling tools\n- Automatic schedule generator: enter your people, shifts, availability and per-person shift limits into the web form, then generate a weekly schedule in the browser. You can copy the result or download it as CSV to edit or import elsewhere.\n- Employee schedule template (Excel): download the .xlsx and open in Excel. Edit shift codes and staff names, use the weekly and monthly sheets to track hours per person and coverage formulas.\n- Employee skill matrix template (Excel): open the template, put people in rows and skills in columns, use the 0–4 rating to record proficiency, and review colour-coded totals to spot gaps.\n- Notice period calculator: enter a resignation date and the notice length (days or months) to see the last working day, remaining days, and a buyout date if applicable.\nNo sign-up or uploads are required—download or run each tool locally and adapt the files to your rostering process.",
+      "rationale": "Adding a concise 'How to use' section makes the page clearly useful on its own by explaining actionable steps for each tool; that increases perceived usefulness for users and gives Google clearer content to index.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google has discovered the URL but hasn't fetched it—likely because the page is short and not clearly useful on its own, and few or no internal pages link to it."
+    },
+    {
+      "id": "2026-11-05-fitrank-features-resume-reading",
+      "host": "fitrank.streamerosai.com",
+      "repo": "Yaseenyk/fitrank-website",
+      "page": "https://fitrank.streamerosai.com/features/resume-reading/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "none",
+      "created": "2026-11-05",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "HR home and hiring requests",
+      "after": "Privacy-first resume reading",
+      "rationale": "No usable linking page (HR home and hiring requests). Add a clear internal link from the HR home and hiring requests page to this resume-reading page using the suggested anchor text. That provides a strong contextual path for crawlers and users, making the page discoverable, improving crawl prioritization and signalling relevance without changing claims or content.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because there are no prominent internal links from higher-level pages pointing to this content."
     }
   ]
 }
