@@ -173,7 +173,7 @@ export async function ranksRun(env, gsc) {
     const r = await gsc(env, RANK_PROPERTY, dates, ['date'], 100, { dimensionFilterGroups: [{ filters: [{ dimension: 'query', operator: 'contains', expression: kw }] }] });
     if (r.status === 200) ok++;
     // [date, clicks, impressions, ctr, position] -> [date, position, impressions, clicks]
-    out.push({ kw, days: r.rows.map((x) => [x[0], x[4], x[2], x[1]]).sort((a, b) => (a[0] < b[0] ? -1 : 1)) });
+    out.push({ kw, days: r.rows.filter((x) => x[2] > 0).map((x) => [x[0], x[4], x[2], x[1]]).sort((a, b) => (a[0] < b[0] ? -1 : 1)) });
   }
   if (ok) await env.DATA.put('ranks:file', JSON.stringify({ generatedAt: new Date().toISOString(), property: RANK_PROPERTY, keywords: out }));
   // Traffic drop: last 7 days of Google clicks against the 7 before.
@@ -198,7 +198,7 @@ export async function watchRuns(env, repos = WATCH_REPOS) {
     for (const r of (await res.json()).workflow_runs ?? []) if (!latest.has(r.path)) latest.set(r.path, r); // newest first
     for (const r of latest.values()) {
       if (r.conclusion !== 'failure' || seen.has(r.id)) continue;
-      if (Date.now() - Date.parse(r.created_at) > 3 * DAY) continue;
+      if (Date.now() - Date.parse(r.created_at) > 40 * 3600e3) continue; // the check is daily: older failures were reported already, or are history
       seen.add(r.id);
       alerts.push({ kind: 'workflow', level: 'bad', title: `${r.name} failed in ${repo.split('/')[1]}`, detail: r.display_title || '', id: `run:${r.id}` });
     }

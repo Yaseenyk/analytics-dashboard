@@ -132,7 +132,7 @@ describe("tracked phrases and traffic check", () => {
   const day = (n: number) => new Date(Date.now() - (n + 2) * 864e5).toISOString().slice(0, 10);
   it("stores a position series per phrase and swaps column order", async () => {
     const gsc = vi.fn(async (_e: unknown, _s: string, dates: { startDate: string }, dims: string[], _l: number, extra?: { dimensionFilterGroups: { filters: { expression: string }[] }[] }) => {
-      if (dims[0] === "date" && extra) return { status: 200, rows: extra.dimensionFilterGroups[0].filters[0].expression === "streamlabs vs obs" ? [[day(1), 3, 40, 7.5, 11.2], [day(2), 2, 30, 6, 12.4]] : [] };
+      if (dims[0] === "date" && extra) return { status: 200, rows: extra.dimensionFilterGroups[0].filters[0].expression === "streamlabs vs obs" ? [[day(1), 3, 40, 7.5, 11.2], [day(2), 2, 30, 6, 12.4], [day(3), 0, 0, 0, 0]] : [] };
       return { status: 200, rows: [[100, 1000, 10, 9]] };
     });
     await ranksRun(env, gsc);
@@ -166,7 +166,7 @@ describe("failed workflow watch", () => {
     expect((await read("alerts"))[0]).toMatchObject({ kind: "workflow", level: "bad" });
   });
   it("ignores old failures and repos it cannot read", async () => {
-    vi.stubGlobal("fetch", async (u: RequestInfo | URL) => (String(u).includes("/o/gone/") ? new Response("no", { status: 404 }) : new Response(JSON.stringify({ workflow_runs: [run(9, ".github/workflows/a.yml", "failure", 24 * 5)] }))));
+    vi.stubGlobal("fetch", async (u: RequestInfo | URL) => (String(u).includes("/o/gone/") ? new Response("no", { status: 404 }) : new Response(JSON.stringify({ workflow_runs: [run(9, ".github/workflows/a.yml", "failure", 50)] }))));
     expect(await watchRuns(env, ["o/gone", "o/r"])).toBe(0);
   });
 });
