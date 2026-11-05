@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { DEFAULT_API } from "./config";
-import type { BingFile, GAFile, GSCFile, HealthFile, Live, Meta } from "./types";
+import type { AlertItem, BingFile, CrawlFile, GAFile, GSCFile, HealthFile, HistoryRow, Live, Meta, RankFile, SpeedFile } from "./types";
 
 /**
  * One tiny store, one entry per data file. A block subscribes to just the file it needs, so when a slow
@@ -19,6 +19,8 @@ const EMPTY: Entry<never> = { data: null, error: false };
 const store = new Map<string, Entry<unknown>>();
 const subs = new Map<string, Set<() => void>>();
 const inflight = new Set<string>();
+/** Files that exist only on the Worker (kept in its KV), so they are fetched from it straight away. */
+const LIVE_FIRST = new Set(["history.json", "alerts.json", "ranks.json", "crawl.json"]);
 
 function emit(key: string) {
   subs.get(key)?.forEach((f) => f());
@@ -95,8 +97,8 @@ export function ensure(file: string, force = false) {
     if (!cur?.data || sig(cur.data) !== sig(j)) put(file, { data: j, error: false });
     setStamp({ liveAt: Date.now(), live: true });
   };
-  const live = base && force ? getJSON<unknown>(`${base}/data/${file}`, 45000).then(applyLive, () => {}) : Promise.resolve();
-  const stat = force
+  const live = base && (force || LIVE_FIRST.has(file)) ? getJSON<unknown>(`${base}/data/${file}`, 45000).then(applyLive, () => {}) : Promise.resolve();
+  const stat = force || LIVE_FIRST.has(file)
     ? Promise.resolve()
     : getJSON<unknown>(`/data/${file}`, 30000).then(
         (j) => {
@@ -157,3 +159,8 @@ export const useGSC = (range: string) => useSource<GSCFile>(`gsc-${range}.json`)
 export const useBing = (range: string) => useSource<BingFile>(`bing-${range}.json`);
 export const useHealth = () => useSource<HealthFile>("health.json");
 export const useLive = () => useSource<Live>("live.json");
+export const useHistory = () => useSource<HistoryRow[]>("history.json");
+export const useAlerts = () => useSource<AlertItem[]>("alerts.json");
+export const useRanks = () => useSource<RankFile>("ranks.json");
+export const useCrawl = () => useSource<CrawlFile>("crawl.json");
+export const useSpeed = () => useSource<SpeedFile>("speed.json");

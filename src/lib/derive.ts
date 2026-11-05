@@ -1,5 +1,5 @@
 import { SITES, SITE_COLOR, SITE_HOSTS, gscProperty } from "./config";
-import type { BingFile, BingSite, Cell, GAFile, GSCFile, GscSite, Rep, Series } from "./types";
+import type { BingFile, BingSite, Cell, GAFile, GSCFile, GscSite, RankFile, Rep, Series } from "./types";
 
 /* ---- formatting ------------------------------------------------------------------ */
 export function n(x: unknown): string {
@@ -310,4 +310,65 @@ export function sourcesAgg(ga: GAFile | null | undefined, site: string): SourceR
     o.eng += +row[nd0 + 4];
   });
   return out.sort((a, b) => b.sessions - a.sessions);
+}
+
+/* ---- quick wins and tracked phrases ----------------------------------------------------------- */
+/** Typical share of clicks a Google result gets at each position (%), from published click-through studies. An estimate, not a promise. */
+export function expectedCtr(pos: number): number {
+  const p = Math.round(pos);
+  const T = [28, 28, 15, 10, 7, 5, 4, 3, 2.5, 2, 1.8];
+  if (p <= 10) return T[Math.max(1, p)];
+  return p <= 20 ? 1 : 0.3;
+}
+export interface QuickWin {
+  query: string;
+  page: string;
+  clicks: number;
+  impr: number;
+  ctr: number;
+  pos: number;
+  /** Extra clicks a month of this traffic would give at position 3 (about 10%). */
+  extra: number;
+}
+/** Searches that already show your page but sit just off the top: positions 4 to 20 with real impressions. Best first. */
+export function quickWins(g: GSCFile | null | undefined, site: string, minImpr = 10): QuickWin[] {
+  return gscMerge(g, site, "queryPage", 2)
+    .map((r) => ({ query: String(r[0]), page: String(r[1]), clicks: +r[2], impr: +r[3], ctr: +r[4], pos: +r[5] }))
+    .filter((x) => x.pos >= 4 && x.pos <= 20 && x.impr >= minImpr)
+    .map((x) => ({ ...x, extra: Math.max(0, Math.round(x.impr * 0.1 - x.clicks)) }))
+    .filter((x) => x.extra > 0)
+    .sort((a, b) => b.extra - a.extra || b.impr - a.impr);
+}
+export interface RankRow {
+  kw: string;
+  /** Average position over the latest 7 days of data, weighted by impressions; null when Google showed nothing. */
+  pos: number | null;
+  prevPos: number | null;
+  impr: number;
+  clicks: number;
+  days: [string, number, number, number][];
+}
+const addDays = (d: string, k: number) => new Date(Date.parse(d + "T00:00:00Z") + k * 864e5).toISOString().slice(0, 10);
+function window(days: RankRow["days"], from: string, to: string) {
+  let i = 0, c = 0, pw = 0;
+  days.forEach((x) => {
+    if (x[0] >= from && x[0] <= to) {
+      i += x[2];
+      c += x[3];
+      pw += x[1] * x[2];
+    }
+  });
+  return { impr: i, clicks: c, pos: i ? pw / i : null };
+}
+export function rankRows(f: RankFile | null | undefined): RankRow[] {
+  if (!f) return [];
+  const newest = f.keywords.reduce((m, k) => (k.days.length && k.days[k.days.length - 1][0] > m ? k.days[k.days.length - 1][0] : m), "");
+  if (!newest) return f.keywords.map((k) => ({ kw: k.kw, pos: null, prevPos: null, impr: 0, clicks: 0, days: k.days }));
+  return f.keywords
+    .map((k) => {
+      const a = window(k.days, addDays(newest, -6), newest);
+      const b = window(k.days, addDays(newest, -13), addDays(newest, -7));
+      return { kw: k.kw, pos: a.pos, prevPos: b.pos, impr: a.impr, clicks: a.clicks, days: k.days };
+    })
+    .sort((x, y) => y.impr - x.impr || x.kw.localeCompare(y.kw));
 }

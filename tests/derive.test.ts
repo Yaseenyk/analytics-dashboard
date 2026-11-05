@@ -163,3 +163,52 @@ describe("traffic sources", () => {
     expect(r.find((x) => x.name === "Google")).toMatchObject({ sessions: 8, users: 6, key: 1, newU: 4, eng: 3 });
   });
 });
+
+import { expectedCtr, quickWins, rankRows } from "@/lib/derive";
+import type { RankFile } from "@/lib/types";
+
+describe("quick wins", () => {
+  const qp = (rows: unknown[][]) => ({ search: { "https://streamerosai.com/": { ok: true, queryPage: rows } } }) as unknown as GSCFile;
+  it("expectedCtr() falls as position gets worse", () => {
+    expect(expectedCtr(1)).toBeGreaterThan(expectedCtr(5));
+    expect(expectedCtr(5)).toBeGreaterThan(expectedCtr(15));
+    expect(expectedCtr(40)).toBeLessThan(1);
+  });
+  it("lists searches in positions 4 to 20 with enough impressions, best first", () => {
+    const g = qp([
+      ["top result", "/a", 50, 500, 10, 2], // already near the top: not a quick win
+      ["page two", "/b", 1, 300, 0.3, 12], // 300 impr, 1 click: 29 extra
+      ["small", "/c", 0, 5, 0, 9], // too few impressions
+      ["page one low", "/d", 5, 1000, 0.5, 6], // 1000 impr, 5 clicks: 95 extra
+      ["far", "/e", 0, 900, 0, 45], // too far down
+    ]);
+    const w = quickWins(g, "all");
+    expect(w.map((x) => x.query)).toEqual(["page one low", "page two"]);
+    expect(w[0].extra).toBe(95);
+  });
+  it("drops a search that already beats the benchmark", () => {
+    expect(quickWins(qp([["strong", "/a", 120, 600, 20, 5]]), "all")).toEqual([]);
+  });
+});
+
+describe("tracked phrases", () => {
+  const f: RankFile = {
+    generatedAt: "x",
+    keywords: [
+      { kw: "a", days: [["2026-10-20", 20, 10, 0], ["2026-10-30", 10, 100, 4], ["2026-11-02", 8, 100, 6]] },
+      { kw: "none", days: [] },
+    ],
+  };
+  it("weights the position by impressions over the latest 7 days and compares with the 7 before", () => {
+    const [a] = rankRows(f);
+    expect(a.pos).toBeCloseTo(9, 5);
+    expect(a.impr).toBe(200);
+    expect(a.clicks).toBe(10);
+    expect(a.prevPos).toBe(20); // the 7 days before: 20 to 26 Oct hold one day at position 20
+  });
+  it("keeps phrases Google never showed, with null position", () => {
+    const r = rankRows(f).find((x) => x.kw === "none")!;
+    expect(r.pos).toBeNull();
+    expect(rankRows(null)).toEqual([]);
+  });
+});

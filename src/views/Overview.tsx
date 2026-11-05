@@ -8,6 +8,7 @@ import {
 } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
 import { Banner, Card, Delta, Sk, SkCard, SkText, Wait } from "@/components/ui";
+import { AlertsCard } from "./Alerts";
 import { GaArea, GaDonut, GaKpi, GaRank, GscKpi, GscRank, cols2, grid4, useGaMemo, useGscMemo } from "./kit";
 
 function GaBanner() {
@@ -202,6 +203,7 @@ export default function Overview() {
   return (
     <>
       <GaBanner />
+      <AlertsCard limit={3} recentDays={7} quiet />
       <LiveCard />
       <div className={grid4}>
         <GaKpi title="People" id="people" color={COLORS[0]} calc={(ga, site, cmp) => {
@@ -210,7 +212,8 @@ export default function Overview() {
         }} />
         <GaKpi title="Visits" id="visits" color={COLORS[1]} calc={(ga, site, cmp) => {
           const ok = hasGA(ga);
-          return { value: ok ? n(total(ga, "sessions", site)) : "–", delta: ok ? <Delta show={cmp} cur={total(ga, "sessions", site)} prev={total(ga, "sessions", site, true)} /> : <Wait />, spark: dailyTotal(rep(ga, "daily"), "sessions", site) };
+          const ses = total(ga, "sessions", site), eng = total(ga, "engagedSessions", site);
+          return { value: ok ? n(ses) : "–", delta: ok ? <Delta show={cmp} cur={ses} prev={total(ga, "sessions", site, true)} /> : <Wait />, spark: dailyTotal(rep(ga, "daily"), "sessions", site), note: ok && ses ? <span className="mt-1.5 block font-mono text-[11px] text-dim" title="GA4 counts a visit as engaged when it lasts 10 seconds or more, has a key event, or views 2 or more pages. Bots and bounces rarely do.">{Math.round((100 * eng) / ses)}% engaged (real readers)</span> : undefined };
         }} />
         <GaKpi title="Leads and clicks" id="leads" color={COLORS[2]} calc={(ga, site, cmp) => {
           const ok = hasGA(ga);

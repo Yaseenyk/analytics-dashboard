@@ -104,3 +104,40 @@ export interface Series {
   fmt?: "n" | "p" | "pos";
   pts: [string, number][];
 }
+
+/** One row per day of "pages in Google / pages checked" per site. */
+export interface HistoryRow {
+  d: string;
+  sites: Record<string, [number, number]>;
+}
+export interface AlertItem {
+  id: string;
+  kind: string;
+  level: "bad" | "warn" | "good";
+  title: string;
+  detail?: string;
+  at: string;
+}
+/** A tracked phrase: [date, average position, impressions, clicks] per day. */
+export interface RankFile {
+  generatedAt: string;
+  keywords: { kw: string; days: [string, number, number, number][] }[];
+}
+export interface CrawlIssue {
+  url: string;
+  kind: "broken" | "redirect" | "noindex" | "no-title" | "not-in-sitemap";
+  detail: string;
+}
+export interface CrawlFile {
+  generatedAt: string;
+  sites: Record<string, { checked: number; counts: Record<string, number>; issues: CrawlIssue[] }>;
+}
+/** Lab speed test (Lighthouse, mobile) of each site's home page, newest run last. */
+export interface SpeedRun {
+  at: string;
+  sites: Record<string, { score: number; lcp: number; cls: number; tbt: number; fcp: number } | null>;
+}
+export interface SpeedFile {
+  generatedAt: string;
+  runs: SpeedRun[];
+}

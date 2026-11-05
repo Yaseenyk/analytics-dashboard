@@ -1,0 +1,34 @@
+name: Speed test
+
+on:
+  schedule:
+    - cron: "40 3 * * *" # daily, after the nightly checks on the Worker
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: speed
+  cancel-in-progress: false
+
+jobs:
+  speed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Lighthouse every site (mobile, lab)
+        run: node scripts/speed.mjs
+      - name: Save the result
+        run: |
+          git config user.name "analytics-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/speed.json
+          git diff --cached --quiet && exit 0
+          git commit -m "chore(data): daily speed test"
+          for i in 1 2 3; do git pull --rebase -q && git push -q && exit 0; sleep 5; done
+          exit 1

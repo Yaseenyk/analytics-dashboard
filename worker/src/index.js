@@ -3,6 +3,8 @@
 // from Google when the dashboard opens and cached for a few minutes. The Google service account key is a
 // Worker secret (GA_SERVICE_ACCOUNT_JSON); it is never sent to the browser. Aggregate numbers only.
 
+import { addAlerts, crawlStart, crawlStatus, crawlTick, ranksRun, recordHealth, watchRuns } from './insights.js';
+
 const PROPERTY = '562159345';
 const RANGES = [
   { id: '7d', days: 7, label: 'Last 7 days' },
@@ -151,8 +153,8 @@ function gscDates(days, prev) {
   const end = new Date(Date.now() - 2 * DAY - (prev ? days * DAY : 0));
   return { startDate: iso(new Date(end.getTime() - (days - 1) * DAY)), endDate: iso(end) };
 }
-async function gsc(env, site, dates, dimensions, rowLimit) {
-  const { res, json } = await post(env, `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`, { ...dates, dimensions, rowLimit });
+async function gsc(env, site, dates, dimensions, rowLimit, extra = {}) {
+  const { res, json } = await post(env, `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`, { ...dates, dimensions, rowLimit, ...extra });
   if (!res.ok) return { status: res.status, rows: [] };
   return { status: 200, rows: (json.rows ?? []).map((r) => [...(r.keys ?? []), r.clicks, r.impressions, +(r.ctr * 100).toFixed(2), +r.position.toFixed(1)]) };
 }
@@ -317,6 +319,8 @@ async function healthTick(env) {
   }
   const prior = await fetch('https://analytics.streamerosai.com/data/health.json').then((x) => (x.ok ? x.json() : null)).catch(() => null);
   const now = new Date().toISOString();
+  const before = await kvJson(env, 'health:file');
+  await recordHealth(env, before, index, now).catch((e) => console.log('history failed:', String((e && e.message) || e)));
   await env.DATA.put('health:file', JSON.stringify({ generatedAt: now, indexAt: now, index, ...(prior?.bing ? { bing: prior.bing } : {}) }));
   await env.DATA.delete('health:state');
 }
@@ -351,6 +355,23 @@ async function rerun(req, env, ch, ctx) {
     ctx.waitUntil(healthTick(env).catch(() => {}));
     return json({ ok: true, job: 'health' }, 202);
   }
+  if (name === 'insights') {
+    // Tracked phrases, traffic check and failed-workflow check, outside their nightly slot. They only read Search Console and GitHub.
+    const last = Number(await env.DATA.get('insights:lastStart')) || 0;
+    if (Date.now() - last < 30 * 60000) return json({ error: 'It ran less than 30 minutes ago.' }, 429);
+    await env.DATA.put('insights:lastStart', String(Date.now()));
+    ctx.waitUntil(Promise.all([ranksRun(env, gsc), watchRuns(env)]).catch(() => {}));
+    return json({ ok: true, job: 'insights' }, 202);
+  }
+  if (name === 'crawl') {
+    const st = await crawlStatus(env);
+    if (st.running) return json({ error: `It is already running (${st.done} of ${st.total || '…'} pages checked).` }, 409);
+    const age = (Date.now() - (st.lastStart || 0)) / 60000;
+    if (age < CRAWL_COOLDOWN_MIN) return json({ error: `It started ${Math.max(1, Math.round(age))} min ago. You can start it again in ${Math.ceil(CRAWL_COOLDOWN_MIN - age)} min.` }, 429);
+    await crawlStart(env, 'manual');
+    ctx.waitUntil(crawlTick(env, crawlHooks).catch(() => {}));
+    return json({ ok: true, job: 'crawl' }, 202);
+  }
   if (!env.GITHUB_TOKEN) return json({ error: 'Re-run is not set up yet (the Worker has no GITHUB_TOKEN).' }, 503);
   const job = RERUNS[name];
   if (!job) return json({ error: 'unknown job' }, 404);
@@ -373,6 +394,10 @@ async function rerun(req, env, ch, ctx) {
 }
 
 const memo = new Map(); // in-isolate cache: key -> { at, body }
+const crawlHooks = { hosts: Object.keys(HEALTH_SITES), sitemapUrlsFor, pool };
+const CRAWL_COOLDOWN_MIN = 90;
+const KV_FILES = { 'history.json': 'history:index', 'alerts.json': 'alerts', 'ranks.json': 'ranks:file', 'crawl.json': 'crawl:file' };
+
 const inflight = new Map();
 function cors(req) {
   const o = req.headers.get('Origin') || '';
@@ -383,10 +408,19 @@ function cors(req) {
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil((async () => {
-      if (await env.DATA.get('health:state')) return healthTick(env);
+      // One job per tick: a running index check goes first, then a running site check. Daily jobs start at fixed minutes
+      // (UTC): 02:20 tracked phrases and traffic check, 02:25 failed-workflow check, 02:40 index check, 02:45 site check.
       const d = new Date(event.scheduledTime);
-      if (d.getUTCHours() === 2 && d.getUTCMinutes() === 40) { await healthStart(env, 'schedule'); return healthTick(env); }
-    })().catch((e) => console.log('health tick failed:', String((e && e.message) || e))));
+      const at = d.getUTCHours() * 100 + d.getUTCMinutes();
+      if (at === 245) return crawlStart(env, 'schedule'); // only queues it: the index check, if still running, goes first
+      if (!(await env.DATA.get('health:state')) && !(await env.DATA.get('crawl:state'))) {
+        if (at === 220) return ranksRun(env, gsc);
+        if (at === 225) return watchRuns(env);
+        if (at === 240) { await healthStart(env, 'schedule'); return healthTick(env); }
+      }
+      if (await env.DATA.get('health:state')) return healthTick(env);
+      if (await env.DATA.get('crawl:state')) return crawlTick(env, crawlHooks);
+    })().catch((e) => console.log('daily tick failed:', String((e && e.message) || e))));
   },
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
@@ -396,6 +430,15 @@ export default {
     if (req.method === 'POST' && url.pathname.startsWith('/rerun/')) return rerun(req, env, ch, ctx);
     if (url.pathname === '/status/health' && req.method === 'GET') {
       return new Response(JSON.stringify(await healthStatus(env)), { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
+    if (url.pathname === '/status/crawl' && req.method === 'GET') {
+      return new Response(JSON.stringify(await crawlStatus(env)), { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
+    const kvKey = req.method === 'GET' && url.pathname.startsWith('/data/') ? KV_FILES[url.pathname.slice(6)] : null;
+    if (kvKey) {
+      const body = await env.DATA.get(kvKey);
+      if (!body) return new Response('not found', { status: 404, headers: ch });
+      return new Response(body, { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' } });
     }
     if (url.pathname === '/data/health.json' && req.method === 'GET') {
       const body = await env.DATA.get('health:file');

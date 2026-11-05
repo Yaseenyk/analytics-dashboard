@@ -304,6 +304,9 @@ health.bing = Object.fromEntries(Object.entries(bing.raw).map(([h, r]) => {
 }));
 write('health', health);
 
+// Daily lab speed test (scripts/speed.mjs, its own workflow) is committed as data/speed.json; publish it with the rest.
+try { write('speed', JSON.parse(fs.readFileSync('data/speed.json', 'utf8'))); } catch { /* no speed test has run yet */ }
+
 const live = {
   generatedAt,
   streams: await realtime(['streamName'], ['activeUsers', 'screenPageViews', 'eventCount']),
