@@ -53,7 +53,7 @@ export function NotificationBell() {
   };
 
   return (
-    <div ref={box} className="relative">
+    <div ref={box} className="sm:relative">
       <m.button type="button" onClick={toggle} aria-label={unread ? `Notifications, ${unread} new` : "Notifications"} aria-expanded={open} title="Notifications" whileTap={{ scale: 0.88 }} whileHover={{ rotate: [0, -14, 12, -8, 0] }} transition={{ duration: 0.5 }} className="relative grid h-[30px] w-[30px] place-items-center rounded-full bg-card2 text-mute transition-colors hover:text-brand">
         <Icon name="bell" className="h-4 w-4" />
         <AnimatePresence>
@@ -66,7 +66,7 @@ export function NotificationBell() {
       </m.button>
       <AnimatePresence>
         {open && (
-          <m.div role="dialog" aria-label="Notifications" initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.97 }} transition={{ type: "spring", stiffness: 420, damping: 30 }} style={{ transformOrigin: "top right" }} className="absolute right-0 top-[38px] z-50 w-[min(92vw,380px)] overflow-hidden rounded-2xl border border-line bg-card shadow-2xl">
+          <m.div role="dialog" aria-label="Notifications" initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.97 }} transition={{ type: "spring", stiffness: 420, damping: 30 }} style={{ transformOrigin: "top right" }} className="absolute inset-x-3 top-full z-50 mt-1 overflow-hidden rounded-2xl border border-line bg-card font-sans text-[13px] text-ink shadow-2xl sm:inset-x-auto sm:right-0 sm:top-[38px] sm:mt-0 sm:w-[380px]">
             <div className="flex items-center justify-between px-4 pb-2 pt-3.5">
               <h2 className="h2">Notifications</h2>
               <span className="font-mono text-[11px] text-dim">checked every night</span>

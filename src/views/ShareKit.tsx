@@ -99,7 +99,9 @@ interface Parts {
 
 /** One entry per place you post. The medium is what the dashboard reports under "Medium". */
 const CHANNELS: { id: string; label: string; src: string; med: string; build: (a: Parts) => string }[] = [
-  { id: "discord", label: "Discord", src: "discord", med: "community", build: ({ url, title, text }) => `**${title}**\n${text}\n${url}` },
+  // Plain text on purpose: many servers run AutoMod rules that block bold, headings and links.
+  { id: "discord", label: "Discord", src: "discord", med: "community", build: ({ url, title, text }) => `${title}\n${text}\n<${url}>` },
+  { id: "discord-nolink", label: "Discord (no link)", src: "discord", med: "community", build: ({ url, title, text }) => `${title}\n${text}\n(Search for ${hostOf(url)} if you want to look it up.)` },
   { id: "whatsapp", label: "WhatsApp", src: "whatsapp", med: "social", build: ({ url, title, text }) => `*${title}*\n${text}\n${url}` },
   { id: "telegram", label: "Telegram", src: "telegram", med: "social", build: ({ url, title, text }) => `**${title}**\n${text}\n${url}` },
   { id: "linkedin", label: "LinkedIn", src: "linkedin", med: "social", build: ({ url, title, text }) => `${title}\n\n${text}\n\n${url}` },
@@ -110,6 +112,13 @@ const CHANNELS: { id: string; label: string; src: string; med: string; build: (a
   { id: "instagram", label: "Instagram bio or story", src: "instagram", med: "social", build: ({ url, title, text }) => `${title}\n${text}\nLink: ${url}` },
 ];
 
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
 function tag(url: string, src: string, med: string, cam: string): string {
   try {
     const u = new URL(url);
@@ -226,7 +235,11 @@ export function ShareKit() {
           <button type="button" className="rounded-[10px] bg-card2 px-4 py-2 text-ink hover:bg-white/[.08]" onClick={() => copy("link", link)}>{copied === "link" ? "Copied" : "Copy link only"}</button>
         </div>
         {chan === "x" && <p className="sub">Posts on X are cut to 280 characters, so the message is trimmed to fit.</p>}
-        {chan === "discord" && <p className="sub">Discord shows a preview of the link. Wrap the link in angle brackets to hide the preview.</p>}
+        {chan.startsWith("discord") && (
+          <div className="rounded-[10px] bg-card2 p-3 text-[12.5px] leading-relaxed text-mute">
+            <b className="text-ink">Where this works on Discord.</b> Post in servers about the topic (for streamerOS: OBS and streaming servers; for DefendIt: student and college servers), in a channel meant for it such as #self-promo, #showcase or #resources, after you have taken part in the server. Read the rules first: many servers block links from new members and time people out for it, and an off-topic channel in an unrelated server reads as spam no matter how the message is written. The message is plain text and the link sits in angle brackets, so it does not show a big preview card. If the server blocks links, use <i>Discord (no link)</i>, which names the site without a link; that visit will not be tracked.
+          </div>
+        )}
       </div>
     </Card>
   );
