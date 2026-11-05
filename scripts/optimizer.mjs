@@ -394,6 +394,12 @@ async function main() {
       }
       const p = await propose(c, ourHtml, competitors, learningsOf(c.host).items, pagesOf(c.host));
       let sourceTitle = "";
+      if (p.change_type === "internal_link" && !/^https?:/i.test(p.current_text || "")) {
+        // the model named the linking page by its title: look the URL up in the site's page list
+        const want = (p.current_text || "").toLowerCase().trim();
+        const hit = want && pagesOf(c.host).find(([, t]) => t.toLowerCase().includes(want) || want.includes(t.toLowerCase().replace(/\s*[|·–—-]\s*[^|·–—-]{2,40}$/, "")));
+        if (hit) p.current_text = hit[0];
+      }
       if (p.change_type === "internal_link") { const src = await fetchPage(p.current_text); sourceTitle = src ? pageTitle(src) : ""; if (!sourceTitle) { p.rationale = `No usable linking page (${p.current_text}). ${p.rationale}`; p.change_type = "none"; } }
       const id = `${date}-${c.host.split(".")[0]}-${(new URL(c.page).pathname.replace(/\W+/g, "-").replace(/^-|-$/g, "") || "home").slice(0, 40)}`;
       const rec = { id, host: c.host, repo: site?.repo || "", page: c.page, q: c.q, kind: c.kind, state: c.state || null, type: p.change_type, created: date, status: "report", baseline: { pos: c.pos, ctr: c.ctr, impr: c.impr, clicks: c.clicks }, before: p.current_text, after: p.new_text, rationale: p.rationale, evidence: p.evidence_urls, competitors: p.competitor_notes, authorityGap: p.likely_authority_gap, gap: p.gap_summary };

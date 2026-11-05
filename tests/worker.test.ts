@@ -20,7 +20,9 @@ class KV {
   }
 }
 
-let env: { DATA: KV; GA_SERVICE_ACCOUNT_JSON: string; GITHUB_TOKEN?: string };
+let env: { DATA: KV; GA_SERVICE_ACCOUNT_JSON: string; GITHUB_TOKEN?: string; OPTIMIZER_GITHUB_TOKEN?: string; MERGE_PASSPHRASE?: string };
+let prState = "open";
+let mergeCalls: string[] = [];
 let calls: { url: string; method: string }[];
 let ghRuns: unknown[];
 let ghDispatchStatus: number;
@@ -48,6 +50,17 @@ function fakeFetch(input: RequestInfo | URL, init?: RequestInit) {
   }
   if (url.startsWith("https://analytics.streamerosai.com/data/health.json")) return Promise.resolve(reply("nope", 404));
   if (url.includes("/actions/workflows/dashboard.yml/runs")) return Promise.resolve(reply({ workflow_runs: ghRuns }));
+  if (/\/repos\/[^/]+\/[^/]+\/pulls\?state=open/.test(url)) {
+    const repo = url.split("/repos/")[1].split("/pulls")[0];
+    if (repo !== "Yaseenyk/portfolio") return Promise.resolve(reply([]));
+    return Promise.resolve(reply([{ number: 7, title: "seo(optimizer): title for x", html_url: "https://github.com/x/7", body: "why", head: { ref: "optimizer/a", sha: "abc" }, created_at: "2026-11-05T00:00:00Z", state: prState }, { number: 8, title: "feat: unrelated", html_url: "u", body: "", head: { ref: "feature/z", sha: "def" }, created_at: "2026-11-05T00:00:00Z", state: "open" }]));
+  }
+  if (url.includes("/commits/abc/check-runs")) return Promise.resolve(reply({ check_runs: [{ status: "completed", conclusion: "success" }] }));
+  if (/\/pulls\/7\/merge$/.test(url) && method === "PUT") { mergeCalls.push(url); return Promise.resolve(reply({ sha: "m1", merged: true })); }
+  if (/\/pulls\/7$/.test(url) && method === "GET") return Promise.resolve(reply({ number: 7, title: "t", head: { ref: "optimizer/a", sha: "abc" }, state: prState }));
+  if (/\/pulls\/8$/.test(url) && method === "GET") return Promise.resolve(reply({ number: 8, title: "t", head: { ref: "feature/z", sha: "def" }, state: "open" }));
+  if (/\/pulls\/7$/.test(url) && method === "PATCH") { mergeCalls.push("close"); return Promise.resolve(reply({ state: "closed" })); }
+  if (url.includes("/git/refs/heads/")) return Promise.resolve(new Response(null, { status: 204 }));
   if (url.includes("/actions/workflows/dashboard.yml/dispatches")) return Promise.resolve(new Response(null, { status: ghDispatchStatus }));
   return Promise.resolve(reply("unexpected " + url, 500));
 }
@@ -78,6 +91,10 @@ beforeEach(() => {
   vi.stubGlobal("fetch", fakeFetch);
   env.DATA = new KV();
   env.GITHUB_TOKEN = undefined;
+  env.OPTIMIZER_GITHUB_TOKEN = undefined;
+  env.MERGE_PASSPHRASE = undefined;
+  prState = "open";
+  mergeCalls = [];
   calls = [];
   ghRuns = [];
   ghDispatchStatus = 204;
@@ -189,5 +206,46 @@ describe("routing", () => {
   it("404s unknown paths and a health file that does not exist yet", async () => {
     expect((await worker.fetch(new Request("https://analytics-api.test/nope"), env, ctxOf().ctx)).status).toBe(404);
     expect((await worker.fetch(new Request("https://analytics-api.test/data/health.json"), env, ctxOf().ctx)).status).toBe(404);
+  });
+});
+
+describe("optimizer pull requests", () => {
+  const list = () => worker.fetch(new Request("https://analytics-api.test/optimizer/prs"), env, ctxOf().ctx).then((r: Response) => r.json());
+  const act = (body: unknown, pass?: string, origin: string | null = ORIGIN) => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (origin) headers.Origin = origin;
+    if (pass !== undefined) headers["X-Passphrase"] = pass;
+    return worker.fetch(new Request("https://analytics-api.test/optimizer/action", { method: "POST", headers, body: JSON.stringify(body) }), env, ctxOf().ctx);
+  };
+  it("lists only optimizer branches, with their check status", async () => {
+    expect((await list()).error).toBe("no token");
+    env.OPTIMIZER_GITHUB_TOKEN = "t";
+    const j = await list();
+    expect(j.prs).toHaveLength(1);
+    expect(j.prs[0]).toMatchObject({ repo: "Yaseenyk/portfolio", number: 7, checks: "success", branch: "optimizer/a" });
+  });
+  it("refuses a merge without the right passphrase, the right origin, or on a non-optimizer branch", async () => {
+    env.OPTIMIZER_GITHUB_TOKEN = "t";
+    env.MERGE_PASSPHRASE = "open sesame";
+    expect((await act({ repo: "Yaseenyk/portfolio", number: 7, action: "merge" }, "open sesame", "https://evil.example")).status).toBe(403);
+    expect((await act({ repo: "Yaseenyk/portfolio", number: 7, action: "merge" }, "wrong")).status).toBe(401);
+    expect((await act({ repo: "Yaseenyk/portfolio", number: 7, action: "merge" })).status).toBe(401);
+    expect((await act({ repo: "Yaseenyk/portfolio", number: 8, action: "merge" }, "open sesame")).status).toBe(403);
+    expect((await act({ repo: "Yaseenyk/other", number: 7, action: "merge" }, "open sesame")).status).toBe(400);
+    expect(mergeCalls).toEqual([]);
+  });
+  it("merges (squash) and declines with the passphrase, and says when the Worker is not set up", async () => {
+    expect((await act({ repo: "Yaseenyk/portfolio", number: 7, action: "merge" }, "x")).status).toBe(503);
+    env.OPTIMIZER_GITHUB_TOKEN = "t";
+    env.MERGE_PASSPHRASE = "open sesame";
+    const m = await act({ repo: "Yaseenyk/portfolio", number: 7, action: "merge" }, "open sesame");
+    expect(m.status).toBe(200);
+    expect(await m.json()).toMatchObject({ ok: true, merged: true });
+    expect(mergeCalls.some((u) => u.endsWith("/pulls/7/merge"))).toBe(true);
+    const c = await act({ repo: "Yaseenyk/portfolio", number: 7, action: "close" }, "open sesame");
+    expect(c.status).toBe(200);
+    expect(mergeCalls).toContain("close");
+    prState = "closed";
+    expect((await act({ repo: "Yaseenyk/portfolio", number: 7, action: "merge" }, "open sesame")).status).toBe(409);
   });
 });

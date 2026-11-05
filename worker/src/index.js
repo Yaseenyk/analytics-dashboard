@@ -397,6 +397,62 @@ async function rerun(req, env, ch, ctx) {
 }
 
 const memo = new Map(); // in-isolate cache: key -> { at, body }
+// ---- content optimizer: the pull requests it opened, and a Merge / Decline button for the owner ----
+// The GitHub token (OPTIMIZER_GITHUB_TOKEN) and the owner's passphrase (MERGE_PASSPHRASE) are Worker secrets. The dashboard
+// is public, so an action needs the passphrase in X-Passphrase; it is compared by hash. Only branches named optimizer/* can
+// be touched, and only in these repositories.
+const OPT_REPOS = ['Yaseenyk/portfolio', 'Yaseenyk/streamer-os-website', 'Yaseenyk/fitrank-website', 'Yaseenyk/campus-site', 'Yaseenyk/spotai-website', 'Yaseenyk/solar-site'];
+const ghHeaders = (token) => ({ Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'analytics-api', 'X-GitHub-Api-Version': '2022-11-28' });
+async function sha256(s) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].map((b) => b.toString(16).padStart(2, '0')).join(''); }
+async function optimizerPrs(env) {
+  if (!env.OPTIMIZER_GITHUB_TOKEN) return { prs: [], error: 'no token' };
+  const h = ghHeaders(env.OPTIMIZER_GITHUB_TOKEN);
+  const prs = [];
+  const errors = [];
+  for (const repo of OPT_REPOS) {
+    const res = await fetch(`https://api.github.com/repos/${repo}/pulls?state=open&per_page=30`, { headers: h }).catch(() => null);
+    if (!res || !res.ok) { errors.push(`${repo}: ${res ? res.status : 'no answer'}`); continue; }
+    for (const pr of await res.json()) {
+      if (!pr.head?.ref?.startsWith('optimizer/') || prs.length >= 30) continue;
+      let checks = 'none';
+      const cr = await fetch(`https://api.github.com/repos/${repo}/commits/${pr.head.sha}/check-runs?per_page=30`, { headers: h }).catch(() => null);
+      if (cr && cr.ok) {
+        const runs = (await cr.json()).check_runs || [];
+        checks = !runs.length ? 'none' : runs.some((r) => r.status !== 'completed') ? 'pending' : runs.every((r) => ['success', 'neutral', 'skipped'].includes(r.conclusion)) ? 'success' : 'failure';
+      }
+      prs.push({ repo, number: pr.number, title: pr.title, url: pr.html_url, body: pr.body || '', branch: pr.head.ref, created: pr.created_at, checks });
+    }
+  }
+  return { prs, errors };
+}
+async function optimizerAction(req, env, ch) {
+  const json = (o, status) => new Response(JSON.stringify(o), { status, headers: { ...ch, 'Content-Type': 'application/json' } });
+  if (req.headers.get('Origin') !== 'https://analytics.streamerosai.com') return json({ error: 'not allowed from this origin' }, 403);
+  if (!env.OPTIMIZER_GITHUB_TOKEN) return json({ error: 'The Worker has no GitHub token yet.' }, 503);
+  if (!env.MERGE_PASSPHRASE) return json({ error: 'No passphrase is set on the Worker yet.' }, 503);
+  const pass = req.headers.get('X-Passphrase') || '';
+  if (!pass || (await sha256(pass)) !== (await sha256(env.MERGE_PASSPHRASE))) return json({ error: 'Wrong passphrase.' }, 401);
+  const body = await req.json().catch(() => ({}));
+  const { repo, number, action } = body;
+  if (!OPT_REPOS.includes(repo) || !Number.isInteger(number) || !['merge', 'close'].includes(action)) return json({ error: 'bad request' }, 400);
+  const h = ghHeaders(env.OPTIMIZER_GITHUB_TOKEN);
+  const prRes = await fetch(`https://api.github.com/repos/${repo}/pulls/${number}`, { headers: h });
+  if (!prRes.ok) return json({ error: `GitHub answered ${prRes.status} for that pull request.` }, 502);
+  const pr = await prRes.json();
+  if (!pr.head?.ref?.startsWith('optimizer/')) return json({ error: 'Only pull requests opened by the optimizer can be handled here.' }, 403);
+  if (pr.state !== 'open') return json({ error: 'That pull request is already closed.' }, 409);
+  if (action === 'merge') {
+    const m = await fetch(`https://api.github.com/repos/${repo}/pulls/${number}/merge`, { method: 'PUT', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ merge_method: 'squash', commit_title: pr.title }) });
+    const mj = await m.json().catch(() => ({}));
+    if (!m.ok) return json({ error: mj.message || `GitHub answered ${m.status}.` }, 502);
+    return json({ ok: true, merged: true, sha: mj.sha || null }, 200);
+  }
+  const c = await fetch(`https://api.github.com/repos/${repo}/pulls/${number}`, { method: 'PATCH', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ state: 'closed' }) });
+  if (!c.ok) return json({ error: `GitHub answered ${c.status}.` }, 502);
+  await fetch(`https://api.github.com/repos/${repo}/git/refs/heads/${pr.head.ref}`, { method: 'DELETE', headers: h }).catch(() => {});
+  return json({ ok: true, closed: true }, 200);
+}
+
 const crawlHooks = { hosts: Object.keys(HEALTH_SITES), sitemapUrlsFor, pool };
 const CRAWL_COOLDOWN_MIN = 90;
 const KV_FILES = { 'history.json': 'history:index', 'alerts.json': 'alerts', 'ranks.json': 'ranks:file', 'crawl.json': 'crawl:file' };
@@ -405,7 +461,7 @@ const inflight = new Map();
 function cors(req) {
   const o = req.headers.get('Origin') || '';
   const h = { 'Vary': 'Origin' };
-  if (ORIGIN_OK.test(o)) { h['Access-Control-Allow-Origin'] = o; h['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'; h['Access-Control-Allow-Headers'] = 'Content-Type'; h['Access-Control-Max-Age'] = '86400'; }
+  if (ORIGIN_OK.test(o)) { h['Access-Control-Allow-Origin'] = o; h['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'; h['Access-Control-Allow-Headers'] = 'Content-Type, X-Passphrase'; h['Access-Control-Max-Age'] = '86400'; }
   return h;
 }
 export default {
@@ -434,6 +490,10 @@ export default {
     if (url.pathname === '/status/health' && req.method === 'GET') {
       return new Response(JSON.stringify(await healthStatus(env)), { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     }
+    if (url.pathname === '/optimizer/prs' && req.method === 'GET') {
+      return new Response(JSON.stringify(await optimizerPrs(env)), { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
+    if (url.pathname === '/optimizer/action' && req.method === 'POST') return optimizerAction(req, env, ch);
     if (url.pathname === '/status/crawl' && req.method === 'GET') {
       return new Response(JSON.stringify(await crawlStatus(env)), { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     }
