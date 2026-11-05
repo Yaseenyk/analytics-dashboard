@@ -97,12 +97,17 @@ export function ensure(file: string, force = false) {
     if (!cur?.data || sig(cur.data) !== sig(j)) put(file, { data: j, error: false });
     setStamp({ liveAt: Date.now(), live: true });
   };
-  const live = base && (force || LIVE_FIRST.has(file)) ? getJSON<unknown>(`${base}/data/${file}`, 45000).then(applyLive, () => {}) : Promise.resolve();
-  const stat = force || LIVE_FIRST.has(file)
+  // Search Console and Bing numbers are final only 2 to 3 days later, so the published copy (rebuilt every 2 hours) is as
+  // fresh as they get. The Worker's one-shot fetch of 11 properties x 8 reports also exceeds its 50-subrequest limit, which
+  // showed up as sites with no search data after a refresh. So those files are never asked for live; Refresh re-reads the published copy.
+  const staticOnly = /^(gsc|bing)-/.test(file);
+  const live = base && !staticOnly && (force || LIVE_FIRST.has(file)) ? getJSON<unknown>(`${base}/data/${file}`, 45000).then(applyLive, () => {}) : Promise.resolve();
+  const stat = (force && !staticOnly) || LIVE_FIRST.has(file)
     ? Promise.resolve()
     : getJSON<unknown>(`/data/${file}`, 30000).then(
         (j) => {
-          if (!store.get(file)?.data) put(file, { data: j, error: false });
+          const cur = store.get(file);
+          if (!cur?.data || (force && sig(cur.data) !== sig(j))) put(file, { data: j, error: false });
         },
         () => {},
       );
