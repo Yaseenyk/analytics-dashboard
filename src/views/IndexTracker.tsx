@@ -4,12 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { SITES, SITE_HOSTS } from "@/lib/config";
 import { useHealth } from "@/lib/data";
 import { useFilters } from "@/lib/filters";
+import { buildReview, type Review } from "@/lib/review";
 import { Card } from "@/components/ui";
 
 /* Where you are with each page, kept in this browser only (nobody else's clicks can change it):
    not in Google -> copy the link -> "Under review" -> Google indexes it -> "Indexed" with a tick. */
 const KEY = "health-review-v1";
-type Review = Record<string, { at: string; host: string }>;
 
 function load(): Review {
   try {
@@ -84,30 +84,7 @@ export function IndexTracker() {
     });
   }, []);
 
-  const view = useMemo(() => {
-    if (!h) return null;
-    const hosts = f.site === "all" ? SITE_HOSTS : [f.site];
-    const notIn: { host: string; rows: [string, string, string | null][] }[] = [];
-    const under: { url: string; host: string; at: string; status: string }[] = [];
-    const done: { url: string; host: string; at: string }[] = [];
-    const known = new Map<string, { status: string; indexed: boolean }>();
-    hosts.forEach((host) => {
-      const s = h.index?.[host];
-      if (!s) return;
-      const idx = new Set(s.indexedUrls ?? []);
-      s.urls.forEach((u) => known.set(u[0], { status: u[1], indexed: false }));
-      idx.forEach((u) => known.set(u, { status: "Indexed", indexed: true }));
-      notIn.push({ host, rows: s.urls.filter((u) => !rev[u[0]]) });
-    });
-    Object.entries(rev).forEach(([url, r]) => {
-      if (!hosts.includes(r.host)) return;
-      const k = known.get(url);
-      if (k?.indexed) done.push({ url, host: r.host, at: r.at });
-      else under.push({ url, host: r.host, at: r.at, status: k?.status ?? "Waiting for the next check" });
-    });
-    under.sort((a, b) => a.at.localeCompare(b.at));
-    return { notIn, under, done, hasIdx: hosts.some((x) => h.index?.[x]?.indexedUrls) };
-  }, [h, f.site, rev]);
+  const view = useMemo(() => (h ? buildReview(h, f.site === "all" ? SITE_HOSTS : [f.site], rev) : null), [h, f.site, rev]);
 
   if (!view || !ready) return null;
   const total = view.notIn.reduce((a, x) => a + x.rows.length, 0);
