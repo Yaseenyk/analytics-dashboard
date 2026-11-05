@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanTitle, usefulIntro } from "@/views/ShareKit";
+import { cleanTitle, personalAsk, usefulIntro } from "@/views/ShareKit";
 
 describe("share kit titles", () => {
   it("drops a trailing site name but keeps the rest of the title", () => {
@@ -26,5 +26,23 @@ describe("share kit openers", () => {
   it("says nothing for a site it has no words for, and survives a bad URL", () => {
     expect(usefulIntro("unknown.example", "https://unknown.example/x")).toBe("");
     expect(usefulIntro("math.streamerosai.com", "not a url")).toMatch(/^If you need a quick everyday calculation/);
+  });
+});
+
+describe("personal ask for servers that block links", () => {
+  it("introduces a solo developer, names the site without a URL, and asks for feedback", () => {
+    const m = personalAsk({ url: "https://streamerosai.com/", title: "streamerOS", text: "", desc: "x", host: "streamerosai.com", isHome: true });
+    expect(m).toMatch(/^Hi everyone, I am a solo developer\. I built streamerOS/);
+    expect(m).toContain("It is at streamerosai.com");
+    expect(m).not.toMatch(/https?:\/\//);
+    expect(m).not.toContain("One thing there");
+  });
+  it("adds a line about the chosen page when it is not the home page", () => {
+    const m = personalAsk({ url: "https://campus.streamerosai.com/templates/", title: "Free synopsis and report templates", text: "", desc: "No sign-up.", host: "campus.streamerosai.com", isHome: false });
+    expect(m).toContain("One thing there you might find useful: Free synopsis and report templates. No sign-up.");
+    expect(m).toContain("DefendIt");
+  });
+  it("falls back to title and description for a site it has no words for", () => {
+    expect(personalAsk({ url: "https://other.example/p", title: "T", text: "", desc: "D" })).toBe("T\nD");
   });
 });

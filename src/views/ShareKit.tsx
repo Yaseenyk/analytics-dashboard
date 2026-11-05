@@ -95,13 +95,39 @@ interface Parts {
   url: string;
   title: string;
   text: string;
+  /** The page's own description, without the opener line. */
+  desc?: string;
+  host?: string;
+  isHome?: boolean;
+}
+
+/** The personal ask, one per site, for places that block links: who you are, what you made (in the site's own words),
+    what you would like from the reader, and where to find it, with no URL. */
+const ASK: Record<string, { made: string; want: string; brand: string }> = {
+  "streamerosai.com": { brand: "streamerOS", made: "I built streamerOS, a Windows app that switches your OBS scenes from live chat on your own PC, so you do not have to alt-tab mid-stream.", want: "If you are starting out on Twitch or YouTube, I would love to hear what is confusing or missing." },
+  "yk.streamerosai.com": { brand: "Yaseen Khatib", made: "I build production AI systems (RAG pipelines, agents, real-time apps) and keep my working demos and write-ups on my site.", want: "If you are hiring for, or building, something like that, I would value your feedback." },
+  "fitrank.streamerosai.com": { brand: "FitRank", made: "I built FitRank, an AI staff scheduler where a manager can check and overrule every suggestion.", want: "If you manage rotas or shift assignments, I would love to know whether it fits how you work." },
+  "campus.streamerosai.com": { brand: "DefendIt", made: "I built DefendIt, a site that explains final year projects line by line for BCA, MCA and B.Tech students, with free report and synopsis templates.", want: "If your project is due this year, tell me what you are stuck on and I will try to cover it." },
+  "spotai.streamerosai.com": { brand: "SpotAI", made: "I built SpotAI, an AI gym app for India: squat form check on your phone, the day's workout, a gym leaderboard and a simple owner view.", want: "If you run a gym or train at one, I would love your feedback." },
+  "tools.streamerosai.com": { brand: "StreamerOS Dev Tools", made: "I built a set of free developer tools (JSON formatter, validator, compare, Base64) that run in your browser and upload nothing.", want: "If you work with JSON every day, tell me what is missing." },
+  "solar.streamerosai.com": { brand: "the PM Surya Ghar guide", made: "I wrote an independent guide to the PM Surya Ghar rooftop solar subsidy, with every figure sourced.", want: "If you are thinking about rooftop solar, tell me what is still unclear." },
+  "calc.streamerosai.com": { brand: "Money Calculators", made: "I built a set of free money calculators (pay raise, salary to hourly, overtime, currency) that give an instant answer.", want: "If one gives you a wrong or confusing answer, tell me." },
+  "images.streamerosai.com": { brand: "Image Tools", made: "I built free image tools that compress to a target size, resize and convert formats in your browser, without uploading anything.", want: "If you need a size or format they do not handle, tell me." },
+  "math.streamerosai.com": { brand: "Math Calculators", made: "I built free everyday math calculators (percentage, age, days between dates, ratio) that show the formula with the answer.", want: "If one is unclear, tell me which." },
+};
+/** "Hi, I am a solo developer..." for Discord servers that block links. Falls back to the plain message for an unknown site. */
+export function personalAsk({ url, title, desc, host, isHome }: Parts): string {
+  const a = host ? ASK[host] : undefined;
+  if (!a) return `${title}\n${desc || ""}`.trim();
+  const page = !isHome && title ? `\nOne thing there you might find useful: ${title}.${desc ? ` ${desc}` : ""}` : "";
+  return `Hi everyone, I am a solo developer. ${a.made}${page}\n${a.want}\nIt is at ${host} (search for ${a.brand} if this server hides links). Thanks for reading.`;
 }
 
 /** One entry per place you post. The medium is what the dashboard reports under "Medium". */
 const CHANNELS: { id: string; label: string; src: string; med: string; build: (a: Parts) => string }[] = [
   // Plain text on purpose: many servers run AutoMod rules that block bold, headings and links.
   { id: "discord", label: "Discord", src: "discord", med: "community", build: ({ url, title, text }) => `${title}\n${text}\n<${url}>` },
-  { id: "discord-nolink", label: "Discord (no link)", src: "discord", med: "community", build: ({ url, title, text }) => `${title}\n${text}\n(Search for ${hostOf(url)} if you want to look it up.)` },
+  { id: "discord-nolink", label: "Discord (no link)", src: "discord", med: "community", build: personalAsk },
   { id: "whatsapp", label: "WhatsApp", src: "whatsapp", med: "social", build: ({ url, title, text }) => `*${title}*\n${text}\n${url}` },
   { id: "telegram", label: "Telegram", src: "telegram", med: "social", build: ({ url, title, text }) => `**${title}**\n${text}\n${url}` },
   { id: "linkedin", label: "LinkedIn", src: "linkedin", med: "social", build: ({ url, title, text }) => `${title}\n\n${text}\n\n${url}` },
@@ -112,13 +138,6 @@ const CHANNELS: { id: string; label: string; src: string; med: string; build: (a
   { id: "instagram", label: "Instagram bio or story", src: "instagram", med: "social", build: ({ url, title, text }) => `${title}\n${text}\nLink: ${url}` },
 ];
 
-function hostOf(url: string): string {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return url;
-  }
-}
 function tag(url: string, src: string, med: string, cam: string): string {
   try {
     const u = new URL(url);
@@ -136,9 +155,10 @@ interface Item {
   url: string;
   title: string;
   text: string;
+  desc: string;
   impr: number;
 }
-const CUSTOM: Item = { id: "custom", label: "Custom page", url: "https://", title: "", text: "", impr: 0 };
+const CUSTOM: Item = { id: "custom", label: "Custom page", url: "https://", title: "", text: "", desc: "", impr: 0 };
 
 /** Pick a site, a page and a place; get the message and the tracked link, ready to paste. */
 export function ShareKit() {
@@ -159,7 +179,7 @@ export function ShareKit() {
     const list = pages.map(([url, title, text]) => {
       const path = url.replace(/^https?:\/\/[^/]+/, "") || "/";
       const intro = usefulIntro(host, url);
-      return { id: url, label: path === "/" ? "/ (home page)" : path, url, title: cleanTitle(title) || SITES[host], text: [intro, text || cleanTitle(title)].filter(Boolean).join("\n"), impr: impr.get(url.replace(/\/$/, "")) ?? 0 };
+      return { id: url, label: path === "/" ? "/ (home page)" : path, url, title: cleanTitle(title) || SITES[host], text: [intro, text || cleanTitle(title)].filter(Boolean).join("\n"), desc: text, impr: impr.get(url.replace(/\/$/, "")) ?? 0 };
     });
     list.sort((x, y) => y.impr - x.impr || (x.label.startsWith("/ ") ? -1 : y.label.startsWith("/ ") ? 1 : x.label.localeCompare(y.label)));
     return [...list, CUSTOM];
@@ -168,7 +188,7 @@ export function ShareKit() {
   const cur = edit && edit.id === base.id ? edit : { id: base.id, title: base.title, text: base.text, url: base.url };
   const c = CHANNELS.find((x) => x.id === chan)!;
   const link = useMemo(() => tag(cur.url, c.src, c.med, cam), [cur.url, c.src, c.med, cam]);
-  const message = c.build({ url: link, title: cur.title, text: cur.text });
+  const message = c.build({ url: link, title: cur.title, text: cur.text, desc: base.desc, host: base.id === "custom" ? undefined : host, isHome: base.label.startsWith("/ ") });
   const copy = (what: string, v: string) => {
     navigator.clipboard?.writeText(v);
     setCopied(what);
@@ -235,9 +255,10 @@ export function ShareKit() {
           <button type="button" className="rounded-[10px] bg-card2 px-4 py-2 text-ink hover:bg-white/[.08]" onClick={() => copy("link", link)}>{copied === "link" ? "Copied" : "Copy link only"}</button>
         </div>
         {chan === "x" && <p className="sub">Posts on X are cut to 280 characters, so the message is trimmed to fit.</p>}
+        {chan === "discord-nolink" && <p className="sub">This one is written as a personal note from you, so it uses the page title and description but not the Headline and Message boxes above. Edit it after pasting if you want to change the wording.</p>}
         {chan.startsWith("discord") && (
           <div className="rounded-[10px] bg-card2 p-3 text-[12.5px] leading-relaxed text-mute">
-            <b className="text-ink">Where this works on Discord.</b> Post in servers about the topic (for streamerOS: OBS and streaming servers; for DefendIt: student and college servers), in a channel meant for it such as #self-promo, #showcase or #resources, after you have taken part in the server. Read the rules first: many servers block links from new members and time people out for it, and an off-topic channel in an unrelated server reads as spam no matter how the message is written. The message is plain text and the link sits in angle brackets, so it does not show a big preview card. If the server blocks links, use <i>Discord (no link)</i>, which names the site without a link; that visit will not be tracked.
+            <b className="text-ink">Where this works on Discord.</b> Post in servers about the topic (for streamerOS: OBS and streaming servers; for DefendIt: student and college servers), in a channel meant for it such as #self-promo, #showcase or #resources, after you have taken part in the server. Read the rules first: many servers block links from new members and time people out for it, and an off-topic channel in an unrelated server reads as spam no matter how the message is written. The message is plain text and the link sits in angle brackets, so it does not show a big preview card. If the server blocks links, use <i>Discord (no link)</i>: a short personal note (who you are, what you made, what you would like to know) that names the site without a link. Those visits cannot be tracked. Some filters also catch bare domain names; the note still names the product so people can search for it.
           </div>
         )}
       </div>
