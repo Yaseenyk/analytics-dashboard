@@ -7,7 +7,7 @@ import { n } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
 import type { Cell } from "@/lib/types";
 import { DataTable } from "@/components/DataTable";
-import { Card, ErrorCard, Sk, SkCard, SkTable } from "@/components/ui";
+import { Card, ErrorCard, Icon, Sk, SkCard, SkTable } from "@/components/ui";
 import { cols2 } from "./kit";
 import { IndexTracker } from "./IndexTracker";
 import { CrawlIssues, IndexHistory, SpeedCard } from "./HealthExtras";
@@ -17,7 +17,7 @@ function Explainer() {
     <details className="group rounded-2xl border border-line bg-card/60 [&_summary::-webkit-details-marker]:hidden">
       <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 text-[13.5px] font-semibold text-mute group-open:text-ink">
         What do these statuses mean?
-        <span aria-hidden="true" className="text-dim transition-transform group-open:rotate-180">⌄</span>
+        <Icon name="chevron" className="h-4 w-4 flex-none text-dim transition-transform duration-300 group-open:rotate-180" />
       </summary>
       <dl className="grid gap-4 px-5 pb-5 text-[13px] leading-relaxed text-mute md:grid-cols-3">
         <div><dt className="font-semibold text-ink">Discovered, currently not indexed</dt><dd className="mt-1">Google knows the page exists (from the sitemap or a link) but has not visited it yet. It usually just needs time and links pointing at it.</dd></div>
@@ -34,7 +34,7 @@ function SiteCards() {
   const h = e.data;
   if (e.error && !h) return <ErrorCard what="index health" />;
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {SITE_HOSTS.map((host) => {
         const s = h?.index?.[host];
         const b = h?.bing?.[host];
@@ -85,16 +85,14 @@ function Tables() {
     return { states: Object.entries(states).sort((a, b) => b[1] - a[1]) as Cell[][], checked: h.indexAt };
   }, [h, f.site]);
 
-  if (!calc) return <div className={cols2}><SkTable /><SkTable /></div>;
+  if (!calc) return <SkTable />;
   return (
-    <>
-      <div className={cols2}>
-        <DataTable title="What Google says about your pages" cols={["Status", "Pages"]} rows={calc.states} fmt={[0, "n"]} bar={1} max={12} empty="No inspection results yet. They appear after the first daily run." />
-      </div>
+    <div>
+      <DataTable title="What Google says about your pages" cols={["Status", "Pages"]} rows={calc.states} fmt={[0, "n"]} bar={1} max={12} empty="No inspection results yet. They appear after the first daily run." />
       <p className="sub">
         Checked {calc.checked ? new Date(calc.checked).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "not yet"}. This uses Google&apos;s URL Inspection data, so it can lag what you see in Search Console by a day.
       </p>
-    </>
+    </div>
   );
 }
 
@@ -103,8 +101,10 @@ export default function Health() {
     <>
       <Explainer />
       <SiteCards />
-      <IndexHistory />
-      <Tables />
+      <div className={cols2}>
+        <Tables />
+        <IndexHistory />
+      </div>
       <IndexTracker />
       <CrawlIssues />
       <SpeedCard />

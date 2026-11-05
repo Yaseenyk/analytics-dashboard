@@ -24,7 +24,7 @@ export function IndexHistory() {
     });
     return out;
   }, [e.data, f.site]);
-  if (e.error && !e.data) return null;
+  if (e.error && !e.data) return <Card title="Pages in Google over time"><p className="sub">No history yet. One point is saved after each nightly index check (02:40 UTC), so the line appears over the next few days.</p></Card>;
   if (!series) return <SkChart />;
   const days = e.data?.length ?? 0;
   return <AreaChart title="Pages in Google over time" series={series} note={days < 3 ? `One point is saved after each daily check, so this fills in over the next few days (${days} so far).` : "One point per daily check."} empty="No history yet. The first point is saved when the index check finishes." />;

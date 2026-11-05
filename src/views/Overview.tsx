@@ -7,7 +7,7 @@ import {
   classify, daily, dailyAll, dailyTotal, dur, gscDaily, gscMerge, gscMissing, gscTotals, group, hasGA, ix, label, n, pct, rep, sourcesAgg, sum,
 } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
-import { Banner, Card, Delta, Sk, SkCard, SkText, Wait } from "@/components/ui";
+import { Banner, Card, Delta, Icon, Sk, SkCard, SkText, Wait } from "@/components/ui";
 import { GaArea, GaDonut, GaKpi, GaRank, GscKpi, GscRank, cols2, grid4, useGaMemo, useGscMemo } from "./kit";
 
 function GaBanner() {
@@ -149,7 +149,7 @@ function Sites() {
         <h2 className="h2">Your sites</h2>
         <span className="text-[12.5px] text-dim">Tap one to see only that site</span>
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
         {Object.keys(SITES).map((h) => <SiteCard key={h} host={h} />)}
       </div>
     </div>
@@ -176,7 +176,7 @@ function MoreNumbers() {
     <details className="group rounded-2xl border border-line bg-card/50 [&_summary::-webkit-details-marker]:hidden">
       <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 text-[13.5px] font-semibold text-mute group-open:text-ink">
         More numbers
-        <span aria-hidden="true" className="text-dim transition-transform group-open:rotate-180">⌄</span>
+        <Icon name="chevron" className="h-4 w-4 flex-none text-dim transition-transform duration-300 group-open:rotate-180" />
       </summary>
       <div className={`${grid4} p-3 pt-0`}>
         {mk("New people", "np", (ga, s, c) => ({ value: n(total(ga, "newUsers", s)), delta: <Delta show={c} cur={total(ga, "newUsers", s)} prev={total(ga, "newUsers", s, true)} /> }))}

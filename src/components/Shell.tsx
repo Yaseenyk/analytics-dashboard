@@ -13,19 +13,25 @@ import { Icon } from "./ui";
 const loadMotion = () => import("./motionFeatures").then((r) => r.default);
 
 export function Logo({ className = "h-9 w-9" }: { className?: string }) {
-  const gid = "lg" + useId().replace(/:/g, "");
+  const id = "lg" + useId().replace(/:/g, "");
   return (
     <svg className={`${className} flex-none`} viewBox="0 0 32 32" aria-hidden="true">
       <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#22D3EE" />
-          <stop offset="1" stopColor="#A855F7" />
+        <linearGradient id={`${id}-l`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#A855F7" />
+          <stop offset="1" stopColor="#22D3EE" />
+        </linearGradient>
+        <linearGradient id={`${id}-a`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#22D3EE" stopOpacity=".28" />
+          <stop offset="1" stopColor="#22D3EE" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <rect width="32" height="32" rx="9" fill={`url(#${gid})`} />
-      <rect className="logo-bar" x="7" y="17" width="4.4" height="8" rx="1.6" fill="#000" />
-      <rect className="logo-bar" x="13.8" y="12" width="4.4" height="13" rx="1.6" fill="#000" />
-      <rect className="logo-bar" x="20.6" y="7" width="4.4" height="18" rx="1.6" fill="#000" />
+      <rect width="32" height="32" rx="9" fill="#0E141C" />
+      <rect x=".5" y=".5" width="31" height="31" rx="8.5" fill="none" stroke="#fff" strokeOpacity=".08" />
+      <polygon className="logo-area" fill={`url(#${id}-a)`} points="6,21.5 11.5,15.5 15,19 20,9.5 23.5,13 26,10 26,25.5 6,25.5" />
+      <polyline className="logo-line" pathLength={1} fill="none" stroke={`url(#${id}-l)`} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" points="6,21.5 11.5,15.5 15,19 20,9.5 23.5,13 26,10" />
+      <circle className="logo-glow" cx="26" cy="10" r="4.4" fill="#22D3EE" fillOpacity=".22" />
+      <circle className="logo-dot" cx="26" cy="10" r="2.2" fill="#22D3EE" />
     </svg>
   );
 }
@@ -240,10 +246,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <MotionConfig reducedMotion="user">
       <LazyMotion features={loadMotion} strict>
         <FiltersProvider>
-          <div aria-hidden="true" className="ambient pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-            <i className="orb orb-a" />
-            <i className="orb orb-b" />
-          </div>
+          <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:40px_40px]" />
           <div className="shell-grid min-h-screen lg:grid lg:grid-cols-[var(--side)_minmax(0,1fr)]" style={{ "--side": collapsed ? "72px" : "224px" } as React.CSSProperties}>
             <Nav collapsed={collapsed} onToggle={toggle} />
             <main className="min-w-0 px-4 pb-[calc(88px+env(safe-area-inset-bottom))] sm:px-7 lg:pb-14">

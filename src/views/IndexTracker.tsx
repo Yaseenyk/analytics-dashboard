@@ -5,7 +5,7 @@ import { SITES, SITE_HOSTS } from "@/lib/config";
 import { useHealth } from "@/lib/data";
 import { useFilters } from "@/lib/filters";
 import { buildReview, type Review } from "@/lib/review";
-import { Card } from "@/components/ui";
+import { Card, Icon } from "@/components/ui";
 
 /* Where you are with each page, kept in this browser only (nobody else's clicks can change it):
    not in Google -> copy the link -> "Under review" -> Google indexes it -> "Indexed" with a tick. */
@@ -115,7 +115,7 @@ export function IndexTracker() {
                     <span className="text-[13.5px] font-semibold">{SITES[x.host]}</span>
                     <span className="flex items-center gap-2 font-mono text-[12px] text-mute">
                       {x.rows.length} not in Google
-                      <span aria-hidden="true" className="text-dim transition-transform group-open:rotate-180">⌄</span>
+                      <Icon name="chevron" className="h-4 w-4 flex-none text-dim transition-transform duration-300 group-open:rotate-180" />
                     </span>
                   </summary>
                   <ul className="px-4 pb-2">
