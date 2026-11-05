@@ -66,6 +66,8 @@ export interface HealthSite {
   byState: Record<string, number>;
   /** [url, status, last crawl date] for pages that are not indexed. */
   urls: [string, string, string | null][];
+  /** URLs Google reports as indexed (lets the page tell when a page you requested has got in). */
+  indexedUrls?: string[];
 }
 export interface HealthFile {
   generatedAt: string;

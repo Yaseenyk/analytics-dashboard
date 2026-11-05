@@ -313,7 +313,7 @@ async function healthTick(env) {
     const byState = {};
     r.forEach((x) => (byState[x[1]] = (byState[x[1]] || 0) + 1));
     const indexed = r.filter((x) => x[2] === 'PASS').length;
-    index[h] = { property, inspected: r.length, indexed, notIndexed: r.length - indexed, byState, urls: r.filter((x) => x[2] !== 'PASS').map((x) => [x[0], x[1], x[3]]).slice(0, 150) };
+    index[h] = { property, inspected: r.length, indexed, notIndexed: r.length - indexed, byState, urls: r.filter((x) => x[2] !== 'PASS').map((x) => [x[0], x[1], x[3]]).slice(0, 1000), indexedUrls: r.filter((x) => x[2] === 'PASS').map((x) => x[0]) };
   }
   const prior = await fetch('https://analytics.streamerosai.com/data/health.json').then((x) => (x.ok ? x.json() : null)).catch(() => null);
   const now = new Date().toISOString();

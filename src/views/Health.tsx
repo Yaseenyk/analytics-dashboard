@@ -9,6 +9,7 @@ import type { Cell } from "@/lib/types";
 import { DataTable } from "@/components/DataTable";
 import { Card, ErrorCard, Sk, SkCard, SkTable } from "@/components/ui";
 import { cols2 } from "./kit";
+import { IndexTracker } from "./IndexTracker";
 
 function Explainer() {
   return (
@@ -75,14 +76,12 @@ function Tables() {
     if (!h) return null;
     const hosts = f.site === "all" ? SITE_HOSTS : [f.site];
     const states: Record<string, number> = {};
-    const urls: Cell[][] = [];
     hosts.forEach((host) => {
       const s = h.index?.[host];
       if (!s) return;
       Object.entries(s.byState).forEach(([k, v]) => (states[k] = (states[k] || 0) + v));
-      s.urls.forEach((u) => urls.push([u[0].replace(/^https?:\/\//, ""), u[1], u[2] ?? "never"]));
     });
-    return { states: Object.entries(states).sort((a, b) => b[1] - a[1]) as Cell[][], urls, checked: h.indexAt };
+    return { states: Object.entries(states).sort((a, b) => b[1] - a[1]) as Cell[][], checked: h.indexAt };
   }, [h, f.site]);
 
   if (!calc) return <div className={cols2}><SkTable /><SkTable /></div>;
@@ -90,7 +89,6 @@ function Tables() {
     <>
       <div className={cols2}>
         <DataTable title="What Google says about your pages" cols={["Status", "Pages"]} rows={calc.states} fmt={[0, "n"]} bar={1} max={12} empty="No inspection results yet. They appear after the first daily run." />
-        <DataTable title="Pages not in Google yet" cols={["Page", "Status", "Last crawl"]} rows={calc.urls} fmt={[0, 0, 0]} max={15} empty="Every inspected page is indexed." note="Shows up to 150 pages per site. Request indexing in Search Console for the most important ones first." />
       </div>
       <p className="sub">
         Checked {calc.checked ? new Date(calc.checked).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "not yet"}. This uses Google&apos;s URL Inspection data, so it can lag what you see in Search Console by a day.
@@ -105,6 +103,7 @@ export default function Health() {
       <Explainer />
       <SiteCards />
       <Tables />
+      <IndexTracker />
     </>
   );
 }
