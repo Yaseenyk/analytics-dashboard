@@ -130,7 +130,8 @@ export interface CrawlIssue {
 }
 export interface CrawlFile {
   generatedAt: string;
-  sites: Record<string, { checked: number; counts: Record<string, number>; issues: CrawlIssue[] }>;
+  /** pages: every sitemap page as [url, title, description], from the page's own head. */
+  sites: Record<string, { checked: number; counts: Record<string, number>; issues: CrawlIssue[]; pages?: [string, string, string][] }>;
 }
 /** Lab speed test (Lighthouse, mobile) of each site's home page, newest run last. */
 export interface SpeedRun {

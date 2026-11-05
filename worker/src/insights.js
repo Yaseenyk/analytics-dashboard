@@ -68,7 +68,7 @@ export async function recordHealth(env, prior, index, nowIso) {
 }
 
 // ---- site crawl: broken links, redirects, noindex, titles --------------------------------------------
-const CRAWL_BATCH = 20;
+const CRAWL_BATCH = 40;
 const ASSET = /\.(png|jpe?g|gif|webp|svg|ico|css|js|mjs|json|xml|txt|pdf|zip|mp4|woff2?)$/i;
 
 async function readHead(res, max = 12000) {
@@ -103,7 +103,7 @@ export async function crawlStatus(env) {
   const file = await kvJson(env, 'crawl:file');
   return { running: !!st, stage: st?.stage ?? null, done: st ? st.total - st.queue.length : 0, total: st?.total ?? 0, lastFinished: file?.generatedAt ?? null, lastStart: Number(await env.DATA.get('crawl:lastStart')) || null };
 }
-async function checkUrl(url, fromSitemap) {
+async function checkUrl(url, fromSitemap, metas) {
   const issue = (kind, detail) => ({ url, kind, detail });
   let res;
   try { res = await fetch(url, { redirect: 'manual', headers: { 'User-Agent': 'streamerOS-site-check' }, signal: AbortSignal.timeout(10000) }); } catch { return issue('broken', 'no answer'); }
@@ -112,12 +112,20 @@ async function checkUrl(url, fromSitemap) {
   if (st >= 400) return issue('broken', `HTTP ${st}`);
   const html = /text\/html/i.test(res.headers.get('content-type') || '') ? await readHead(res) : '';
   if (!html) return fromSitemap ? null : issue('not-in-sitemap', 'linked from the home page, not in the sitemap');
+  if (fromSitemap && metas) metas.push([url, ...pageMeta(html)]);
   const noindex = /<meta[^>]+name=["']robots["'][^>]*content=["'][^"']*noindex/i.test(html);
   if (fromSitemap && noindex) return issue('noindex', 'in the sitemap but marked noindex');
   if (!fromSitemap) return noindex ? null : issue('not-in-sitemap', 'linked from the home page, not in the sitemap');
   const t = /<title[^>]*>([^<]*)<\/title>/i.exec(html);
   if (!t || !t[1].trim()) return issue('no-title', 'the page has no title');
   return null;
+}
+const unesc = (x) => String(x || '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
+/** [title, description] from a page's head, so the share kit can describe the page in its own words. */
+function pageMeta(html) {
+  const t = /<title[^>]*>([^<]*)<\/title>/i.exec(html);
+  const d = /<meta[^>]+name=["']description["'][^>]*content=["']([^"']*)["']/i.exec(html) || /<meta[^>]+content=["']([^"']*)["'][^>]*name=["']description["']/i.exec(html);
+  return [unesc(t && t[1]).slice(0, 160), unesc(d && d[1]).slice(0, 300)];
 }
 export async function crawlTick(env, h) {
   const st = await kvJson(env, 'crawl:state');
@@ -137,7 +145,10 @@ export async function crawlTick(env, h) {
     return;
   }
   const batch = st.queue.splice(0, CRAWL_BATCH);
-  const rows = await h.pool(batch.map(([, u, m]) => () => checkUrl(u, !!m)), 6);
+  const metas = [];
+  const rows = await h.pool(batch.map(([, u, m]) => () => checkUrl(u, !!m, metas)), 6);
+  st.pages = st.pages || {};
+  for (const [u, t, d] of metas) { try { const host = new URL(u).hostname; (st.pages[host] = st.pages[host] || []).push([u, t, d]); } catch { /* skip */ } }
   batch.forEach(([host], i) => {
     st.checked[host] = (st.checked[host] || 0) + 1;
     if (rows[i]) (st.issues[host] = st.issues[host] || []).push(rows[i]);
@@ -148,7 +159,7 @@ export async function crawlTick(env, h) {
     const issues = st.issues[host] || [];
     const counts = {};
     issues.forEach((x) => (counts[x.kind] = (counts[x.kind] || 0) + 1));
-    sites[host] = { checked: st.checked[host] || 0, counts, issues: issues.slice(0, 200) };
+    sites[host] = { checked: st.checked[host] || 0, counts, issues: issues.slice(0, 200), pages: (st.pages && st.pages[host]) || [] };
   }
   const prior = await kvJson(env, 'crawl:file');
   const now = new Date().toISOString();

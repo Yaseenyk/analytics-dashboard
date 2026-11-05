@@ -1,19 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SITES, SITE_HOSTS } from "@/lib/config";
+import { useCrawl, useGSC } from "@/lib/data";
+import { gscMerge } from "@/lib/derive";
+import { useFilters } from "@/lib/filters";
 import { Card } from "@/components/ui";
 
-/** What can be shared. The text is a plain description of the page, editable before copying. */
-const ITEMS: { id: string; label: string; url: string; title: string; text: string }[] = [
-  { id: "campus", label: "Campus: final year projects", url: "https://campus.streamerosai.com/", title: "Final year project help for BCA, MCA and B.Tech", text: "Final year project help for BCA, MCA and B.Tech students: free guides, report and synopsis templates, and projects explained line by line so you can answer in your viva." },
-  { id: "templates", label: "Campus: free templates", url: "https://campus.streamerosai.com/templates/", title: "Free synopsis and report templates", text: "Free synopsis and project report templates for final year projects. No sign-up." },
-  { id: "sample", label: "Campus: sample project report", url: "https://campus.streamerosai.com/sample-project-report/", title: "A sample final year project report", text: "A sample final year project report you can read before you write your own." },
-  { id: "bca", label: "Campus: BCA project topics", url: "https://campus.streamerosai.com/guides/bca-final-year-project-topics/", title: "BCA final year project topics", text: "BCA final year project topics, with a stack table, a plan that works back from your submission date and a checklist of the documents you need." },
-  { id: "qbank", label: "Campus: viva question bank", url: "https://campus.streamerosai.com/question-bank/", title: "Final year project viva questions", text: "89 viva questions for final year projects, each showing what the examiner is testing." },
-  { id: "portfolio", label: "Portfolio: home", url: "https://yk.streamerosai.com/", title: "Yaseen Khatib, Senior Full-Stack AI Engineer", text: "My portfolio and AI systems lab: working demos, product write-ups and a RAG concierge you can question about my work." },
-  { id: "zoho", label: "Portfolio: Zoho CRM pricing post", url: "https://yk.streamerosai.com/blog/zoho-crm-pricing-india-3-year-cost/", title: "Zoho CRM pricing in India: the 3-year cost", text: "What Zoho CRM costs in India over three years, using Zoho's published yearly prices." },
-  { id: "custom", label: "Custom page", url: "https://", title: "", text: "" },
-];
+/** Pages come from the nightly site check (every sitemap page of every site, with the page's own title and description),
+    so the kit covers all ten sites and never describes a page in words the page does not use itself. */
+const BRANDS = /streameros|yaseen|khatib|fitrank|defendit|campus|spotai|solar|calc|tools|image|math/i;
+/** "How to pick a GPU | streamerOS" -> "How to pick a GPU": drop a trailing site name, keep everything else. */
+export function cleanTitle(t: string): string {
+  const m = /^(.*\S)\s*[|–—-]\s*([^|–—-]{2,40})$/.exec(t);
+  return m && BRANDS.test(m[2]) ? m[1] : t;
+}
 
 interface Parts {
   url: string;
@@ -45,15 +46,41 @@ function tag(url: string, src: string, med: string, cam: string): string {
   }
 }
 
-/** Pick a page and a place; get the message and the tracked link, ready to paste. */
+interface Item {
+  id: string;
+  label: string;
+  url: string;
+  title: string;
+  text: string;
+  impr: number;
+}
+const CUSTOM: Item = { id: "custom", label: "Custom page", url: "https://", title: "", text: "", impr: 0 };
+
+/** Pick a site, a page and a place; get the message and the tracked link, ready to paste. */
 export function ShareKit() {
-  const [item, setItem] = useState(ITEMS[0].id);
+  const f = useFilters();
+  const crawl = useCrawl();
+  const gsc = useGSC(f.range).data;
+  const [host, setHost] = useState<string>(SITE_HOSTS[0]);
+  const [item, setItem] = useState<string>("");
   const [chan, setChan] = useState("discord");
   const [cam, setCam] = useState("share");
   const [edit, setEdit] = useState<(Parts & { id: string }) | null>(null);
   const [copied, setCopied] = useState("");
-  const base = ITEMS.find((i) => i.id === item)!;
-  const cur = edit && edit.id === item ? edit : { id: item, title: base.title, text: base.text, url: base.url };
+
+  const items = useMemo<Item[]>(() => {
+    const pages = crawl.data?.sites[host]?.pages ?? [];
+    const impr = new Map<string, number>();
+    if (gsc) gscMerge(gsc, host, "pages", 1).forEach((r) => impr.set(String(r[0]).replace(/\/$/, ""), +r[3]));
+    const list = pages.map(([url, title, text]) => {
+      const path = url.replace(/^https?:\/\/[^/]+/, "") || "/";
+      return { id: url, label: path === "/" ? "Home page" : path, url, title: cleanTitle(title) || SITES[host], text, impr: impr.get(url.replace(/\/$/, "")) ?? 0 };
+    });
+    list.sort((x, y) => y.impr - x.impr || (x.label === "Home page" ? -1 : y.label === "Home page" ? 1 : x.label.localeCompare(y.label)));
+    return [...list, CUSTOM];
+  }, [crawl.data, gsc, host]);
+  const base = items.find((i) => i.id === item) ?? items[0];
+  const cur = edit && edit.id === base.id ? edit : { id: base.id, title: base.title, text: base.text, url: base.url };
   const c = CHANNELS.find((x) => x.id === chan)!;
   const link = useMemo(() => tag(cur.url, c.src, c.med, cam), [cur.url, c.src, c.med, cam]);
   const message = c.build({ url: link, title: cur.title, text: cur.text });
@@ -63,15 +90,30 @@ export function ShareKit() {
     setTimeout(() => setCopied(""), 1200);
   };
   const set = (p: Partial<Parts>) => setEdit({ ...cur, ...p });
+  const pick = (id: string) => {
+    setItem(id);
+    setEdit(null);
+  };
+  const noPages = !!crawl.data && !(crawl.data.sites[host]?.pages?.length);
   return (
-    <Card title="Share kit" note="Pick the page and where you will post it. You get the message and the tracked link for that place, ready to paste.">
+    <Card title="Share kit" note="Pick a site, a page and where you will post it. The message is the page's own title and description, so it says only what the page says; edit it as you like. Pages Google already shows most come first.">
       <div className="mt-3 space-y-3">
-        <label className="block">
-          <span className="mb-1 block text-[12.5px] text-mute">What to share</span>
-          <select value={item} onChange={(e) => { setItem(e.target.value); setEdit(null); }} className="w-full">
-            {ITEMS.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
-          </select>
-        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1 block text-[12.5px] text-mute">Site</span>
+            <select value={host} onChange={(e) => { setHost(e.target.value); pick(""); }} className="w-full">
+              {SITE_HOSTS.map((h) => <option key={h} value={h}>{SITES[h]}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-[12.5px] text-mute">Page ({items.length - 1})</span>
+            <select value={base.id} onChange={(e) => pick(e.target.value)} className="w-full">
+              {items.map((i) => <option key={i.id} value={i.id}>{i.label}{i.impr ? ` · ${i.impr} impressions` : ""}</option>)}
+            </select>
+          </label>
+        </div>
+        {!crawl.data && !crawl.error && <p className="sub">Loading the page list…</p>}
+        {(crawl.error && !crawl.data) || noPages ? <p className="sub">No page list for this site yet: it fills in after the nightly site check. Use Custom page for now.</p> : null}
         <div>
           <span className="mb-1 block text-[12.5px] text-mute">Where you will post it</span>
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="Channel">
@@ -80,7 +122,7 @@ export function ShareKit() {
             ))}
           </div>
         </div>
-        {item === "custom" && (
+        {base.id === "custom" && (
           <label className="block">
             <span className="mb-1 block text-[12.5px] text-mute">Page URL</span>
             <input type="text" value={cur.url} onChange={(e) => set({ url: e.target.value })} className="w-full" />
