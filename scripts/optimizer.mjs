@@ -385,6 +385,8 @@ async function main() {
     try {
       const ourHtml = await fetchPage(c.page);
       if (!ourHtml) { say(`skip ${c.page}: could not fetch`); continue; }
+      // a page kept out of Google on purpose (staged languages, drafts) is not a problem to fix
+      if (/<meta[^>]+name=["']robots["'][^>]*noindex/i.test(ourHtml)) { say(`skip ${c.page}: marked noindex on purpose`); continue; }
       const competitors = [];
       if (c.kind !== "index") {
         const urls = await topResults(c.q, c.host);
