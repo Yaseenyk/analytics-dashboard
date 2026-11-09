@@ -1,35 +1,35 @@
 {
-  "generatedAt": "2026-11-05T22:47:14.016Z",
+  "generatedAt": "2026-11-09T12:02:31.164Z",
   "lastRun": {
-    "date": "2026-11-05",
+    "date": "2026-11-09",
     "proposed": 15,
     "judged": 0,
-    "mode": "dry",
-    "costUsd": 0.052,
+    "mode": "pr",
+    "costUsd": 0.071,
     "log": [
-      "optimizer 2026-11-05: dry run, indexed sites frozen until 2026-11-18",
+      "optimizer 2026-11-09: pull requests on, indexed sites frozen until 2026-11-18",
       "20 candidate page(s)",
-      "report only for https://fitrank.streamerosai.com/blog/what-is-rostering/ (frozen)",
-      "report only for https://streamerosai.com/features/viral-moments (frozen)",
-      "no change for https://streamerosai.com/features/sponsor-crm: Rejected by the numbers check: the proposal introduced 4, which the page does not have. Google flagged the page as low-v",
-      "report only for https://streamerosai.com/blog/twitch-chat-overlay-obs (frozen)",
-      "report only for https://streamerosai.com/blog/how-much-to-charge-for-stream-sponsorships (frozen)",
-      "report only for https://streamerosai.com/blog/how-to-read-chat-sentiment-in-real-time (frozen)",
-      "report only for https://yk.streamerosai.com/anthropic-roadmap/ (frozen)",
-      "no change for https://yk.streamerosai.com/products/fitrank/: Rejected by the numbers check: the proposal introduced 06, which the page does not have. Adding a concise, actionable \"H",
-      "report only for https://yk.streamerosai.com/products/streameros/ (frozen)",
-      "report only for https://yk.streamerosai.com/solutions/ (frozen)",
-      "report only for https://yk.streamerosai.com/interview/ (frozen)",
-      "no change for https://fitrank.streamerosai.com/results/: No usable linking page (Pre-register). Add a clear internal link from the existing Pre-register page (in the site nav) t",
-      "report only for https://fitrank.streamerosai.com/blog/ (frozen)",
-      "report only for https://fitrank.streamerosai.com/tools/ (frozen)",
-      "no change for https://fitrank.streamerosai.com/features/resume-reading/: No usable linking page (HR home and hiring requests). Add a clear internal link from the HR home and hiring requests pag",
+      "no change for https://math.streamerosai.com/percentage-calculator: Rejected by the numbers check: the proposal introduced 1, 6, 5, 2.4, 25, 0.25, which the page does not have. The query a",
+      "report only for https://fitrank.streamerosai.com/blog/staffing-vs-scheduling/ (frozen)",
+      "report only for https://fitrank.streamerosai.com/features/decision-api/ (frozen)",
+      "report only for https://streamerosai.com/blog/popout-chat-masterclass (frozen)",
+      "no change for https://yk.streamerosai.com/blog/ai-engineer-portfolio-examples/: Rejected by the numbers check: the proposal introduced 5, which the page does not have. Adding a short, practical \"how t",
+      "no change for https://yk.streamerosai.com/blog/mern-stack-developer-vs-full-stack-developer/: Rejected by the numbers check: the proposal introduced 20, which the page does not have. The page already lists what div",
+      "report only for https://yk.streamerosai.com/blog/when-usememo-actually-helps-in-react-19-and-how-to-measure-it/ (frozen)",
+      "report only for https://yk.streamerosai.com/blog/my-journey-web-developer-to-ai-engineer/ (frozen)",
+      "no change for https://yk.streamerosai.com/blog/shipped-5-products-solo-12-months/: Rejected by the numbers check: the proposal introduced 1, 2, 3, 4, which the page does not have. Adds a short, crawlable",
+      "report only for https://streamerosai.com/features/live-cockpit (frozen)",
+      "report only for https://streamerosai.com/features/ai-sidekick (frozen)",
+      "no change for https://streamerosai.com/features/scene-switcher: No usable linking page (How to auto-switch OBS scenes, including from chat activity). Adding an internal link from the r",
+      "report only for https://streamerosai.com/vs/streamlabs (frozen)",
+      "report only for https://fitrank.streamerosai.com/blog/rotating-shifts-explained/ (frozen)",
+      "report only for https://fitrank.streamerosai.com/blog/automated-employee-scheduling-excel/ (frozen)",
       "skip https://spotai.streamerosai.com/bn/: marked noindex on purpose",
       "skip https://spotai.streamerosai.com/bn/features/food-log/: marked noindex on purpose",
       "skip https://spotai.streamerosai.com/bn/features/leaderboard/: marked noindex on purpose",
       "skip https://spotai.streamerosai.com/bn/features/owners/: marked noindex on purpose",
       "skip https://spotai.streamerosai.com/bn/guides/: marked noindex on purpose",
-      "OpenAI: 16 calls, 32923 in / 22041 out tokens, about $0.052"
+      "OpenAI: 18 calls, 61906 in / 27584 out tokens, about $0.071"
     ]
   },
   "experiments": [
@@ -472,6 +472,430 @@
       "competitors": [],
       "authorityGap": false,
       "gap": "Google discovered the URL but hasn't fetched it because there are no prominent internal links from higher-level pages pointing to this content."
+    },
+    {
+      "id": "2026-11-09-math-percentage-calculator",
+      "host": "math.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://math.streamerosai.com/percentage-calculator",
+      "q": "工作率 分数 计算",
+      "kind": "rank",
+      "state": null,
+      "type": "none",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": 9.7,
+        "ctr": 0,
+        "impr": 26,
+        "clicks": 0
+      },
+      "before": "## Frequently asked questions",
+      "after": "### How do I calculate work rate as a fraction?\nWork equals rate × time. If one worker completes one job in t hours, the worker's rate is 1/t job per hour (a fraction).\n\nTo combine workers, add their rates. Example: A does a job in 4 hours (rate = 1/4). B does it in 6 hours (rate = 1/6). Combined rate = 1/4 + 1/6 = 5/12 job per hour. Time to finish together = 1 ÷ (combined rate) = 12/5 hours (2.4 hours).\n\nIf you are given a percentage rate per hour, convert the percent to a decimal and then to a fraction. For example, 25% per hour = 0.25 = 1/4 job per hour, which you can add to other rates in the same way.",
+      "rationale": "Rejected by the numbers check: the proposal introduced 1, 6, 5, 2.4, 25, 0.25, which the page does not have. The query asks about calculating work rates as fractions. The current page covers percentages generally but has no concise explanation of work‑rate formulas or how to convert percent‑per‑hour into fractional rates. Adding a short FAQ with the formula, a combining example, and the percent→fraction conversion directly matches search intent and is likely to improve relevance for this query. Evidence pages from MathisFun and PurpleMath show this is standard content users expect.",
+      "evidence": [
+        "https://www.mathsisfun.com/algebra/work-rate.html",
+        "https://www.purplemath.com/modules/rates3.htm"
+      ],
+      "competitors": [
+        {
+          "url": "https://www.mathsisfun.com/algebra/work-rate.html",
+          "does_better": "Gives step‑by‑step formulas and worked examples for computing work rates as fractions and combining rates of multiple workers."
+        },
+        {
+          "url": "https://www.purplemath.com/modules/rates3.htm",
+          "does_better": "Explains rate = work/time, shows adding fractional rates and finding total time, with clear examples."
+        }
+      ],
+      "authorityGap": false,
+      "gap": "The page explains percentages but lacks a concise explanation of how to compute work rate as a fraction (rate = work/time, adding rates, converting percent-per-hour to a fractional rate). Users searching '工作率 分数 计算' are likely seeking this exact procedure."
+    },
+    {
+      "id": "2026-11-09-fitrank-blog-staffing-vs-scheduling",
+      "host": "fitrank.streamerosai.com",
+      "repo": "Yaseenyk/fitrank-website",
+      "page": "https://fitrank.streamerosai.com/blog/staffing-vs-scheduling/",
+      "q": "staffing and scheduling",
+      "kind": "rank",
+      "state": null,
+      "type": "title",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": 82.2,
+        "ctr": 0,
+        "impr": 15,
+        "clicks": 0
+      },
+      "before": "Staffing vs scheduling: meaning and software | FitRank",
+      "after": "Staffing and scheduling: meaning and software | FitRank",
+      "rationale": "Searchers use the exact phrase 'staffing and scheduling' (as shown by MeSH/NCBI pages). Replacing 'vs' with 'and' gives an exact-query match in the title, improving relevance and click-through without changing the page content. This is a low-risk, high-impact on-page tweak; authority from gov/academic sites may still dominate, but the title change should help ranking and CTR for informational searchers.",
+      "evidence": [
+        "https://www.ncbi.nlm.nih.gov/mesh/68010561",
+        "https://profiles.uchicago.edu/profiles/display/34558",
+        "https://pubmed.ncbi.nlm.nih.gov/10827724/"
+      ],
+      "competitors": [
+        {
+          "url": "https://www.ncbi.nlm.nih.gov/mesh/68010561",
+          "does_better": "Uses the exact descriptor 'Personnel Staffing and Scheduling' as an authoritative MeSH entry; exact-phrase match and high domain authority."
+        },
+        {
+          "url": "https://profiles.uchicago.edu/profiles/display/34558",
+          "does_better": "Repeats the MeSH descriptor 'Personnel Staffing and Scheduling' and presents a clear definitional page tied to the MeSH term."
+        },
+        {
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10827724/",
+          "does_better": "PubMed/NCBI content ranks for the phrase and signals strong topical authority around 'staffing and scheduling'."
+        }
+      ],
+      "authorityGap": true,
+      "gap": "The page title uses 'Staffing vs scheduling' not the exact query phrase 'staffing and scheduling', reducing exact-match relevance and CTR versus authoritative MeSH pages that use the phrase."
+    },
+    {
+      "id": "2026-11-09-fitrank-features-decision-api",
+      "host": "fitrank.streamerosai.com",
+      "repo": "Yaseenyk/fitrank-website",
+      "page": "https://fitrank.streamerosai.com/features/decision-api/",
+      "q": "digitalrank api",
+      "kind": "rank",
+      "state": null,
+      "type": "faq",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": 29.1,
+        "ctr": 0,
+        "impr": 14,
+        "clicks": 0
+      },
+      "before": "## Questions about decision api",
+      "after": "Q: Is this the \"DigitalRank API\" that returns website rankings?\n\nA: No. FitRank's Decision API answers typed, fixed-choice questions for your internal tools and returns probabilities for each option. It does not provide website ranking or traffic data. If you are looking for a \"DigitalRank\" product that returns global website ranks, vendors such as Similarweb offer a named DigitalRank API that provides ranking data and example endpoints. This page explains FitRank's Decision API; if you meant a website-ranking API, try searching for \"Similarweb DigitalRank API\" or an API marketplace listing.",
+      "rationale": "Search intent: people querying \"digitalrank api\" expect a website-ranking API named DigitalRank (as shown in competitor pages). Our page is about a different API and never clarifies that. Adding a short FAQ right after the existing FAQ header will (1) directly answer that query, (2) reduce user confusion and bounce, and (3) improve CTR for visitors who arrive looking for a ranking API but want to confirm the difference. To truly outrank those competitors for the query would require matching product coverage (a website-ranking API) and stronger authority/backlinks; the competitors win because they use the exact product name and document ranking endpoints.",
+      "evidence": [
+        "https://aws.amazon.com/marketplace/pp/prodview-kisniewxfa7mu",
+        "https://github.com/ever-works/awesome-mcp-servers/blob/master/details/similarweb-digitalrank-api-mcp-server.md"
+      ],
+      "competitors": [
+        {
+          "url": "https://aws.amazon.com/marketplace/pp/prodview-kisniewxfa7mu",
+          "does_better": "Uses the exact product name 'DigitalRank API' and documents the API purpose (global website ranking data), endpoints and example responses."
+        },
+        {
+          "url": "https://github.com/ever-works/awesome-mcp-servers/blob/master/details/similarweb-digitalrank-api-mcp-server.md",
+          "does_better": "References Similarweb's DigitalRank API and lists features and endpoints, making intent clear to developers seeking a ranking API."
+        }
+      ],
+      "authorityGap": true,
+      "gap": "The page does not match the search intent for \"digitalrank api\". Searchers expect an API that returns website ranking data (a product called DigitalRank API). Our Decision API is a different product and the page never clarifies that, so it will not attract clicks for that query."
+    },
+    {
+      "id": "2026-11-09-streamerosai-blog-popout-chat-masterclass",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/blog/popout-chat-masterclass",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "The page explains how to pop out chat, why it's better, and a checklist but lacks a single concise troubleshooting & best-practice section users can scan when something goes wrong.",
+      "after": "### Troubleshooting & Best Practices\n- Confirm the Popout is the one selected in the Live Sync modal and that you hit “Start Monitor.” Watch for the YouTube Chat badge to turn green.\n- Keep the popout window visible and not fully minimized. On a single monitor, place it in a corner; a second monitor is ideal.\n- If your velocity gauge stops updating, reopen the popout and reselect it in Live Sync, then restart the monitor — the local scraper reads what’s rendered on screen.\n- During high-chat bursts, the engine refreshes the chat snapshot every second; expect smooth, accurate msgs/sec without extra configuration.\n- Remember: the popout is lightweight and predictable by design. When in doubt, re-open the popout and confirm the Live Control Room for the current broadcast is active.",
+      "rationale": "Adding a compact Troubleshooting & Best Practices section gives immediate, scannable value for readers who hit common issues (minimized windows, wrong popout selection, needing to restart monitor). That increases the page’s standalone usefulness and reduces the chance Google flags it as thin or duplicate content.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped this page because it is practical but lacks a concise troubleshooting/best-practice section that makes it uniquely actionable compared with similar how-tos."
+    },
+    {
+      "id": "2026-11-09-yk-blog-ai-engineer-portfolio-examples",
+      "host": "yk.streamerosai.com",
+      "repo": "Yaseenyk/portfolio",
+      "page": "https://yk.streamerosai.com/blog/ai-engineer-portfolio-examples/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "none",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Add after 'A checklist you can apply to your own' heading.",
+      "after": "### How a reviewer can verify this in five minutes\n\n1. Ask the live concierge on the home page a question outside the site and watch it refuse — that proves a visible refusal path.\n2. Open the Sable write-up to read the trust boundary (how the model is prevented from touching money).\n3. Find the measured result (the payload reduction) and confirm a before-and-after is shown.\n4. Read the plain failure paragraph that explains what went wrong and why — honesty is credibility.\n5. Look for a source code or repository link for at least one piece so you can inspect implementation details.\n\nEach step takes under a minute and together they let a stranger verify production experience without contacting you.",
+      "rationale": "Rejected by the numbers check: the proposal introduced 5, which the page does not have. Adding a short, practical \"how to verify\" section makes the page immediately useful to visitors and gives a clear, linkable anchor other site pages can point to; that increases the page's on-site discoverability and helps crawlers understand its standalone value. The steps are drawn only from the page's existing examples and checklist.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it—likely because the page isn't surfaced from other site pages and lacks a clear, linkable anchor that signals standalone value."
+    },
+    {
+      "id": "2026-11-09-yk-blog-mern-stack-developer-vs-full-stack-",
+      "host": "yk.streamerosai.com",
+      "repo": "Yaseenyk/portfolio",
+      "page": "https://yk.streamerosai.com/blog/mern-stack-developer-vs-full-stack-developer/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "none",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "",
+      "after": "### Quick hiring checklist: what to test\n\nWhen you’re hiring for MERN vs full-stack, ask for concrete examples and tests that cover these areas:\n\n- Databases: request a schema-design example and discuss joins, transactions, migrations, and when to enforce constraints in the DB versus the app.\n- MongoDB specifics: ask about aggregation pipelines, index design, and how they decide between embedding and referencing documents.\n- Server patterns: evaluate Express middleware experience, WebSocket/streaming patterns, and Node event-loop trade-offs.\n- Front-end architecture: how they structure React apps as they grow (state management, component boundaries, tests) once a project exceeds ~20 components.\n- Rendering and SEO: experience with server-side rendering or frameworks like Next.js and how that changes data loading and caching.\n- AI-in-production (if relevant): putting a model behind an interface—retrieval, evaluation, cost control, and the boundary between model proposals and system commits.\n- Trade-offs and reasoning: ask them to argue for or against MERN given your product requirements.",
+      "rationale": "Rejected by the numbers check: the proposal introduced 20, which the page does not have. The page already lists what diverges between MERN and general full-stack and what to test when hiring. Adding a concise, actionable hiring checklist turns that guidance into a stand‑alone section that answers common hiring queries (what to test) without inventing facts. This makes the page more clearly useful for recruiters and hiring managers and increases the chance that Google will treat it as a distinct, query-focused resource. I chose a section rather than an internal link because no other site pages were listed to link from. ",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google shows ‘Discovered - currently not indexed’ because it knows the URL but hasn’t fetched the page—likely nothing important on the site links to it so Google didn’t crawl the content."
+    },
+    {
+      "id": "2026-11-09-yk-blog-when-usememo-actually-helps-in-reac",
+      "host": "yk.streamerosai.com",
+      "repo": "Yaseenyk/portfolio",
+      "page": "https://yk.streamerosai.com/blog/when-usememo-actually-helps-in-react-19-and-how-to-measure-it/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "section",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Insert after the EXECUTIVE TEARDOWN // TL;DR",
+      "after": "## Quick checklist before adding useMemo\n\n- Measure first: run the React DevTools Profiler on the interaction and add performance.mark around suspected hotspots to get concrete ms measurements. Don’t guess.\n- Ask why: prefer useMemo only for pure, CPU‑heavy derivations or for stabilizing prop identities that gate large memoized subtrees (e.g., columns arrays for virtualized grids).\n- Check identity churn: use why‑did‑you‑render in development to spot props that change by reference even when logically the same.\n- Prefer upstream fixes: if a dependency like rows is recreated on every fetch, fix the fetch/state layer—useMemo won’t help if the dependency identity always changes.\n- Watch memory: avoid holding huge arrays/objects in memo without bounds; memo can increase retention and hide poor data flow.\n- Iterate: change one thing at a time and reprofile to verify real wins before keeping the memoization.",
+      "rationale": "The page is practical and measurement-focused, but adding a concise checklist makes it immediately actionable for readers and search crawlers by improving clarity and utility without introducing new claims; this helps the page stand alone and encourages internal linking from other site pages.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google knows the URL but hasn't fetched it—likely because there are no internal links pointing to the page, so crawlers don't prioritize fetching it."
+    },
+    {
+      "id": "2026-11-09-yk-blog-my-journey-web-developer-to-ai-engi",
+      "host": "yk.streamerosai.com",
+      "repo": "Yaseenyk/portfolio",
+      "page": "https://yk.streamerosai.com/blog/my-journey-web-developer-to-ai-engineer/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "section",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "No dedicated 'How I approach client projects' section.",
+      "after": "## How I approach client projects\nI treat AI work as engineering first: start with the systems you already run and the data that lives in them. Practically that means I focus on data contracts and APIs before model choice — models add leverage, not authority — and I only introduce infrastructure when simpler designs won’t scale.\n\nTypical engagement flow: assess your existing stack and documents, identify high-value retrieval or agent use cases, build a focused prototype (often a RAG chatbot or small agentic workflow), then iterate with real data and simple observability. I ship incrementally so you get working value early and avoid unnecessary complexity.\n\nIf you want this built, I offer fixed-price engagements with the scope and cost visible before we start, or I can join as a senior/lead hire to drive the work from inside your team.",
+      "rationale": "Adds a clear, standalone section that explains how the author works with clients and what visitors can expect — making the page more immediately useful and linkable from other site pages and increasing the chance Google will fetch and index it.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because the page has no obvious internal links or a concise, standalone section that clearly signals its utility for searchers."
+    },
+    {
+      "id": "2026-11-09-yk-blog-shipped-5-products-solo-12-months",
+      "host": "yk.streamerosai.com",
+      "repo": "Yaseenyk/portfolio",
+      "page": "https://yk.streamerosai.com/blog/shipped-5-products-solo-12-months/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "none",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "",
+      "after": "## What you'll find in this post\nThis post is a concise portfolio and thesis: I designed, built, and shipped five production products alone — streamerOS (a realtime telemetry cockpit), IntegrateX (a React Flow workflow canvas), Sable (a local-first AI finance agent), the Zero-Cost AI Blog Writer, and the LinkedIn Pipeline.\n\nRead here for: 1) a short summary of each product and the recurring job it replaced, 2) what “solo” actually meant for architecture and trust boundaries, 3) the operating mindset that turns one engineer into a full stack of roles, and 4) pointers to deeper writeups — every product has a full architecture breakdown in the products section and the next posts in this series will deep-dive each system.\n\nIf you want this built or are hiring, see the services and prices and my hiring note at the end of the post.",
+      "rationale": "Rejected by the numbers check: the proposal introduced 1, 2, 3, 4, which the page does not have. Adds a short, crawlable summary and clear signposts to the deeper product pages and hiring/services CTA already mentioned on the page. That makes the page more useful to both human readers and search crawlers, increasing the chance it will be fetched and indexed without inventing new facts or URLs.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google found the URL but hasn't fetched it because the page appears to have little internal linkage or a clear, crawlable summary that signals standalone value."
+    },
+    {
+      "id": "2026-11-09-streamerosai-features-live-cockpit",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/features/live-cockpit",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "section",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Feature Guide",
+      "after": "## Privacy & local data\n\nEverything shown in the Live Cockpit runs on your PC. Chat lines and every Super Chat are written to a local ledger on your disk; nothing is uploaded off your machine. The moderation filter, Super Chat tally and sentiment scores run locally (Sentiment Horizon uses a model you host in Ollama), so no third‑party AI service sees your chat. YouTube chat is read from your open browser via Windows UI Automation (no Google sign‑in, no API key) and Twitch arrives via a read‑only anonymous connection. If Ollama is offline the page displays a neutral reading rather than inventing scores. In short: your chat, revenue ledger and local AI work remain under your control on your PC.",
+      "rationale": "A clear, concise privacy section uses facts already on the page (local ledger, Ollama/local AI, no API key/no Google sign‑in, Twitch read‑only, nothing uploaded) to make the page self-contained and more useful to readers and reviewers; that can improve perceived usefulness and encourage crawling/indexing.",
+      "evidence": [
+        "https://streamerosai.com/features/live-cockpit"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because nothing important links to the page, so it may look low-value or unconnected to the site."
+    },
+    {
+      "id": "2026-11-09-streamerosai-features-ai-sidekick",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/features/ai-sidekick",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "section",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Feature Guide — the page currently explains features in detail but lacks a short, standalone quick-start checklist.",
+      "after": "## Quick start checklist\n\n1. Install Ollama on the PC and ensure a suitable GPU (RTX 3060-class recommended).\n2. Open streamerOS → Settings → AI and pick/download models (defaults: llama3.2 for chat, nomic-embed-text for memory).\n3. Flip the AI Engine toggle to start the local engine (streamerOS manages the process for you).\n4. Create or edit workspace/streamer_bible.json with persona, game, moderation rules and OBS scene names (e.g. scene.gameplay: Scene 3).\n5. Ask the Sidekick or tell it to act: “How’s chat feeling right now?”, “switch to gameplay”, or store a memory with “remember that…”.\n\nNotes:\n- The Sidekick runs locally at 127.0.0.1; your prompts, stats and memories stay on your PC.\n- If OBS isn’t connected the Sidekick will tell you rather than pretending it switched a scene.",
+      "rationale": "Adding a short, clearly structured Quick start checklist makes the page immediately useful on its own and creates a compact, crawlable block of content for search snippets. It also gives other pages a simple anchorable section to link to and lowers the barrier for visitors (and crawlers) to understand prerequisites and first actions.",
+      "evidence": [
+        "https://streamerosai.com/features/ai-sidekick"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn’t fetched it—there’s no concise, standalone quick-start section that makes the page clearly useful on its own or easy to link from other pages."
+    },
+    {
+      "id": "2026-11-09-streamerosai-features-scene-switcher",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/features/scene-switcher",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "none",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "How to auto-switch OBS scenes, including from chat activity",
+      "after": "Chat-driven OBS scene switcher",
+      "rationale": "No usable linking page (How to auto-switch OBS scenes, including from chat activity). Adding an internal link from the related 'How to auto-switch OBS scenes' guide to this page gives Google an important contextual signal and a crawl path. That guide is the most relevant place users will look for chat-driven switching, so a clear 3–8 word anchor pointing to the scene-switcher feature page should make Google fetch and index it.",
+      "evidence": [
+        "https://streamerosai.com/features/scene-switcher"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because there are no important internal links pointing to the page."
+    },
+    {
+      "id": "2026-11-09-streamerosai-vs-streamlabs",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/vs/streamlabs",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "section",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## The short answer",
+      "after": "## Quick decision checklist\n\n- Choose Streamlabs if you want a single, cloud-synced broadcaster with web and mobile dashboards, hosted alerts/overlays, tipping and merch support, and easy cross‑machine sync.\n\n- Choose streamerOS if you already use OBS and prefer local-first automation: no account or backend, a one-time $29 licence, scene automation that keeps running offline, lower CPU from a native app, and local chat/telemetry handling.\n\n- Practical checks you can run yourself:\n  - Unplug your internet mid‑stream: local automation keeps working; a cloud tool stops.\n  - Watch Task Manager during a live stream to compare real CPU impact on your machine.",
+      "rationale": "Adding a short, actionable checklist makes the page immediately useful to visitors deciding between the two tools and provides a clear, linkable summary that other pages can reference — increasing the chance the URL will be linked internally and fetched by Google.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped indexing because the page is discoverable but lacks a concise, standalone decision-oriented section that makes it directly useful and link-worthy from other site pages."
+    },
+    {
+      "id": "2026-11-09-fitrank-blog-rotating-shifts-explained",
+      "host": "fitrank.streamerosai.com",
+      "repo": "Yaseenyk/fitrank-website",
+      "page": "https://fitrank.streamerosai.com/blog/rotating-shifts-explained/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "section",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Insert after 'Choosing between 8 and 12 hours'",
+      "after": "### How to choose a rotating schedule\n\nUse a short checklist based on the points already discussed on this page:\n\n- Match coverage needs first: confirm how many crew-hours you need (168 hours per week per single-crew requirement) and how many crews you can staff.\n- Check legal limits and overtime: ensure the pattern fits local working-time rules and overtime budgets before you commit.\n- Assess safety risk: favour shorter night runs or forward rotation where work is safety-critical to reduce fatigue risks.\n- Weigh handovers and days off: 12-hour patterns cut handovers and give longer breaks; 8-hour patterns reduce per-shift fatigue.\n- Ask the crews and trial it: consult the people who will work the roster, run a trial cycle and collect feedback.\n- Monitor and adjust: track hours, incidents, and staff wellbeing and be ready to tweak the pattern or staffing levels.\n\nThis practical checklist turns the patterns above into a decision path you can follow for your operation.",
+      "rationale": "Adding a concise, practical \"How to choose\" section makes the page more self-contained and useful to visitors who land directly on it, increasing likelihood of engagement and internal linking; the section uses only points already present on the page (coverage arithmetic, legal limits, safety, handovers, crew preference and trials) and avoids introducing new facts.",
+      "evidence": [
+        "https://fitrank.streamerosai.com/blog/rotating-shifts-explained/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but has not crawled it—likely because the page is isolated with few internal links and needs a clearer, self-contained practical takeaway to make it linkable and index-worthy."
+    },
+    {
+      "id": "2026-11-09-fitrank-blog-automated-employee-scheduling-excel",
+      "host": "fitrank.streamerosai.com",
+      "repo": "Yaseenyk/fitrank-website",
+      "page": "https://fitrank.streamerosai.com/blog/automated-employee-scheduling-excel/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "section",
+      "created": "2026-11-09",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Insert after the \"## Where it breaks\" section.",
+      "after": "## How to keep an Excel schedule shareable and auditable\n\nExcel will get you a working schedule, but the usual complaints — multiple editors, no history, and no recorded reasons — are solvable with a few lightweight practices that keep the sheet useful longer:\n\n- Use one canonical workbook and a single published sheet. Put the live roster on a sheet named \"Published\" so everyone knows what to follow.\n- Keep a simple change log sheet. Each change entry should record who published it, what changed and a short reason. Paste any Solver experiment into the log before replacing the published grid.\n- Record decisions, not just cells. A small \"Decisions\" table (date, editor, reason) preserves why a shift was assigned and avoids burying rationale in managers' heads.\n- Protect formulas and validated columns. Lock formulas and keep drop-downs for shift codes so accidental edits are visible and recoverable.\n- Use comments or a short notes column for exceptions (swaps, skill overrides) so the schedule can answer “why” when someone asks.\n\nThese steps keep Excel practical for small teams while making schedules easier to audit and hand off.",
+      "rationale": "The page already lists practical breakdowns of what Excel handles and where it fails; adding a short, actionable section on making Excel schedules collaborative and auditable increases the page's standalone usefulness for readers and gives other pages a natural reason to link here, which helps Google decide to fetch and index it.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google has discovered the URL but not fetched it because the page appears isolated (no important internal links point to it)."
     }
   ],
   "learnings": {}
