@@ -20,7 +20,7 @@ const store = new Map<string, Entry<unknown>>();
 const subs = new Map<string, Set<() => void>>();
 const inflight = new Set<string>();
 /** Files that exist only on the Worker (kept in its KV), so they are fetched from it straight away. */
-const LIVE_FIRST = new Set(["history.json", "alerts.json", "ranks.json", "crawl.json"]);
+const LIVE_FIRST = new Set(["history.json", "alerts.json", "ranks.json", "crawl.json", "health.json"]);
 
 function emit(key: string) {
   subs.get(key)?.forEach((f) => f());
