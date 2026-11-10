@@ -17,7 +17,7 @@ export function ndate(s: Cell): string {
   const t = String(s);
   return /^\d{8}$/.test(t) ? `${t.slice(0, 4)}-${t.slice(4, 6)}-${t.slice(6)}` : t;
 }
-export type Fmt = 0 | "n" | "p" | "dur" | "pos";
+export type Fmt = 0 | "n" | "p" | "dur" | "pos" | "inr";
 /** GA4's raw placeholders in plain words: "(not set)" is a missing tag, "(direct)" and "(none)" mean no source info. */
 export function nice(v: string): string {
   return v
@@ -31,6 +31,7 @@ export function fmtCell(v: Cell, f?: Fmt): string {
   if (f === "p") return (+v).toFixed(1) + "%";
   if (f === "dur") return dur(+v);
   if (f === "pos") return (+v).toFixed(1);
+  if (f === "inr") return "₹" + (+v || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
   return nice(String(v ?? ""));
 }
 

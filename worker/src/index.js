@@ -71,6 +71,11 @@ const PLAN = {
     mets: ['eventCount'], limit: 500, filter: inList('eventName', ['generate_lead', 'agreement_signed']),
   },
   eventsFirstTouch: { dims: ['hostName', 'eventName', 'customEvent:first_source', 'customEvent:first_medium'], mets: ['eventCount'], limit: 600, filter: keyEventFilter },
+  // Google Ads (linked to the property on 10 Nov 2026). Ad metrics cannot be split by hostName, so these cover all sites.
+  adsCampaigns: { dims: ['sessionGoogleAdsCampaignName'], mets: ['advertiserAdImpressions', 'advertiserAdClicks', 'advertiserAdCost', 'sessions', 'keyEvents'], limit: 200 },
+  adsDaily: { dims: ['date', 'sessionCampaignName'], mets: ['advertiserAdImpressions', 'advertiserAdClicks', 'advertiserAdCost'], limit: 5000, order: byDate },
+  adsKeywords: { dims: ['sessionGoogleAdsKeyword'], mets: ['advertiserAdClicks', 'advertiserAdCost', 'sessions', 'keyEvents'], limit: 200 },
+  adsGroups: { dims: ['sessionGoogleAdsCampaignName', 'sessionGoogleAdsAdGroupName'], mets: ['advertiserAdClicks', 'advertiserAdCost', 'sessions'], limit: 200 },
 };
 
 // ---- Google auth (service account JWT, RS256 via WebCrypto) ----

@@ -54,7 +54,7 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
   const showRows = rows.length > Math.min(max, 5);
   const wide = cols.length >= 6;
   const th = (i: number) => (col === i ? (dir > 0 ? "ascending" : "descending") : "none");
-  const numeric = (j: number) => fmt[j] === "n" || fmt[j] === "p" || fmt[j] === "dur" || fmt[j] === "pos";
+  const numeric = (j: number) => fmt[j] === "n" || fmt[j] === "p" || fmt[j] === "dur" || fmt[j] === "pos" || fmt[j] === "inr";
   const pctOf = (r: Cell[]) => (bar != null ? Math.max(3, (100 * (+r[bar] || 0)) / topVal) : 0);
 
   return (
