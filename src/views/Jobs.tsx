@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { CONCIERGE_API } from "@/lib/config";
 import { getApiBase } from "@/lib/data";
 import { Card } from "@/components/ui";
 
@@ -49,7 +50,7 @@ const JOBS: Job[] = [
 
   // ---- Cloudflare
   { id: "health", group: G_CF, title: "Index health check", schedule: "Daily at 02:40 UTC (08:10 IST)", what: "Asks Google whether each page of all nine sites is indexed, and why not.", repo: "Yaseenyk/analytics-dashboard", file: "", worker: true, rerun: "health", cooldown: "once every 90 minutes", note: "Runs on Cloudflare, in small batches every minute, so a full check takes about 20 minutes. The Health tab updates the moment it finishes." },
-  { id: "reindex", group: G_CF, title: "Chat re-index", schedule: "Daily at 11:30 UTC (17:00 IST)", what: "Re-reads the live portfolio text and refreshes the search index behind the portfolio's chat assistant.", repo: "", file: "", external: true, note: "Runs on Cloudflare, which has no status feed for it yet, so there is no last-run time here." },
+  { id: "reindex", group: G_CF, title: "Chat re-index", schedule: "Daily at 11:30 UTC (17:00 IST)", what: "Re-reads the live portfolio text and refreshes the search index behind the portfolio's chat assistant.", repo: "", file: "", external: true, note: "Runs on the chat assistant's own Worker, which reports each run." },
   { id: "concierge", group: G_CF, title: "Chat assistant deploy", schedule: "On every push that changes the Worker", what: "Publishes the chat assistant's Worker to Cloudflare.", repo: "Yaseenyk/portfolio", file: "worker.yml" },
 
   // ---- tool sites (separate session and repo)
@@ -306,6 +307,156 @@ function WorkerJobCard({ job }: { job: Job }) {
   );
 }
 
+interface ReindexRun {
+  at: string;
+  trigger: string;
+  ok: boolean;
+  baseline: boolean;
+  articles: number;
+  chunks: number;
+  embedded: number;
+  added: { url: string; title: string }[];
+  changed: { url: string; title: string }[];
+  removed: { url: string; title: string }[];
+  error?: string | null;
+  ms: number;
+}
+const PASS_KEY = "merge-passphrase";
+
+/** The chat assistant's nightly re-index: when it ran, what it found new, changed or removed, and where that went. */
+function ReindexCard({ job }: { job: Job }) {
+  const [runs, setRuns] = useState<ReindexRun[] | null>(null);
+  const [err, setErr] = useState("");
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [ask, setAsk] = useState(false);
+  const load = useCallback(async () => {
+    try {
+      const j = await (await fetch(`${CONCIERGE_API}/status/reindex`, { cache: "no-store" })).json();
+      setRuns(j.runs || []);
+      setErr(j.error || "");
+    } catch {
+      setErr("Could not reach the chat assistant's Worker.");
+    }
+  }, []);
+  useEffect(() => {
+    load();
+    publish(job.id, null);
+  }, [load, job.id]);
+  const run = async (pass: string) => {
+    setBusy(true);
+    setMsg("");
+    try {
+      const r = await fetch(`${CONCIERGE_API}/api/reindex`, { method: "POST", headers: { "X-Passphrase": pass } });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        if (r.status === 401) { try { localStorage.removeItem(PASS_KEY); } catch { /* ignore */ } setAsk(true); }
+        setMsg(j.error || `Failed (${r.status}).`);
+      } else {
+        try { localStorage.setItem(PASS_KEY, pass); } catch { /* ignore */ }
+        setAsk(false);
+        setMsg("Started. It takes a minute or two; this card updates when it finishes.");
+        setTimeout(load, 45000);
+        setTimeout(load, 90000);
+      }
+    } catch {
+      setMsg("Could not reach the chat assistant's Worker.");
+    }
+    setBusy(false);
+  };
+  const go = () => {
+    let p = "";
+    try { p = localStorage.getItem(PASS_KEY) || ""; } catch { /* ignore */ }
+    if (p) run(p); else setAsk(true);
+  };
+  const last = runs?.[0];
+  const lastOk = runs?.find((r) => r.ok);
+  const tone = !last ? "bg-white/5 text-mute" : last.ok ? "bg-good/10 text-good" : "bg-bad/10 text-bad";
+  const list = (title: string, items: { url: string; title: string }[]) =>
+    items.length ? (
+      <div className="mt-2">
+        <div className="text-[12px] font-semibold text-ink">{title} ({items.length})</div>
+        <ul className="mt-1 space-y-0.5">
+          {items.map((x) => <li key={x.url} className="truncate text-[12.5px]"><a href={x.url} target="_blank" rel="noopener noreferrer" className="text-brand hover:underline" title={x.url}>{x.title}</a></li>)}
+        </ul>
+      </div>
+    ) : null;
+  return (
+    <Card title={job.title}>
+      <p className="sub">{job.what}</p>
+      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[13px]">
+        <dt className="text-dim">Schedule</dt>
+        <dd className="text-mute">{job.schedule}</dd>
+        <dt className="text-dim">Status</dt>
+        <dd>
+          <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 font-mono text-[11.5px] font-semibold ${tone}`}>
+            <i className={`h-1.5 w-1.5 rounded-full ${last ? (last.ok ? "bg-good" : "bg-bad") : "bg-dim"}`} />
+            {!runs ? "Loading…" : last ? `${last.ok ? "Succeeded" : "Failed"} ${ago(last.at)}` : "No run recorded yet"}
+          </span>
+        </dd>
+        {last && last.ok && (
+          <>
+            <dt className="text-dim">Last run</dt>
+            <dd className="text-mute">
+              {last.baseline ? `First run with history: indexed all ${last.articles} articles (${last.chunks} passages) as the baseline.` : `${last.added.length} new, ${last.changed.length} updated, ${last.removed.length} removed. ${last.embedded} passages re-embedded of ${last.chunks} (${last.articles} articles).`}
+            </dd>
+            <dt className="text-dim">Where</dt>
+            <dd className="text-mute">Search index <span className="font-mono text-[12px]">portfolio-corpus</span>, built from the portfolio&apos;s <a className="text-brand hover:underline" href="https://yk.streamerosai.com/llms-full.txt" target="_blank" rel="noopener noreferrer">llms-full.txt</a>. The chat assistant answers from it.</dd>
+          </>
+        )}
+        {last && !last.ok && (
+          <>
+            <dt className="text-dim">Error</dt>
+            <dd className="break-words text-bad">{last.error}</dd>
+          </>
+        )}
+        {lastOk && last && !last.ok && (
+          <>
+            <dt className="text-dim">Last good run</dt>
+            <dd className="text-mute">{ago(lastOk.at)}</dd>
+          </>
+        )}
+      </dl>
+      {err && <p className="sub">{err}</p>}
+      {last && (last.added.length > 0 || last.changed.length > 0 || last.removed.length > 0) && (
+        <div className="mt-2">
+          {list("New in the index", last.added)}
+          {list("Updated", last.changed)}
+          {list("Removed", last.removed)}
+        </div>
+      )}
+      {last && !last.baseline && !last.added.length && !last.changed.length && !last.removed.length && last.ok && <p className="sub">Nothing changed in the portfolio&apos;s text since the previous run, so nothing was re-embedded.</p>}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button type="button" disabled={busy} onClick={go} className="rounded-[10px] bg-brand px-3 py-1.5 text-[12.5px] font-semibold text-black disabled:opacity-50">{busy ? "Starting…" : "Run now"}</button>
+        <button type="button" onClick={() => setOpen(!open)} className="pill">{open ? "Hide history" : `History (${runs?.length ?? 0})`}</button>
+        <button type="button" onClick={load} className="pill">Refresh</button>
+      </div>
+      {ask && (
+        <form className="mt-3 flex flex-wrap items-center gap-2 rounded-[10px] bg-card2 p-3" onSubmit={(e) => { e.preventDefault(); const v = (new FormData(e.currentTarget).get("pass") as string) || ""; if (v) run(v); }}>
+          <span className="text-[12.5px] text-mute">Your passphrase:</span>
+          <input name="pass" type="password" autoComplete="current-password" className="min-w-[160px] flex-1" placeholder="passphrase" />
+          <button type="submit" className="rounded-[10px] bg-brand px-3 py-1.5 font-semibold text-black">Run</button>
+        </form>
+      )}
+      {msg && <p role="status" className="mt-2 rounded-lg bg-brand/10 px-3 py-2 text-[12.5px] text-ink">{msg}</p>}
+      {open && (
+        <ul className="mt-3 border-t border-line">
+          {(runs || []).map((r, i) => (
+            <li key={i} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-line py-2 text-[12.5px] last:border-0">
+              <span className="font-mono text-[11.5px] text-dim">{new Date(r.at).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+              <span className={r.ok ? "text-good" : "text-bad"}>{r.ok ? "ok" : "failed"}</span>
+              <span className="text-dim">{r.trigger}</span>
+              <span className="min-w-0 flex-1 text-mute">{r.ok ? (r.baseline ? `baseline, ${r.articles} articles` : `${r.added.length} new · ${r.changed.length} updated · ${r.removed.length} removed`) : r.error}</span>
+            </li>
+          ))}
+          {!runs?.length && <li className="py-2 text-dim">No runs recorded yet.</li>}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
 function ExternalJobCard({ job }: { job: Job }) {
   return (
     <Card title={job.title}>
@@ -372,7 +523,7 @@ export default function Jobs() {
         <section key={g} aria-label={g}>
           <h2 className="h2 mb-3">{g}</h2>
           <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
-            {JOBS.filter((j) => j.group === g).map((j) => (j.worker ? <WorkerJobCard key={j.id} job={j} /> : j.external ? <ExternalJobCard key={j.id} job={j} /> : <JobCard key={j.id} job={j} />))}
+            {JOBS.filter((j) => j.group === g).map((j) => (j.worker ? <WorkerJobCard key={j.id} job={j} /> : j.external ? (j.id === "reindex" ? <ReindexCard key={j.id} job={j} /> : <ExternalJobCard key={j.id} job={j} />) : <JobCard key={j.id} job={j} />))}
           </div>
         </section>
       ))}

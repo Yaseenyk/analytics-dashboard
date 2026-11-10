@@ -30,6 +30,8 @@ export const gscProperty = (host: string) => `https://${host}/`;
 
 /** Cloudflare Worker that answers the same files fresh from Google. `?api=off` turns it off. */
 export const DEFAULT_API = "https://analytics-api.yaseenyk.workers.dev";
+/** The portfolio's chat assistant Worker: also reports its nightly re-index at /status/reindex. */
+export const CONCIERGE_API = "https://yaseen-concierge.yaseenyk.workers.dev";
 
 export const COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)", "var(--s6)", "var(--s7)", "var(--s8)", "var(--s9)", "var(--s10)"];
 export const BRAND = "var(--brand)";
