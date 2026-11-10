@@ -102,8 +102,10 @@ export function applyReplace(text, before, after) {
 }
 /** Numbers in the proposal that are not on our page: the one kind of change a model must never make up. */
 export function newNumbers(proposal, ourText) {
+  // "1. First step", "Step 2" and heading levels are structure, not claims: take them out before comparing
+  const body = proposal.replace(/^\s*(?:#{1,6}\s*)?\d{1,2}[.)]\s/gm, " ").replace(/\b(?:step|steps|part|question|q)\s*\d{1,2}\b/gi, " ");
   const have = new Set((ourText.match(/\d[\d,.]*/g) || []).map((x) => x.replace(/[,.]$/, "")));
-  return [...new Set((proposal.match(/\d[\d,.]*/g) || []).map((x) => x.replace(/[,.]$/, "")))].filter((n) => !have.has(n) && !/^(19|20)\d\d$/.test(n));
+  return [...new Set((body.match(/\d[\d,.]*/g) || []).map((x) => x.replace(/[,.]$/, "")))].filter((n) => !have.has(n) && !/^(19|20)\d\d$/.test(n));
 }
 /** Visible text of an HTML page, trimmed for a prompt. */
 export function extractText(html, max = 7000) {
@@ -397,8 +399,16 @@ async function main() {
       if (p.change_type === "internal_link" && !/^https?:/i.test(p.current_text || "")) {
         // the model named the linking page by its title: look the URL up in the site's page list
         const want = (p.current_text || "").toLowerCase().trim();
-        const hit = want && pagesOf(c.host).find(([, t]) => t.toLowerCase().includes(want) || want.includes(t.toLowerCase().replace(/\s*[|·–—-]\s*[^|·–—-]{2,40}$/, "")));
-        if (hit) p.current_text = hit[0];
+        const words = (x) => new Set(x.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((w) => w.length > 2));
+        const wantW = words(want);
+        let best = null, bestScore = 0;
+        for (const [u, t] of pagesOf(c.host)) {
+          const tw = words(t);
+          const shared = [...wantW].filter((w) => tw.has(w)).length;
+          const score = shared / Math.max(1, Math.min(wantW.size, tw.size));
+          if (score > bestScore) { best = u; bestScore = score; }
+        }
+        if (best && bestScore >= 0.6) p.current_text = best;
       }
       if (p.change_type === "internal_link") { const src = await fetchPage(p.current_text); sourceTitle = src ? pageTitle(src) : ""; if (!sourceTitle) { p.rationale = `No usable linking page (${p.current_text}). ${p.rationale}`; p.change_type = "none"; } }
       const id = `${date}-${c.host.split(".")[0]}-${(new URL(c.page).pathname.replace(/\W+/g, "-").replace(/^-|-$/g, "") || "home").slice(0, 40)}`;

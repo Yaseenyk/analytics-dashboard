@@ -68,6 +68,10 @@ describe("edits", () => {
     expect(locate(["a", "c"], "hello", read)).toBeNull(); // two files
     expect(locate(["c"], "hello", read)).toBeNull(); // twice in one file
   });
+  it("newNumbers ignores list numbering and step labels, which are structure not claims", () => {
+    expect(newNumbers("## How to start\n1. Install it\n2. Open it\n3. Press go\nStep 4 is optional.", "no figures on the page")).toEqual([]);
+    expect(newNumbers("1. It costs 499 rupees", "no figures")).toEqual(["499"]);
+  });
   it("newNumbers flags figures the page did not have, ignoring years", () => {
     expect(newNumbers("Costs 1,200 rupees in 2026 for 3 kW", "a 3 kW system from 2024")).toEqual(["1,200"]);
     expect(newNumbers("no digits here", "anything")).toEqual([]);
