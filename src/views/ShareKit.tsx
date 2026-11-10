@@ -55,6 +55,12 @@ const OPENERS: Record<string, { who: string; home: string; rules: [RegExp, strin
     rules: [],
     other: "this one runs in your browser and uploads nothing:",
   },
+  "exams.streamerosai.com": {
+    who: "If you're preparing for or applying to JEE Main, NEET UG, CUET UG or UPSC",
+    home: "this shows the dates, eligibility, pattern and fees for each exam, with a link to the official document behind every fact:",
+    rules: [[/^\/calendar\//, "here is every deadline and exam day in one list:"], [/\/eligibility\//, "this is who can apply, read from the official bulletin:"], [/\/exam-pattern\//, "this is how the paper is built and marked:"], [/\/fees\//, "this is what it costs to apply, by category:"]],
+    other: "this has the dates and how to apply, with the official source linked:",
+  },
   "solar.streamerosai.com": {
     who: "If you're thinking about rooftop solar under PM Surya Ghar",
     home: "this is an independent guide with every figure sourced:",
@@ -110,6 +116,7 @@ const ASK: Record<string, { made: string; want: string; brand: string }> = {
   "campus.streamerosai.com": { brand: "DefendIt", made: "I built DefendIt, a site that explains final year projects line by line for BCA, MCA and B.Tech students, with free report and synopsis templates.", want: "If your project is due this year, tell me what you are stuck on and I will try to cover it." },
   "spotai.streamerosai.com": { brand: "SpotAI", made: "I built SpotAI, an AI gym app for India: squat form check on your phone, the day's workout, a gym leaderboard and a simple owner view.", want: "If you run a gym or train at one, I would love your feedback." },
   "tools.streamerosai.com": { brand: "StreamerOS Dev Tools", made: "I built a set of free developer tools (JSON formatter, validator, compare, Base64) that run in your browser and upload nothing.", want: "If you work with JSON every day, tell me what is missing." },
+  "exams.streamerosai.com": { brand: "Exam Dates India", made: "I made a site that lists the dates, eligibility, pattern and fees for JEE Main, NEET UG, CUET UG and UPSC, each read from the official bulletin with a link to it.", want: "If you are preparing for one of them, tell me what is missing or wrong." },
   "solar.streamerosai.com": { brand: "the PM Surya Ghar guide", made: "I wrote an independent guide to the PM Surya Ghar rooftop solar subsidy, with every figure sourced.", want: "If you are thinking about rooftop solar, tell me what is still unclear." },
   "calc.streamerosai.com": { brand: "Money Calculators", made: "I built a set of free money calculators (pay raise, salary to hourly, overtime, currency) that give an instant answer.", want: "If one gives you a wrong or confusing answer, tell me." },
   "images.streamerosai.com": { brand: "Image Tools", made: "I built free image tools that compress to a target size, resize and convert formats in your browser, without uploading anything.", want: "If you need a size or format they do not handle, tell me." },

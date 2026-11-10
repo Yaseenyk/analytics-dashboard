@@ -5,7 +5,7 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 
-const HOSTS = ["streamerosai.com", "yk.streamerosai.com", "fitrank.streamerosai.com", "campus.streamerosai.com", "spotai.streamerosai.com", "tools.streamerosai.com", "solar.streamerosai.com", "calc.streamerosai.com", "images.streamerosai.com", "math.streamerosai.com"];
+const HOSTS = ["streamerosai.com", "yk.streamerosai.com", "fitrank.streamerosai.com", "campus.streamerosai.com", "spotai.streamerosai.com", "tools.streamerosai.com", "solar.streamerosai.com", "calc.streamerosai.com", "images.streamerosai.com", "math.streamerosai.com", "exams.streamerosai.com"];
 const only = process.argv.slice(2);
 const hosts = only.length ? only : HOSTS;
 const FILE = "data/speed.json";

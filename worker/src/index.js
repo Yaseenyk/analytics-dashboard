@@ -22,6 +22,7 @@ const GSC_SITES = [
   'https://spotai.streamerosai.com/',
   'https://tools.streamerosai.com/',
   'https://solar.streamerosai.com/',
+  'https://exams.streamerosai.com/',
   'https://calc.streamerosai.com/',
   'https://images.streamerosai.com/',
   'https://math.streamerosai.com/',
@@ -268,6 +269,7 @@ const HEALTH_SITES = {
   'calc.streamerosai.com': 'https://calc.streamerosai.com/',
   'images.streamerosai.com': 'https://images.streamerosai.com/',
   'math.streamerosai.com': 'https://math.streamerosai.com/',
+  'exams.streamerosai.com': 'https://exams.streamerosai.com/',
 };
 const HEALTH_BATCH = 25;
 const HEALTH_COOLDOWN_MIN = 90;
@@ -401,7 +403,7 @@ const memo = new Map(); // in-isolate cache: key -> { at, body }
 // The GitHub token (OPTIMIZER_GITHUB_TOKEN) and the owner's passphrase (MERGE_PASSPHRASE) are Worker secrets. The dashboard
 // is public, so an action needs the passphrase in X-Passphrase; it is compared by hash. Only branches named optimizer/* can
 // be touched, and only in these repositories.
-const OPT_REPOS = ['Yaseenyk/portfolio', 'Yaseenyk/streamer-os-website', 'Yaseenyk/fitrank-website', 'Yaseenyk/campus-site', 'Yaseenyk/spotai-website', 'Yaseenyk/solar-site'];
+const OPT_REPOS = ['Yaseenyk/portfolio', 'Yaseenyk/streamer-os-website', 'Yaseenyk/fitrank-website', 'Yaseenyk/campus-site', 'Yaseenyk/spotai-website', 'Yaseenyk/solar-site', 'Yaseenyk/exams'];
 const ghHeaders = (token) => ({ Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'analytics-api', 'X-GitHub-Api-Version': '2022-11-28' });
 async function sha256(s) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].map((b) => b.toString(16).padStart(2, '0')).join(''); }
 async function optimizerPrs(env) {

@@ -46,6 +46,7 @@ const JOBS: Job[] = [
   { id: "streameros", group: G_DEPLOY, title: "streamerOS deploy", schedule: "On every push", what: "Rebuilds streamerosai.com. The blogger's posts go live through this.", repo: "Yaseenyk/streamer-os-website", file: "nextjs.yml" },
   { id: "campus", group: G_DEPLOY, title: "DefendIt deploy", schedule: "On every push", what: "Rebuilds campus.streamerosai.com.", repo: "Yaseenyk/campus-site", file: "deploy.yml" },
   { id: "solar", group: G_DEPLOY, title: "Solar guide deploy", schedule: "On every push", what: "Rebuilds solar.streamerosai.com.", repo: "Yaseenyk/solar-site", file: "deploy.yml" },
+  { id: "exams", group: G_DEPLOY, title: "Exam Dates deploy", schedule: "Daily at 00:20 UTC (05:50 IST), and on every push", what: "Rebuilds exams.streamerosai.com and drops dates that have passed from its Coming up list.", repo: "Yaseenyk/exams", file: "deploy.yml" },
   { id: "dashboard", group: G_DEPLOY, title: "Dashboard data and deploy", schedule: "Every 2 hours, and on every push", what: "Pulls Google Analytics, Search Console and Bing, then rebuilds and publishes this dashboard.", repo: "Yaseenyk/analytics-dashboard", file: "dashboard.yml", rerun: "dashboard", cooldown: "once every 10 minutes", note: "Takes about 2 minutes." },
 
   // ---- Cloudflare

@@ -19,7 +19,7 @@ export const RANK_PROPERTY = 'sc-domain:streamerosai.com';
 /** GitHub repositories whose latest run of every workflow is checked for failures. */
 export const WATCH_REPOS = [
   'Yaseenyk/portfolio', 'Yaseenyk/streamer-os-website', 'Yaseenyk/fitrank-website', 'Yaseenyk/campus-site', 'Yaseenyk/spotai-website',
-  'Yaseenyk/solar-site', 'Yaseenyk/analytics-dashboard', 'Yaseenyk/linkedin-bot', 'Yaseenyk/sites-lab-yk',
+  'Yaseenyk/solar-site', 'Yaseenyk/exams', 'Yaseenyk/analytics-dashboard', 'Yaseenyk/linkedin-bot', 'Yaseenyk/sites-lab-yk',
 ];
 
 // ---- alerts ----------------------------------------------------------------------------------------

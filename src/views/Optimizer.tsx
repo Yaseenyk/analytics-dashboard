@@ -61,7 +61,7 @@ interface Pr {
   checks: "success" | "pending" | "failure" | "none";
 }
 const PASS_KEY = "merge-passphrase";
-const siteOfRepo = (repo: string) => ({ "Yaseenyk/portfolio": "Portfolio", "Yaseenyk/streamer-os-website": "streamerOS", "Yaseenyk/fitrank-website": "FitRank", "Yaseenyk/campus-site": "DefendIt", "Yaseenyk/spotai-website": "SpotAI", "Yaseenyk/solar-site": "Solar Guide" })[repo] || repo;
+const siteOfRepo = (repo: string) => ({ "Yaseenyk/portfolio": "Portfolio", "Yaseenyk/streamer-os-website": "streamerOS", "Yaseenyk/fitrank-website": "FitRank", "Yaseenyk/campus-site": "DefendIt", "Yaseenyk/spotai-website": "SpotAI", "Yaseenyk/solar-site": "Solar Guide", "Yaseenyk/exams": "Exam Dates" })[repo] || repo;
 const CHECK: Record<Pr["checks"], [string, string]> = { success: ["Checks passed", "bg-good/10 text-good"], pending: ["Checks running", "bg-white/5 text-mute"], failure: ["Checks failed", "bg-bad/10 text-bad"], none: ["No checks yet", "bg-white/5 text-dim"] };
 const agoDays = (iso: string) => Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 864e5));
 

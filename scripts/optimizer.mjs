@@ -21,6 +21,7 @@ export const SITES = {
   "campus.streamerosai.com": { repo: "Yaseenyk/campus-site", indexed: true },
   "spotai.streamerosai.com": { repo: "Yaseenyk/spotai-website", indexed: true },
   "solar.streamerosai.com": { repo: "Yaseenyk/solar-site", indexed: true },
+  "exams.streamerosai.com": { repo: "Yaseenyk/exams", indexed: true },
   // The tool sites belong to another working session: reports only, never pull requests.
   "tools.streamerosai.com": { repo: "Yaseenyk/sites-lab-yk", indexed: true, reportOnly: true },
   "calc.streamerosai.com": { repo: "Yaseenyk/sites-lab-yk", indexed: true, reportOnly: true },

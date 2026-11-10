@@ -25,6 +25,7 @@ const GSC_SITES = [
   'https://spotai.streamerosai.com/',
   'https://tools.streamerosai.com/',
   'https://solar.streamerosai.com/',
+  'https://exams.streamerosai.com/',
   'https://calc.streamerosai.com/',
   'https://images.streamerosai.com/',
   'https://math.streamerosai.com/',
