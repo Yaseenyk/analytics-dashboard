@@ -324,6 +324,15 @@ for (const range of RANGES) {
 // adds Bing's latest crawl stats and publishes both.
 let health = { generatedAt, indexAt: null, index: {} };
 try { health = { ...health, ...JSON.parse(fs.readFileSync('data/health.json', 'utf8')), generatedAt }; } catch { /* first run: no file yet */ }
+// The committed file can be days old (the daily check now runs inside the Worker, not here). Take the Worker's current index
+// report, already lined up with the sitemaps, so the copy published with the site is not the first thing people see stale.
+try {
+  const live = await fetch('https://analytics-api.yaseenyk.workers.dev/data/health.json', { signal: AbortSignal.timeout(30000) }).then((r) => (r.ok ? r.json() : null));
+  if (live && live.index && Object.keys(live.index).length && (!health.indexAt || Date.parse(live.indexAt) >= Date.parse(health.indexAt))) {
+    health.index = live.index;
+    health.indexAt = live.indexAt;
+  }
+} catch { /* the Worker is a bonus here: keep the committed copy */ }
 const latest = (rows) => rows.slice().sort((a, b) => (bingDate(b.Date)?.getTime() ?? 0) - (bingDate(a.Date)?.getTime() ?? 0))[0];
 health.bing = Object.fromEntries(Object.entries(bing.raw).map(([h, r]) => {
   const c = latest(r.crawl || []);

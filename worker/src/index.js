@@ -460,6 +460,46 @@ async function optimizerAction(req, env, ch) {
   return json({ ok: true, closed: true }, 200);
 }
 
+// ---- keep the index report in step with the sitemaps ----
+// The inspection runs once a day, so between runs a page released that morning is missing from it, and a page that has since
+// left the sitemap (for example a language switched back to noindex) is still counted. When the report is served, line it up
+// with each site's current sitemap: drop pages no longer in it, and list new ones as "not checked yet". A host whose sitemap
+// cannot be read is left exactly as the last inspection saw it.
+const NEW_PAGE = 'New page: Google has not checked it yet';
+async function reconcileHealth(env, body) {
+  const file = JSON.parse(body);
+  let cache = await kvJson(env, 'health:sitemaps');
+  if (!cache || Date.now() - cache.at > 30 * 60000) {
+    const hosts = Object.keys(HEALTH_SITES);
+    const lists = await Promise.all(hosts.map((h) => sitemapUrlsFor(h).catch(() => [])));
+    cache = { at: Date.now(), map: Object.fromEntries(hosts.map((h, i) => [h, lists[i]])) };
+    await env.DATA.put('health:sitemaps', JSON.stringify(cache));
+  }
+  for (const [h, s] of Object.entries(file.index || {})) {
+    const live = cache.map[h];
+    if (!live || !live.length || !Array.isArray(s.indexedUrls)) continue;
+    const inMap = new Set(live);
+    const urls = s.urls.filter((u) => inMap.has(u[0]));
+    const indexedUrls = s.indexedUrls.filter((u) => inMap.has(u));
+    const seen = new Set([...urls.map((u) => u[0]), ...indexedUrls]);
+    const fresh = live.filter((u) => !seen.has(u));
+    const notStates = new Set(s.urls.map((u) => u[1]));
+    const byState = {};
+    urls.forEach((u) => (byState[u[1]] = (byState[u[1]] || 0) + 1));
+    if (fresh.length) byState[NEW_PAGE] = fresh.length;
+    const inKeys = Object.keys(s.byState || {}).filter((k) => !notStates.has(k));
+    let left = indexedUrls.length;
+    inKeys.forEach((k, i) => { const v = i === inKeys.length - 1 ? left : Math.min(left, s.byState[k]); byState[k] = v; left -= v; });
+    Object.assign(s, {
+      inspected: s.inspected, urls: [...urls, ...fresh.map((u) => [u, NEW_PAGE, null])], indexedUrls, byState,
+      indexed: indexedUrls.length, notIndexed: urls.length + fresh.length, sitemapNow: live.length, newUnchecked: fresh.length, droppedFromSitemap: s.urls.length + s.indexedUrls.length - urls.length - indexedUrls.length,
+    });
+    s.inspected = indexedUrls.length + urls.length + fresh.length;
+  }
+  file.reconciledAt = new Date(cache.at).toISOString();
+  return JSON.stringify(file);
+}
+
 const crawlHooks = { hosts: Object.keys(HEALTH_SITES), sitemapUrlsFor, pool };
 const CRAWL_COOLDOWN_MIN = 90;
 const KV_FILES = { 'history.json': 'history:index', 'alerts.json': 'alerts', 'ranks.json': 'ranks:file', 'crawl.json': 'crawl:file' };
@@ -511,8 +551,9 @@ export default {
       return new Response(body, { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' } });
     }
     if (url.pathname === '/data/health.json' && req.method === 'GET') {
-      const body = await env.DATA.get('health:file');
+      let body = await env.DATA.get('health:file');
       if (!body) return new Response('not found', { status: 404, headers: ch });
+      body = await reconcileHealth(env, body).catch(() => body);
       return new Response(body, { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' } });
     }
     const m = url.pathname.match(/^\/data\/(meta|live|ga|gsc|bing)(?:-([a-z0-9]+))?\.json$/);
