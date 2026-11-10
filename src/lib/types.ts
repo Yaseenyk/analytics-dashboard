@@ -178,3 +178,30 @@ export interface OptimizerFile {
   experiments: Experiment[];
   learnings: Record<string, { date: string; type: string; q: string; page: string; verdict: string; note?: string }[]>;
 }
+
+/** Microsoft Clarity behaviour numbers per site, for the last 3 days at the time of each daily export. */
+export interface ClaritySignal {
+  pct: number | null;
+  sessions: number | null;
+}
+export interface ClaritySite {
+  sessions: number | null;
+  botSessions: number | null;
+  humanSessions: number | null;
+  users: number | null;
+  pagesPerSession: number | null;
+  scrollDepth: number | null;
+  activeSeconds: number | null;
+  totalSeconds: number | null;
+  rageClicks: ClaritySignal | null;
+  deadClicks: ClaritySignal | null;
+  excessiveScroll: ClaritySignal | null;
+  quickBacks: ClaritySignal | null;
+  scriptErrors: ClaritySignal | null;
+  errorClicks: ClaritySignal | null;
+  topPages: { url: string; visits: number | null }[];
+}
+export interface ClarityFile {
+  generatedAt: string;
+  runs: { at: string; window: string; sites: Record<string, ClaritySite>; errors: string[] }[];
+}

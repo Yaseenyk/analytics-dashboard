@@ -328,6 +328,8 @@ write('health', health);
 
 // Daily lab speed test (scripts/speed.mjs, its own workflow) is committed as data/speed.json; publish it with the rest.
 try { write('speed', JSON.parse(fs.readFileSync('data/speed.json', 'utf8'))); } catch { /* no speed test has run yet */ }
+// Daily Microsoft Clarity export (scripts/clarity.mjs, its own workflow) is committed as data/clarity.json.
+try { write('clarity', JSON.parse(fs.readFileSync('data/clarity.json', 'utf8'))); } catch { /* no Clarity export yet */ }
 // The weekly content optimizer (scripts/optimizer.mjs) commits data/optimizer.json; publish it for the Rankings tab.
 try { write('optimizer', JSON.parse(fs.readFileSync('data/optimizer.json', 'utf8'))); } catch { /* no optimizer run yet */ }
 

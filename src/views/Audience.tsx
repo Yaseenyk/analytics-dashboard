@@ -3,6 +3,7 @@
 import { group, ix, rep } from "@/lib/derive";
 import { Card, Sk, SkCard } from "@/components/ui";
 import WorldMap from "@/components/WorldMap";
+import { BehaviourCard } from "./Behaviour";
 
 /** GA4 sends "(not set)" or a blank when it cannot place a visitor (privacy tools, VPNs, bots). That is not a missing tag. */
 const place = (v: string) => (!v || v === "(not set)" ? "Location unknown" : v);
@@ -76,6 +77,9 @@ export default function Audience() {
       <div className={cols2.replace("items-start", "items-stretch")}>
         <div className="md:col-span-2">
           <CountryMap />
+        </div>
+        <div className="md:col-span-2">
+          <BehaviourCard />
         </div>
         {two("Devices", "devices", "deviceCategory")}
         <GaDonut

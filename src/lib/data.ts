@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { DEFAULT_API } from "./config";
-import type { AlertItem, BingFile, CrawlFile, GAFile, GSCFile, HealthFile, HistoryRow, Live, Meta, OptimizerFile, RankFile, SpeedFile } from "./types";
+import type { AlertItem, BingFile, CrawlFile, GAFile, GSCFile, HealthFile, HistoryRow, Live, Meta, OptimizerFile, RankFile, SpeedFile, ClarityFile } from "./types";
 
 /**
  * One tiny store, one entry per data file. A block subscribes to just the file it needs, so when a slow
@@ -217,3 +217,4 @@ export const useRanks = () => useSource<RankFile>("ranks.json");
 export const useCrawl = () => useSource<CrawlFile>("crawl.json");
 export const useSpeed = () => useSource<SpeedFile>("speed.json");
 export const useOptimizer = () => useSource<OptimizerFile>("optimizer.json");
+export const useClarity = () => useSource<ClarityFile>("clarity.json");

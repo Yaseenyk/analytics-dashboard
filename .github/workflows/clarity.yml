@@ -1,0 +1,38 @@
+name: Clarity export
+
+# Once a day: pull behaviour numbers (sessions, scroll depth, rage and dead clicks, quick backs, script errors) for every site
+# that has a Clarity API token in the CLARITY_TOKENS secret. The API allows 10 requests per project per day, so one run a day.
+on:
+  schedule:
+    - cron: "10 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: clarity
+  cancel-in-progress: false
+
+jobs:
+  clarity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Pull from Clarity
+        run: node scripts/clarity.mjs
+        env:
+          CLARITY_TOKENS: ${{ secrets.CLARITY_TOKENS }}
+      - name: Save the result
+        run: |
+          git config user.name "analytics-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/clarity.json
+          git diff --cached --quiet && exit 0
+          git commit -m "chore(data): daily Clarity export"
+          for i in 1 2 3; do git pull --rebase -q && git push -q && exit 0; sleep 5; done
+          exit 1
