@@ -10,7 +10,7 @@ import { DataTable } from "@/components/DataTable";
 import { Card, ErrorCard, Icon, Sk, SkCard, SkTable } from "@/components/ui";
 import { cols2 } from "./kit";
 import { IndexTracker } from "./IndexTracker";
-import { CrawlIssues, IndexHistory, SpeedCard } from "./HealthExtras";
+import { CrawlIssues, PageIndexing, SpeedCard } from "./HealthExtras";
 
 function Explainer() {
   return (
@@ -101,10 +101,7 @@ export default function Health() {
     <>
       <Explainer />
       <SiteCards />
-      <div className={cols2}>
-        <Tables />
-        <IndexHistory />
-      </div>
+      <PageIndexing />
       <IndexTracker />
       <CrawlIssues />
       <SpeedCard />

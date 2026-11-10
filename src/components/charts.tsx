@@ -37,8 +37,13 @@ function useWidth(): [React.RefObject<HTMLDivElement>, number] {
   return [ref, w];
 }
 
+/** A chart's frame: its own card, or bare (no card) when it sits inside a panel that already has one. A module-level component so it keeps its identity between renders. */
+function ChartWrap({ bare, title, extra, note, children }: { bare?: boolean; title: string; extra?: ReactNode; note?: ReactNode; children: ReactNode }) {
+  return bare ? <div className="p-4 pt-2">{children}</div> : <Card title={title} extra={extra} note={note}>{children}</Card>;
+}
+
 /** Line and area chart drawn at its real width so text stays readable on phones. */
-export function AreaChart({ title, series, norm, extra, empty = "Nothing here yet.", note }: { title: string; series: Series[]; norm?: boolean; extra?: ReactNode; empty?: string; note?: ReactNode }) {
+export function AreaChart({ title, series, norm, extra, empty = "Nothing here yet.", note, bare }: { title: string; series: Series[]; norm?: boolean; extra?: ReactNode; empty?: string; note?: ReactNode; bare?: boolean }) {
   const gid = useId().replace(/:/g, "");
   const [ref, W] = useWidth();
   const [hov, setHov] = useState<number | null>(null);
@@ -48,7 +53,7 @@ export function AreaChart({ title, series, norm, extra, empty = "Nothing here ye
     return Object.keys(d).sort();
   }, [series]);
   const maps = useMemo(() => series.map((s) => Object.fromEntries(s.pts)), [series]);
-  if (!xs.length || !series.length) return <Card title={title} extra={extra}><Empty msg={empty} /></Card>;
+  if (!xs.length || !series.length) return bare ? <div className="p-4"><Empty msg={empty} /></div> : <Card title={title} extra={extra}><Empty msg={empty} /></Card>;
 
   const small = W < 480;
   const H = small ? 170 : 210;
@@ -70,7 +75,7 @@ export function AreaChart({ title, series, norm, extra, empty = "Nothing here ye
   };
 
   return (
-    <Card title={title} extra={extra} note={note}>
+    <ChartWrap bare={bare} title={title} extra={extra} note={note}>
       <div ref={ref} className="relative mt-3 select-none">
         <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={title} className="block max-w-full touch-pan-y" onPointerMove={onMove} onPointerLeave={() => setHov(null)}>
           <defs>
@@ -133,7 +138,7 @@ export function AreaChart({ title, series, norm, extra, empty = "Nothing here ye
           ))}
         </div>
       )}
-    </Card>
+    </ChartWrap>
   );
 }
 

@@ -1,14 +1,124 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { SITES, SITE_COLOR, SITE_HOSTS } from "@/lib/config";
-import { useCrawl, useHistory, useSpeed } from "@/lib/data";
+import { useCrawl, useHealth, useHistory, useSpeed } from "@/lib/data";
 import { useFilters } from "@/lib/filters";
 import type { Cell, Series } from "@/lib/types";
 import { AreaChart } from "@/components/charts";
 import { DataTable } from "@/components/DataTable";
 import { Card, SkChart, SkTable } from "@/components/ui";
 import { cols2 } from "./kit";
+
+const SOURCE_WEBSITE = /404|not found|noindex|robots|redirect|soft 404|server error|blocked|unauthorized|forbidden/i;
+const NOT_COLOR = "#9aa0a6";
+const IN_COLOR = "#0f9d58";
+const lastCrawl = (d: string | null) => (d ? d.replace(/-/g, "/") : "Never");
+
+/** Page indexing, laid out like Search Console: Not indexed / Indexed tiles over a chart, then "Why pages aren't indexed" with the
+    pages behind each reason one click away. Reads the nightly index check and its daily history. */
+export function PageIndexing() {
+  const f = useFilters();
+  const h = useHealth().data;
+  const hist = useHistory().data;
+  const [pick, setPick] = useState<string>("");
+  const calc = useMemo(() => {
+    if (!h) return null;
+    const hosts = f.site === "all" ? SITE_HOSTS : [f.site];
+    const reasons = new Map<string, { urls: [string, string | null][] }>();
+    const indexed: [string, string | null][] = [];
+    hosts.forEach((host) => {
+      const s = h.index?.[host];
+      if (!s) return;
+      s.urls.forEach((u) => {
+        const r = reasons.get(u[1]) || { urls: [] };
+        r.urls.push([u[0], u[2]]);
+        reasons.set(u[1], r);
+      });
+      (s.indexedUrls ?? []).forEach((u) => indexed.push([u, null]));
+    });
+    const notIn = [...reasons.entries()].map(([reason, v]) => ({ reason, ...v })).sort((a, b) => b.urls.length - a.urls.length);
+    const series: Series[] = [];
+    if (hist && hist.length) {
+      const pick2 = (fn: (x: [number, number]) => number) => hist.map((r) => [r.d, hosts.reduce((a, host) => a + (r.sites[host] ? fn(r.sites[host]) : 0), 0)] as [string, number]);
+      series.push({ name: "Not indexed", color: NOT_COLOR, fmt: "n", pts: pick2((x) => x[1] - x[0]) }, { name: "Indexed", color: IN_COLOR, fmt: "n", pts: pick2((x) => x[0]) });
+    }
+    return { notIn, indexed, notCount: notIn.reduce((a, r) => a + r.urls.length, 0), series, at: h.indexAt };
+  }, [h, hist, f.site]);
+  if (!calc) return <SkTable />;
+  const sel = pick || (calc.notIn[0]?.reason ?? "__indexed");
+  const rows = sel === "__indexed" ? calc.indexed : calc.notIn.find((r) => r.reason === sel)?.urls ?? [];
+  const tile = (key: string, name: string, n: number, color: string) => (
+    <div className="px-4 py-3.5" style={{ borderTop: `3px solid ${color}` }}>
+      <div className="text-[12.5px] text-mute">{name}</div>
+      <div className="mt-1 text-[26px] font-bold leading-tight tracking-tight">{n.toLocaleString("en-US")}</div>
+    </div>
+  );
+  return (
+    <>
+      <div className="overflow-hidden rounded-2xl border border-line bg-card animate-fadein">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4">
+          <h2 className="h2">Page indexing</h2>
+          <span className="font-mono text-[11.5px] text-dim">Last checked {calc.at ? new Date(calc.at).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "not yet"}</span>
+        </div>
+        <div className="mt-3 grid grid-cols-2 border-y border-line">
+          {tile("not", "Not indexed", calc.notCount, NOT_COLOR)}
+          {tile("in", "Indexed", calc.indexed.length, IN_COLOR)}
+        </div>
+        {calc.series.length ? <AreaChart bare title="Page indexing over time" series={calc.series} empty="No history yet." /> : <p className="sub px-4 pb-4">The trend line appears after the nightly index check has run for a few days.</p>}
+      </div>
+      <div className="overflow-hidden rounded-2xl border border-line bg-card animate-fadein">
+        <div className="px-4 pt-4"><h2 className="h2">Why pages aren&apos;t indexed</h2><p className="sub">Select a reason to see the pages behind it.</p></div>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full border-collapse text-[13px]">
+            <thead>
+              <tr className="border-y border-line text-left text-[11.5px] text-dim">
+                <th scope="col" className="px-4 py-2 font-medium">Reason</th>
+                <th scope="col" className="px-3 py-2 font-medium">Source</th>
+                <th scope="col" className="px-4 py-2 text-right font-medium">Pages</th>
+              </tr>
+            </thead>
+            <tbody>
+              {calc.notIn.map((r) => (
+                <tr key={r.reason} onClick={() => setPick(r.reason)} className={`cursor-pointer border-b border-line transition-colors hover:bg-white/[.04] ${sel === r.reason ? "bg-[#4285f4]/10" : ""}`}>
+                  <td className="px-4 py-2.5 font-medium">{r.reason}</td>
+                  <td className="px-3 py-2.5 text-mute">{SOURCE_WEBSITE.test(r.reason) ? "Website" : "Google systems"}</td>
+                  <td className="px-4 py-2.5 text-right font-mono">{r.urls.length}</td>
+                </tr>
+              ))}
+              <tr onClick={() => setPick("__indexed")} className={`cursor-pointer transition-colors hover:bg-white/[.04] ${sel === "__indexed" ? "bg-[#4285f4]/10" : ""}`}>
+                <td className="px-4 py-2.5 font-medium" style={{ color: IN_COLOR }}>Indexed</td>
+                <td className="px-3 py-2.5 text-mute">Google</td>
+                <td className="px-4 py-2.5 text-right font-mono">{calc.indexed.length}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="border-t border-line px-4 py-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="m-0 text-[13.5px] font-semibold">{sel === "__indexed" ? "Indexed pages" : sel}</h3>
+            <span className="font-mono text-[11.5px] text-dim">{rows.length} page{rows.length === 1 ? "" : "s"}</span>
+          </div>
+          <div className="mt-2 max-h-[420px] overflow-auto">
+            <table className="w-full border-collapse text-[12.5px]">
+              <thead><tr className="text-left text-[11.5px] text-dim"><th className="py-1.5 pr-3 font-medium">URL</th><th className="w-px whitespace-nowrap py-1.5 pl-3 text-right font-medium">Last crawled</th></tr></thead>
+              <tbody>
+                {rows.slice(0, 300).map(([url, crawled]) => (
+                  <tr key={url} className="border-t border-line">
+                    <td className="max-w-0 py-2 pr-3"><a href={url} target="_blank" rel="noreferrer" className="block truncate font-mono text-[12px] hover:text-brand" title={url}>{url.replace(/^https?:\/\//, "")}</a></td>
+                    <td className="whitespace-nowrap py-2 pl-3 text-right font-mono text-[11.5px] text-mute">{sel === "__indexed" ? "–" : lastCrawl(crawled)}</td>
+                  </tr>
+                ))}
+                {!rows.length && <tr><td colSpan={2} className="py-4 text-center text-dim">No pages here.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          {rows.length > 300 && <p className="sub">Showing the first 300.</p>}
+        </div>
+      </div>
+    </>
+  );
+}
 
 /** Pages in Google over time, one line per site (or the chosen site). Needs a few days of history to say much. */
 export function IndexHistory() {

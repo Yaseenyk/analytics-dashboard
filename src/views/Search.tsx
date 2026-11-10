@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { COLORS } from "@/lib/config";
+import { COLORS, DEFAULT_RANGES } from "@/lib/config";
 import { useBing, useGSC } from "@/lib/data";
 import { bingDaily, bingList, bingMerge, bingTotals, gscDaily, gscList, gscMerge, gscMissing, gscTotals, label, n } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
@@ -13,6 +13,9 @@ import { grid4 } from "./kit";
 
 type Metric = "clicks" | "impr" | "ctr" | "pos";
 const DIMS: [string, string][] = [["queries", "Queries"], ["pages", "Pages"], ["countries", "Countries"], ["devices", "Devices"], ["daily", "Dates"], ["queryPage", "Query on page"]];
+const TOP: Record<string, string> = { queries: "Top queries", pages: "Top pages", countries: "Countries", devices: "Devices", daily: "Dates", queryPage: "Top queries on pages" };
+/** The four metric tiles take Search Console's colours so the report reads the same. */
+const GSC_COLOR: Record<Metric, string> = { clicks: "#4285f4", impr: "#7e57c2", ctr: "#0f9d58", pos: "#f29900" };
 const DIM_LABEL: Record<string, string> = { queries: "Query", pages: "Page", countries: "Country", devices: "Device" };
 
 function GoogleSearch() {
@@ -33,7 +36,8 @@ function GoogleSearch() {
       o.rows = gscMerge(g, f.site, "queryPage", 2);
       o.cols = ["Query", "Page", "Clicks", "Impressions", "CTR", "Position"];
       o.fmt = [0, 0, "n", "n", "p", "pos"];
-      o.bar = 2;
+      o.bar = undefined;
+      o.sort = 2;
     } else if (dim === "daily") {
       o.rows = calc.gd.map((x) => [x.d, x.clicks, x.impr, x.ctr, x.pos]).reverse();
       o.cols = ["Date", "Clicks", "Impressions", "CTR", "Position"];
@@ -42,6 +46,8 @@ function GoogleSearch() {
     } else {
       o.rows = gscMerge(g, f.site, dim, 1);
       o.cols = [DIM_LABEL[dim], "Clicks", "Impressions", "CTR", "Position"];
+      o.bar = undefined;
+      o.sort = 1;
     }
     return o;
   }, [g, calc, dim, f.site]);
@@ -81,36 +87,43 @@ function GoogleSearch() {
   const series: Series[] = defs
     .map((d, i) => ({ d, i }))
     .filter(({ d }) => sm[d.key])
-    .map(({ d, i }) => ({ name: d.name, color: COLORS[i], fmt: d.fmt, pts: gd.map((x) => [x.d, x[d.key]] as [string, number]) }));
+    .map(({ d, i }) => ({ name: d.name, color: GSC_COLOR[d.key], fmt: d.fmt, pts: gd.map((x) => [x.d, x[d.key]] as [string, number]) }));
 
+  const dateLabel = (calc.gd.length ? `${calc.gd[0].d} to ${calc.gd[calc.gd.length - 1].d}` : "").replace(/-/g, "/");
   return (
     <>
-      <div className={grid4}>
-        {toggles.map((t, i) => (
-          <button
-            key={t.key}
-            type="button"
-            aria-pressed={sm[t.key]}
-            onClick={() => setSm({ ...sm, [t.key]: !sm[t.key] })}
-            className={`card text-left transition-colors ${sm[t.key] ? "border-line2" : "opacity-60"}`}
-            style={sm[t.key] ? { borderColor: COLORS[i] } : undefined}
-          >
-            <div className="flex items-center gap-2 text-[12.5px] text-mute">
-              <i className="h-2.5 w-2.5 rounded-[3px]" style={{ background: sm[t.key] ? COLORS[i] : "transparent", border: `2px solid ${COLORS[i]}` }} />
-              {t.name}
-            </div>
-            <div className="mt-1 text-[28px] font-bold leading-tight tracking-tight">{t.value}</div>
-            <Delta show={f.cmp} cur={t.cur} prev={t.prev} invert={t.invert} />
-          </button>
-        ))}
+      <div className="flex flex-wrap gap-2 text-[12.5px]" aria-label="Report filters">
+        <span className="rounded-full border border-line px-3 py-1 text-mute">Search type: <b className="text-ink">Web</b></span>
+        <span className="rounded-full border border-line px-3 py-1 text-mute">Date: <b className="text-ink">{DEFAULT_RANGES.find((x) => x.id === f.range)?.label ?? f.range}</b>{dateLabel ? <span className="text-dim"> ({dateLabel})</span> : null}</span>
+        <span className="rounded-full border border-line px-3 py-1 text-mute">Property: <b className="text-ink">{f.site === "all" ? "All sites" : label(f.site)}</b></span>
       </div>
-      <AreaChart title="Performance" series={series} norm empty="Tap a metric above to show it." note="Tap a metric to show or hide it. Each line uses its own scale. Touch the chart for exact values." />
-      <div className="flex gap-1.5 overflow-x-auto pb-1">
+      <div className="overflow-hidden rounded-2xl border border-line bg-card animate-fadein">
+        <div className="grid grid-cols-2 lg:grid-cols-4">
+          {toggles.map((t) => {
+            const on = sm[t.key];
+            const c = GSC_COLOR[t.key];
+            return (
+              <button key={t.key} type="button" aria-pressed={on} onClick={() => setSm({ ...sm, [t.key]: !sm[t.key] })} className="text-left transition-colors" style={on ? { background: c, color: "#fff" } : undefined}>
+                <div className="px-4 py-3.5">
+                  <div className="flex items-center gap-2 text-[12.5px]" style={on ? { color: "rgba(255,255,255,.9)" } : { color: "var(--mute)" }}>
+                    <i className="grid h-3.5 w-3.5 place-items-center rounded-[3px] border-2 text-[9px] leading-none" style={{ borderColor: on ? "#fff" : c, background: on ? "rgba(255,255,255,.25)" : "transparent" }}>{on ? "✓" : ""}</i>
+                    {t.name}
+                  </div>
+                  <div className="mt-1 text-[26px] font-bold leading-tight tracking-tight">{t.value}</div>
+                  {f.cmp && t.prev ? <div className="mt-0.5 font-mono text-[11px]" style={{ opacity: on ? 0.85 : 0.6 }}>{t.cur >= t.prev ? "▲" : "▼"} {Math.abs(((t.cur - t.prev) / t.prev) * 100).toFixed(0)}% vs previous</div> : null}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <AreaChart bare title="Performance" series={series} norm empty="Select a metric above to show it." />
+      </div>
+      <div className="flex gap-6 overflow-x-auto border-b border-line" role="tablist" aria-label="Report dimension">
         {DIMS.map(([id, nm]) => (
-          <button key={id} type="button" onClick={() => setDim(id)} className={`pill ${dim === id ? "on" : ""}`}>{nm}</button>
+          <button key={id} type="button" role="tab" aria-selected={dim === id} onClick={() => setDim(id)} className={`-mb-px whitespace-nowrap border-b-2 px-0.5 pb-2.5 pt-1 text-[12.5px] font-semibold uppercase tracking-wide transition-colors ${dim === id ? "border-[#4285f4] text-[#8ab4f8]" : "border-transparent text-dim hover:text-ink"}`}>{nm}</button>
         ))}
       </div>
-      <DataTable key={dim} title={DIMS.find((d) => d[0] === dim)?.[1] ?? ""} cols={table.cols} rows={table.rows} fmt={table.fmt} bar={table.bar} sort={table.sort} max={20} />
+      <DataTable key={dim} title={TOP[dim] ?? ""} cols={table.cols} rows={table.rows} fmt={table.fmt} bar={table.bar} sort={table.sort} max={20} />
       {calc.missing.length > 0 && <p className="sub">Not connected: {calc.missing.map(label).join(", ")}. Add the service account as a user on those properties in Search Console.</p>}
       <p className="sub">Search Console data runs about 2 days behind. The published copy is rebuilt every 2 hours.</p>
     </>

@@ -88,6 +88,42 @@ export function useStamp(): Stamp {
 }
 
 /** Load the published copy (a static file, no API call). The live copy, which spends Google API calls, is fetched only when force is true, from the refresh button. */
+/* What Refresh fetched live is kept in this browser, so reloading the page shows it instead of falling back to the copy
+   published every 2 hours. The newer of the two (by generatedAt) wins; the saved copy expires after 12 hours. */
+const CACHE_PREFIX = "live-cache:";
+const cacheable = (file: string) => !/^(gsc|bing)-|^optimizer\.json$|^live\.json$/.test(file) && !LIVE_FIRST.has(file);
+function readCache(file: string): { data: { generatedAt?: string }; at: number } | null {
+  if (!cacheable(file)) return null;
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + file);
+    if (!raw) return null;
+    const c = JSON.parse(raw) as { at: number; data: { generatedAt?: string } };
+    if (Date.now() - c.at > 12 * 3600e3) {
+      localStorage.removeItem(CACHE_PREFIX + file);
+      return null;
+    }
+    return c;
+  } catch {
+    return null;
+  }
+}
+function writeCache(file: string, data: unknown) {
+  if (!cacheable(file)) return;
+  const save = () => localStorage.setItem(CACHE_PREFIX + file, JSON.stringify({ at: Date.now(), data }));
+  try {
+    save();
+  } catch {
+    try {
+      // storage is full: drop every saved live copy and try once more
+      Object.keys(localStorage).filter((k) => k.startsWith(CACHE_PREFIX)).forEach((k) => localStorage.removeItem(k));
+      save();
+    } catch {
+      /* private window or too large: the page still works, it just forgets on reload */
+    }
+  }
+}
+const newer = (a?: { generatedAt?: string } | null, b?: { generatedAt?: string } | null) => !!a && String(a.generatedAt || "") > String((b as { generatedAt?: string } | null)?.generatedAt || "");
+
 export function ensure(file: string, force = false) {
   if (inflight.has(file) && !force) return;
   inflight.add(file);
@@ -95,7 +131,8 @@ export function ensure(file: string, force = false) {
   const applyLive = (j: unknown) => {
     const cur = store.get(file);
     if (!cur?.data || sig(cur.data) !== sig(j)) put(file, { data: j, error: false });
-    setStamp({ liveAt: Date.now(), live: true });
+    writeCache(file, j);
+    if (!LIVE_FIRST.has(file)) setStamp({ liveAt: Date.now(), live: true });
   };
   // Search Console and Bing numbers are final only 2 to 3 days later, so the published copy (rebuilt every 2 hours) is as
   // fresh as they get. The Worker's one-shot fetch of 11 properties x 8 reports also exceeds its 50-subrequest limit, which
@@ -107,9 +144,19 @@ export function ensure(file: string, force = false) {
     : getJSON<unknown>(`/data/${file}`, 30000).then(
         (j) => {
           const cur = store.get(file);
-          if (!cur?.data || (force && sig(cur.data) !== sig(j))) put(file, { data: j, error: false });
+          const saved = readCache(file);
+          const useSaved = !!saved && newer(saved.data, j as { generatedAt?: string });
+          const use = useSaved ? saved!.data : j;
+          if (!cur?.data || (force && sig(cur.data) !== sig(use))) put(file, { data: use, error: false });
+          if (useSaved) setStamp({ liveAt: saved!.at, live: true }); // the header says when this copy was fetched
         },
-        () => {},
+        () => {
+          const saved = readCache(file);
+          if (saved && !store.get(file)?.data) {
+            put(file, { data: saved.data, error: false });
+            setStamp({ liveAt: saved.at, live: true });
+          }
+        },
       );
   Promise.all([stat, live]).then(() => {
     inflight.delete(file);
