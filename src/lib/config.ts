@@ -10,6 +10,7 @@ export const SITES: Record<string, string> = {
   "images.streamerosai.com": "Image Tools",
   "math.streamerosai.com": "Math Calcs",
   "exams.streamerosai.com": "Exam Dates",
+  "esports.streamerosai.com": "Esports Hub",
 };
 export const SITE_HOSTS = Object.keys(SITES);
 
@@ -35,7 +36,7 @@ export const DEFAULT_API = "https://analytics-api.yaseenyk.workers.dev";
 /** The portfolio's chat assistant Worker: also reports its nightly re-index at /status/reindex. */
 export const CONCIERGE_API = "https://yaseen-concierge.yaseenyk.workers.dev";
 
-export const COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)", "var(--s6)", "var(--s7)", "var(--s8)", "var(--s9)", "var(--s10)", "var(--s11)"];
+export const COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)", "var(--s6)", "var(--s7)", "var(--s8)", "var(--s9)", "var(--s10)", "var(--s11)", "var(--s12)"];
 export const BRAND = "var(--brand)";
 export const SITE_COLOR: Record<string, string> = {
   streamerOS: COLORS[0],
@@ -49,6 +50,7 @@ export const SITE_COLOR: Record<string, string> = {
   "Math Calcs": COLORS[8],
   "Solar Guide": COLORS[9],
   "Exam Dates": COLORS[10],
+  "Esports Hub": COLORS[11],
 };
 export const CAT_COLOR: Record<string, string> = {
   "Search engines": COLORS[0],

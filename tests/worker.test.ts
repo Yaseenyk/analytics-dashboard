@@ -5,7 +5,7 @@ import worker from "../worker/src/index.js";
 /* The Worker's index-health pipeline, run end to end against a fake Google, a fake GitHub and an in-memory KV. */
 
 const ORIGIN = "https://analytics.streamerosai.com";
-const HOSTS = ["yk", "campus", "", "fitrank", "spotai", "tools", "solar", "calc", "images", "math", "exams"].map((s) => (s ? `${s}.streamerosai.com` : "streamerosai.com"));
+const HOSTS = ["yk", "campus", "", "fitrank", "spotai", "tools", "solar", "calc", "images", "math", "exams", "esports"].map((s) => (s ? `${s}.streamerosai.com` : "streamerosai.com"));
 
 class KV {
   m = new Map<string, string>();

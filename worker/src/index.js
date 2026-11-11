@@ -275,6 +275,7 @@ const HEALTH_SITES = {
   'images.streamerosai.com': 'https://images.streamerosai.com/',
   'math.streamerosai.com': 'https://math.streamerosai.com/',
   'exams.streamerosai.com': 'https://exams.streamerosai.com/',
+  'esports.streamerosai.com': 'https://esports.streamerosai.com/',
 };
 const HEALTH_BATCH = 25;
 const HEALTH_COOLDOWN_MIN = 90;
