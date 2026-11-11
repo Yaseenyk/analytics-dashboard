@@ -31,6 +31,7 @@ jobs:
         run: |
           git config user.name "analytics-bot"
           git config user.email "actions@users.noreply.github.com"
+          [ -f data/clarity.json ] || exit 0
           git add data/clarity.json
           git diff --cached --quiet && exit 0
           git commit -m "chore(data): daily Clarity export"
