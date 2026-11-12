@@ -132,9 +132,12 @@ describe("Search Console-style notifications and helpers", () => {
     expect(g.text).toMatch(/2 pages are no longer in Google/);
     expect(gscStyle({ id: "y", kind: "indexed", level: "good", title: "1 new page in Google on yk.streamerosai.com", at: "x" }).title).toBe("New pages indexed on Portfolio");
   });
-  it("opens the site's page-indexing report (the inspect box is at the top), never a made-up per-page address", () => {
-    expect(inspectLink("https://esports.streamerosai.com/tools/bracket/")).toBe("https://search.google.com/search-console/index?resource_id=sc-domain%3Astreamerosai.com");
-    expect(inspectLink()).not.toMatch(/inspect\?|&id=/);
+  it("opens the Search Console property of the page's own site, written the way Search Console writes it", () => {
+    expect(inspectLink("https://esports.streamerosai.com/tools/bracket/")).toBe("https://search.google.com/search-console?resource_id=https%3A%2F%2Fesports.streamerosai.com%2F");
+    expect(inspectLink("https://calc.streamerosai.com/x/")).toBe("https://search.google.com/search-console?resource_id=https%3A%2F%2Fcalc.streamerosai.com%2F");
+    expect(inspectLink("https://streamerosai.com/blog/a")).toBe("https://search.google.com/search-console?resource_id=https%3A%2F%2Fstreamerosai.com%2F");
+    expect(inspectLink()).toBe("https://search.google.com/search-console?resource_id=https%3A%2F%2Fstreamerosai.com%2F");
+    expect(inspectLink("not a url")).not.toMatch(/inspect\?|&id=/);
   });
   it("turns Google's status words into everyday sentences", () => {
     expect(plainState("Discovered - currently not indexed")).toMatch(/knows it exists/);

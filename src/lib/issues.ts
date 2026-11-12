@@ -26,14 +26,16 @@ export interface Issue {
   link?: { href: string; label: string };
 }
 
-/** Search Console property that covers every subdomain of the sites. */
-export const PROPERTY = "sc-domain:streamerosai.com";
 /**
- * Where "Open in Search Console" goes: your site's page-indexing report, which has the "Inspect any URL" box at the top.
- * Search Console has no public address that pre-fills one page (its per-page links carry an internal id), so the page link is
- * copied to the clipboard at the same tap and the person pastes it into that box.
+ * Where "Open in Search Console" goes: the Search Console property of the page's own site, written the way Search Console itself
+ * writes it (one property per site, "https://host/"). The per-page inspect address carries an internal id that cannot be built,
+ * so the page link is copied to the clipboard at the same tap and pasted into the "Inspect any URL" box at the top.
  */
-export const inspectLink = (_url?: string) => `https://search.google.com/search-console/index?resource_id=${encodeURIComponent(PROPERTY)}`;
+export function inspectLink(url?: string): string {
+  let origin = "https://streamerosai.com";
+  try { if (url) origin = new URL(url).origin; } catch { /* keep the default */ }
+  return `https://search.google.com/search-console?resource_id=${encodeURIComponent(origin + "/")}`;
+}
 
 /** Google's own status words in everyday language. */
 export function plainState(s: string): string {
