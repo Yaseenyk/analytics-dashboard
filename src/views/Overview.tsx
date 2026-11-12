@@ -8,6 +8,7 @@ import {
 } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
 import { Banner, Card, Delta, Icon, Sk, SkCard, SkText, Wait } from "@/components/ui";
+import { HelpDot } from "@/components/Term";
 import { GaArea, GaDonut, GaKpi, GaRank, GscKpi, GscRank, cols2, grid4, useGaMemo, useGscMemo } from "./kit";
 
 function GaBanner() {
@@ -26,7 +27,7 @@ function LiveCard() {
       <div className="flex flex-wrap items-center gap-2.5">
         <span className="h-[7px] w-[7px] animate-pulseglow rounded-full bg-good" />
         <span className="text-[26px] font-bold leading-none">{n(total)}</span>
-        <span className="text-[12.5px] text-dim">online now (last 30 min)</span>
+        <span className="text-[12.5px] text-dim">online now (last 30 min)</span><HelpDot k="online" />
         {rows.map((r) => (
           <span key={String(r[0])} className="rounded-full border border-line bg-card2 px-2.5 py-1 text-[12.5px]">
             {STREAMS[String(r[0])] || String(r[0])} <b>{String(r[1])}</b>
@@ -156,15 +157,18 @@ function Sites() {
   );
 }
 
+const HELP: Record<string, string> = { ev: "engaged", gi: "impressions", gc: "ctr", gp: "position" };
+
 function MoreNumbers() {
   const mk = (title: string, id: string, calc: (ga: Parameters<typeof rep>[0], site: string, cmp: boolean) => { value: string; delta?: React.ReactNode }) => (
-    <GaKpi key={id} title={title} id={id} calc={(ga, site, cmp) => (hasGA(ga) ? calc(ga, site, cmp) : { value: "–" })} />
+    <GaKpi key={id} title={title} id={id} help={HELP[id]} calc={(ga, site, cmp) => (hasGA(ga) ? calc(ga, site, cmp) : { value: "–" })} />
   );
   const gk = (title: string, id: string, field: "impr" | "ctr" | "pos") => (
     <GscKpi
       key={id}
       title={title}
       id={id}
+      help={HELP[id]}
       calc={(g, site, cmp) => {
         const a = gscTotals(g, site, false), b = gscTotals(g, site, true);
         const value = field === "impr" ? n(a.impr) : field === "ctr" ? a.ctr.toFixed(1) + "%" : a.pos ? a.pos.toFixed(1) : "–";
@@ -204,20 +208,20 @@ export default function Overview() {
       <GaBanner />
       <LiveCard />
       <div className={grid4}>
-        <GaKpi title="People" id="people" color={COLORS[0]} calc={(ga, site, cmp) => {
+        <GaKpi title="People" id="people" help="people" color={COLORS[0]} calc={(ga, site, cmp) => {
           const ok = hasGA(ga);
           return { value: ok ? n(total(ga, "activeUsers", site)) : "–", delta: ok ? <Delta show={cmp} cur={total(ga, "activeUsers", site)} prev={total(ga, "activeUsers", site, true)} /> : <Wait />, spark: dailyTotal(rep(ga, "daily"), "activeUsers", site) };
         }} />
-        <GaKpi title="Visits" id="visits" color={COLORS[1]} calc={(ga, site, cmp) => {
+        <GaKpi title="Visits" id="visits" help="visits" color={COLORS[1]} calc={(ga, site, cmp) => {
           const ok = hasGA(ga);
           const ses = total(ga, "sessions", site), eng = total(ga, "engagedSessions", site);
           return { value: ok ? n(ses) : "–", delta: ok ? <Delta show={cmp} cur={ses} prev={total(ga, "sessions", site, true)} /> : <Wait />, spark: dailyTotal(rep(ga, "daily"), "sessions", site), note: ok && ses ? <span className="mt-1.5 block font-mono text-[11px] text-dim" title="GA4 counts a visit as engaged when it lasts 10 seconds or more, has a key event, or views 2 or more pages. Bots and bounces rarely do.">{Math.round((100 * eng) / ses)}% engaged (real readers)</span> : undefined };
         }} />
-        <GaKpi title="Leads and clicks" id="leads" color={COLORS[2]} calc={(ga, site, cmp) => {
+        <GaKpi title="Leads and clicks" id="leads" help="leads" color={COLORS[2]} calc={(ga, site, cmp) => {
           const ok = hasGA(ga);
           return { value: ok ? n(total(ga, "keyEvents", site)) : "–", delta: ok ? <Delta show={cmp} cur={total(ga, "keyEvents", site)} prev={total(ga, "keyEvents", site, true)} /> : <Wait />, spark: dailyTotal(rep(ga, "daily"), "keyEvents", site) };
         }} />
-        <GscKpi title="Google clicks" id="gclicks" color={COLORS[3]} calc={(g, site, cmp) => {
+        <GscKpi title="Google clicks" id="gclicks" help="clicks" color={COLORS[3]} calc={(g, site, cmp) => {
           const a = gscTotals(g, site, false), b = gscTotals(g, site, true);
           return { value: n(a.clicks), delta: <Delta show={cmp} cur={a.clicks} prev={b.clicks} />, spark: gscDaily(g, site).map((x) => x.clicks) };
         }} />

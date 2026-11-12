@@ -4,11 +4,12 @@ import { LazyMotion, MotionConfig, m } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState, type ReactNode } from "react";
-import { DEFAULT_RANGES, PRIMARY_TABS, SITES, TABS } from "@/lib/config";
+import { DEFAULT_RANGES, GROUPS, SITES, TABS, tabsOf } from "@/lib/config";
 import { refreshAll, useMeta, useStamp } from "@/lib/data";
 import { FiltersProvider, useFilters } from "@/lib/filters";
 import { NotificationBell } from "@/views/Alerts";
 import { Icon } from "./ui";
+import { HelpDot } from "./Term";
 
 const loadMotion = () => import("./motionFeatures").then((r) => r.default);
 
@@ -41,6 +42,43 @@ function useTab() {
   return TABS.find((t) => t.href === path || (t.href !== "/" && path.startsWith(t.href))) ?? TABS[0];
 }
 
+/** "Updated 5 min ago", always visible (on a phone it used to be hidden). Tapping it fetches fresh numbers. */
+function ago(ms: number): string {
+  const m = Math.max(0, Math.round((Date.now() - ms) / 60000));
+  return m < 1 ? "just now" : m < 90 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
+}
+function Fresh() {
+  const stamp = useStamp();
+  const meta = useMeta();
+  const [, tick] = useState(0);
+  useEffect(() => { const t = setInterval(() => tick((x) => x + 1), 30000); return () => clearInterval(t); }, []);
+  const at = stamp.liveAt || (meta.data?.generatedAt ? Date.parse(meta.data.generatedAt) : 0);
+  const text = stamp.busy ? "Refreshing…" : at ? `${stamp.live ? "Live numbers" : "Saved numbers"}, updated ${ago(at)}` : "Loading numbers…";
+  return (
+    <button type="button" onClick={refreshAll} className="inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-1 text-[12px] text-dim active:text-brand" aria-label={`${text}. Tap to refresh.`}>
+      <span className={`h-[7px] w-[7px] flex-none rounded-full ${stamp.live ? "animate-pulseglow bg-good" : "bg-dim"}`} aria-hidden="true" />
+      {text}
+      <Icon name="refresh" className={`h-3.5 w-3.5 ${stamp.busy ? "animate-spin" : ""}`} />
+    </button>
+  );
+}
+
+/** The other screens in the same group, one tap apart, so related things are not hidden behind a menu. */
+function Sections() {
+  const tab = useTab();
+  const list = tabsOf(tab.group);
+  if (list.length < 2) return null;
+  return (
+    <nav aria-label="In this section" className="-mx-4 mt-2.5 flex gap-1.5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] sm:mx-0 sm:px-0">
+      {list.map((t) => (
+        <Link key={t.id} href={t.href} aria-current={t.id === tab.id ? "page" : undefined} className={`flex-none whitespace-nowrap rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors ${t.id === tab.id ? "border-brand/50 bg-brand/10 text-brand" : "border-line text-mute active:bg-card2"}`}>
+          {t.short === "Pages" ? "Top pages" : t.short}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 function Header() {
   const tab = useTab();
   const f = useFilters();
@@ -68,27 +106,25 @@ function Header() {
           <div className="min-w-0">
             <div key={f.site} className="eyebrow head-in">{f.site === "all" ? "All sites" : SITES[f.site]}</div>
             <h1 key={tab.id} className="head-in m-0 truncate text-[21px] font-bold leading-tight tracking-tight">{tab.title}</h1>
-            <div className="mt-0.5 hidden text-[12.5px] text-dim sm:block">{tab.id === "live" ? "Last 30 minutes · press refresh for the latest" : tab.id === "tools" ? "Link builder and tracking reference" : span}</div>
+            <div className="mt-0.5 text-[12.5px] leading-snug text-mute">{tab.what}</div>
           </div>
         </div>
         <div className="flex flex-none items-center gap-2 font-mono text-[11.5px] text-dim">
-          <span className={`h-[7px] w-[7px] rounded-full ${stamp.live ? "animate-pulseglow bg-good" : "bg-dim"}`} />
-          <span className="hidden whitespace-nowrap sm:inline">{stamp.busy ? "Refreshing…" : stamp.live ? `Live${time ? ` · ${time}` : ""}` : "Saved copy · press refresh for live"}</span>
           <NotificationBell />
           <button type="button" onClick={refreshAll} aria-label="Refresh now" title="Fetch fresh data now" className="group grid h-[30px] w-[30px] place-items-center rounded-full bg-card2 text-mute transition-[color,transform] duration-300 hover:rotate-180 hover:text-brand active:scale-90">
             <Icon name="refresh" className={`h-4 w-4 ${stamp.busy ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
-      {tab.id !== "tools" && (
+      {tab.filters !== "none" && (
         <div className="-mx-4 mt-3 flex items-center gap-2 overflow-x-auto px-4 pb-0.5 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-          <select aria-label="Site" value={f.site} onChange={(e) => f.setSite(e.target.value)}>
+          <select aria-label="Which site" value={f.site} onChange={(e) => f.setSite(e.target.value)}>
             <option value="all">All sites</option>
             {Object.entries(SITES).map(([h, nm]) => <option key={h} value={h}>{nm}</option>)}
           </select>
-          {tab.id !== "live" && (
+          {tab.filters === "all" && (
             <>
-              <select aria-label="Date range" value={f.range} onChange={(e) => f.setRange(e.target.value)} className="md:hidden">
+              <select aria-label="How far back" value={f.range} onChange={(e) => f.setRange(e.target.value)} className="md:hidden">
                 {ranges.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
               </select>
               <div className="hidden gap-0.5 overflow-x-auto rounded-xl bg-card p-[3px] shadow-inset md:flex">
@@ -99,15 +135,22 @@ function Header() {
                   </button>
                 ))}
               </div>
-              <label className="inline-flex flex-none cursor-pointer items-center gap-2 whitespace-nowrap text-[13px] text-mute">
-                <input type="checkbox" checked={f.cmp} onChange={(e) => f.setCmp(e.target.checked)} className="h-4 w-4 accent-cyan-400" />
-                <span className="hidden sm:inline">Compare with previous period</span>
-                <span className="sm:hidden">Compare</span>
-              </label>
+              <span className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap text-[13px] text-mute">
+                <label className="inline-flex cursor-pointer items-center gap-2">
+                  <input type="checkbox" checked={f.cmp} onChange={(e) => f.setCmp(e.target.checked)} className="h-4 w-4 accent-cyan-400" />
+                  <span className="sm:hidden">Compare</span><span className="hidden sm:inline">Compare with before</span>
+                </label>
+                <HelpDot k="compare" />
+              </span>
             </>
           )}
         </div>
       )}
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <Fresh />
+        <span className="hidden truncate text-[12px] text-dim sm:block">{tab.filters === "all" ? span : ""}</span>
+      </div>
+      <Sections />
     </header>
   );
 }
@@ -116,8 +159,7 @@ function Nav({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void
   const tab = useTab();
   const [flip, setFlip] = useState(0); // bumps on every open/close so the logo plays its animation
   const [more, setMore] = useState(false);
-  const primary = TABS.filter((t) => PRIMARY_TABS.includes(t.id));
-  const rest = TABS.filter((t) => !PRIMARY_TABS.includes(t.id));
+  const rest = tabsOf("more");
   return (
     <>
       <aside className={`sticky top-0 hidden h-screen flex-col gap-0.5 overflow-hidden border-r border-line p-3 pt-5 lg:flex ${collapsed ? "side-collapsed" : ""}`}>
@@ -145,7 +187,7 @@ function Nav({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void
         <nav aria-label="Sections" className="relative flex flex-col gap-0.5">
           {TABS.map((t, i) => {
             const on = tab.id === t.id;
-            const label = t.short === "Leads" ? "Leads and clicks" : t.id === "search" ? "Search (Google)" : t.id === "live" ? "Live now" : t.short;
+            const label = t.title;
             return (
               <Link key={t.id} href={t.href} title={collapsed ? label : undefined} style={{ "--i": i } as React.CSSProperties} aria-current={on ? "page" : undefined} className={`nav-item group relative flex h-10 items-center gap-2.5 rounded-[10px] px-[13px] outline-none transition-colors duration-200 focus-visible:bg-white/10 ${on ? "font-semibold text-brand" : "text-mute hover:text-ink"}`}>
                 {on && (
@@ -163,18 +205,21 @@ function Nav({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void
         <FootNote />
       </aside>
 
-      <nav aria-label="Sections" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-line bg-black/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
-        {primary.map((t) => (
-          <Link key={t.id} href={t.href} aria-current={tab.id === t.id ? "page" : undefined} className={`relative flex flex-col items-center gap-1 py-2 text-[10.5px] ${tab.id === t.id ? "text-brand" : "text-dim"}`}>
-            {tab.id === t.id && <m.span layoutId="tab-dot" aria-hidden="true" transition={{ type: "spring", stiffness: 420, damping: 30 }} className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-brand" />}
-            <m.span whileTap={{ scale: 0.8 }} transition={{ type: "spring", stiffness: 500, damping: 16 }}><Icon name={t.icon} /></m.span>
-            {t.short}
-          </Link>
-        ))}
-        <button type="button" onClick={() => setMore(true)} className={`flex flex-col items-center gap-1 py-2 text-[10.5px] ${rest.some((t) => t.id === tab.id) ? "text-brand" : "text-dim"}`}>
-          <Icon name="more" />
-          More
-        </button>
+      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-black/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
+        {GROUPS.map((g) => {
+          const on = tab.group === g.id;
+          const cls = `relative flex min-h-[56px] flex-col items-center justify-center gap-1 text-[11px] ${on ? "text-brand" : "text-dim"}`;
+          const inner = (
+            <>
+              {on && <m.span layoutId="tab-dot" aria-hidden="true" transition={{ type: "spring", stiffness: 420, damping: 30 }} className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-brand" />}
+              <m.span whileTap={{ scale: 0.8 }} transition={{ type: "spring", stiffness: 500, damping: 16 }}><Icon name={g.icon} className="h-[22px] w-[22px]" /></m.span>
+              {g.label}
+            </>
+          );
+          return g.id === "more"
+            ? <button key={g.id} type="button" onClick={() => setMore(true)} className={cls} aria-haspopup="dialog">{inner}</button>
+            : <Link key={g.id} href={g.home} aria-current={on ? "page" : undefined} className={cls}>{inner}</Link>;
+        })}
       </nav>
 
       {more && (
@@ -184,9 +229,9 @@ function Nav({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/15" />
             <div className="grid gap-1.5">
               {rest.map((t) => (
-                <Link key={t.id} href={t.href} onClick={() => setMore(false)} className="flex items-center gap-3 rounded-xl bg-card2 px-4 py-3 text-[14px]">
+                <Link key={t.id} href={t.href} onClick={() => setMore(false)} className="flex items-center gap-3 rounded-xl bg-card2 px-4 py-3.5 text-[15px]">
                   <Icon name={t.icon} />
-                  {t.title}
+                  <span className="min-w-0"><b className="block font-semibold">{t.title}</b><span className="block text-[12.5px] text-dim">{t.what}</span></span>
                 </Link>
               ))}
             </div>

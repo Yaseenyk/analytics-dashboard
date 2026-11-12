@@ -32,7 +32,7 @@ function Tracked() {
     <>
       <AreaChart title="Google position over time (lower is better)" series={calc.series} empty="No tracked phrase has shown up in Google yet." note="The five tracked phrases with the most impressions. Position 1 is the top result; 10 is the bottom of page one." />
       <DataTable title="Tracked phrases, last 7 days" cols={["Phrase", "Position", "Vs week before", "Impressions", "Clicks"]} rows={calc.table} fmt={[0, 0, 0, "n", "n"]} max={12}
-        note="Any search containing the phrase counts. ▲ means it moved up the results. Position is averaged by impressions. The list of phrases is in worker/src/insights.js (TRACKED_KEYWORDS)." empty="Waiting for the first nightly run." />
+        note="These are the phrases we watch. ▲ means the page moved up in Google since last week, ▼ means it slipped. Position 1 is the top; 10 is the bottom of page one; above 10 is page two or later." empty="Waiting for the first nightly run." />
     </>
   );
 }

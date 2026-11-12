@@ -9,7 +9,7 @@ import type { Cell } from "@/lib/types";
 import { DataTable } from "@/components/DataTable";
 import { Card, ErrorCard, Icon, Sk, SkCard, SkTable } from "@/components/ui";
 import { cols2 } from "./kit";
-import { IndexTracker } from "./IndexTracker";
+import Link from "next/link";
 import { CrawlIssues, PageIndexing, SpeedCard } from "./HealthExtras";
 
 function Explainer() {
@@ -102,7 +102,10 @@ export default function Health() {
       <Explainer />
       <SiteCards />
       <PageIndexing />
-      <IndexTracker />
+      <Card title="Pages that are not in Google yet">
+        <p className="sub">There is a step-by-step screen for sending them to Google, one tap each.</p>
+        <Link href="/fix/" className="mt-3 inline-flex min-h-10 items-center rounded-xl bg-brand/10 px-4 text-[13.5px] font-semibold text-brand">Open “Get pages into Google”</Link>
+      </Card>
       <CrawlIssues />
       <SpeedCard />
     </>

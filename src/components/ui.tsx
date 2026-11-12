@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { BRAND, ICONS } from "@/lib/config";
+import { HelpDot } from "./Term";
 
 export function Icon({ name, className = "h-[18px] w-[18px]" }: { name: string; className?: string }) {
   return (
@@ -136,10 +137,10 @@ function CountUp({ value }: { value: string }) {
   return <>{shown}</>;
 }
 
-export function Kpi({ title, value, delta, spark, color, id, note }: { title: string; value: ReactNode; delta?: ReactNode; spark?: number[]; color?: string; id: string; note?: ReactNode }) {
+export function Kpi({ title, value, delta, spark, color, id, note, help }: { title: string; value: ReactNode; delta?: ReactNode; spark?: number[]; color?: string; id: string; note?: ReactNode; help?: string }) {
   return (
     <div className="card animate-fadein !p-3.5 sm:!p-5">
-      <div className="truncate text-[12px] text-mute sm:text-[12.5px]">{title}</div>
+      <div className="flex items-center gap-1.5 text-[12px] text-mute sm:text-[12.5px]"><span className="truncate">{title}</span>{help && <HelpDot k={help} />}</div>
       <div className="mt-1 text-[24px] font-bold leading-tight tracking-tight sm:text-[28px]">{typeof value === "string" ? <CountUp value={value} /> : value}</div>
       {delta}
       {note}
@@ -163,12 +164,12 @@ export function Banner({ children }: { children: ReactNode }) {
   );
 }
 
-export function Card({ title, note, extra, children, className = "", style }: { title?: string; note?: ReactNode; extra?: ReactNode; children: ReactNode; className?: string; style?: CSSProperties }) {
+export function Card({ title, note, extra, children, className = "", style, help }: { title?: string; note?: ReactNode; extra?: ReactNode; children: ReactNode; className?: string; style?: CSSProperties; help?: string }) {
   return (
     <section className={`card animate-fadein ${className}`} style={style}>
       {(title || extra) && (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          {title && <h2 className="h2">{title}</h2>}
+          {title && <h2 className="h2 flex items-center gap-2">{title}{help && <HelpDot k={help} />}</h2>}
           {extra}
         </div>
       )}

@@ -77,28 +77,54 @@ export const DEFAULT_RANGES: Range[] = [
   { id: "16m", days: 480, label: "Last 16 months" },
 ];
 
+export type GroupId = "today" | "visitors" | "google" | "todo" | "more";
+/** Which filters make sense on a page: all three, only the site picker, or none (a filter that changes nothing is hidden). */
+export type FilterMode = "all" | "site" | "none";
 export interface Tab {
   id: string;
   href: string;
   title: string;
   short: string;
   icon: string;
+  group: GroupId;
+  /** One plain sentence under the title: what this page answers. */
+  what: string;
+  filters: FilterMode;
 }
 export const TABS: Tab[] = [
-  { id: "overview", href: "/", title: "Overview", short: "Overview", icon: "overview" },
-  { id: "sources", href: "/sources/", title: "Where visitors come from", short: "Sources", icon: "sources" },
-  { id: "pages", href: "/pages/", title: "Pages", short: "Pages", icon: "pages" },
-  { id: "leads", href: "/leads/", title: "Leads and clicks", short: "Leads", icon: "leads" },
-  { id: "ads", href: "/ads/", title: "Google Ads", short: "Ads", icon: "ads" },
-  { id: "search", href: "/search/", title: "Search (Google)", short: "Search", icon: "search" },
-  { id: "audience", href: "/audience/", title: "Audience", short: "Audience", icon: "audience" },
-  { id: "rankings", href: "/rankings/", title: "Rankings and quick wins", short: "Rankings", icon: "rankings" },
-  { id: "health", href: "/health/", title: "Index health", short: "Health", icon: "health" },
-  { id: "live", href: "/live/", title: "Live now", short: "Live", icon: "live" },
-  { id: "jobs", href: "/jobs/", title: "Jobs", short: "Jobs", icon: "jobs" },
-  { id: "tools", href: "/tools/", title: "Tools", short: "Tools", icon: "tools" },
+  { id: "today", href: "/", title: "Today", short: "Today", icon: "overview", group: "today", filters: "all", what: "A quick read of how your sites are doing, and what needs you." },
+  { id: "traffic", href: "/traffic/", title: "Traffic", short: "Traffic", icon: "sources", group: "visitors", filters: "all", what: "How many people visited, and whether it is going up or down." },
+  { id: "sources", href: "/sources/", title: "Where visitors come from", short: "Sources", icon: "sources", group: "visitors", filters: "all", what: "Which websites, apps and searches sent people to you." },
+  { id: "pages", href: "/pages/", title: "Pages", short: "Pages", icon: "pages", group: "visitors", filters: "all", what: "Which pages people open the most." },
+  { id: "audience", href: "/audience/", title: "Audience", short: "Audience", icon: "audience", group: "visitors", filters: "all", what: "Which countries your visitors are in, and how they behave on the page." },
+  { id: "live", href: "/live/", title: "Live now", short: "Live", icon: "live", group: "visitors", filters: "site", what: "Who is on your sites right now (the last 30 minutes)." },
+  { id: "leads", href: "/leads/", title: "Leads and clicks", short: "Leads", icon: "leads", group: "visitors", filters: "all", what: "People who took an action: WhatsApp, email, phone call, or a form." },
+  { id: "search", href: "/search/", title: "Google searches", short: "Searches", icon: "search", group: "google", filters: "all", what: "What people typed into Google before they found you." },
+  { id: "rankings", href: "/rankings/", title: "Rankings", short: "Rankings", icon: "rankings", group: "google", filters: "all", what: "Where you show up on Google for the phrases you care about, and easy wins." },
+  { id: "health", href: "/health/", title: "Pages in Google", short: "Checks", icon: "health", group: "google", filters: "site", what: "How many of your pages Google has added to its list, and the checks on them." },
+  { id: "ads", href: "/ads/", title: "Google Ads", short: "Ads", icon: "ads", group: "google", filters: "all", what: "Results of any Google ads you run." },
+  { id: "fix", href: "/fix/", title: "Get pages into Google", short: "Send to Google", icon: "health", group: "todo", filters: "site", what: "Pages Google does not have yet, and how to send them. About a minute each." },
+  { id: "tools", href: "/tools/", title: "Share a link", short: "Share a link", icon: "tools", group: "todo", filters: "none", what: "Make a link and a ready-to-post message for Discord, WhatsApp, LinkedIn and more." },
+  { id: "jobs", href: "/jobs/", title: "Automatic jobs", short: "Jobs", icon: "jobs", group: "more", filters: "none", what: "Posts, builds and checks that run by themselves. Did any of them fail?" },
+  { id: "help", href: "/help/", title: "Help: what the words mean", short: "Help", icon: "help", group: "more", filters: "none", what: "Plain meanings for every term used here, and how to read the numbers." },
 ];
-export const PRIMARY_TABS = ["overview", "sources", "pages", "leads", "search"];
+
+export interface Group {
+  id: GroupId;
+  label: string;
+  icon: string;
+  /** The page the bottom-bar button opens. */
+  home: string;
+}
+/** The bottom bar on a phone: five big questions instead of twelve tool names. */
+export const GROUPS: Group[] = [
+  { id: "today", label: "Today", icon: "overview", home: "/" },
+  { id: "visitors", label: "Visitors", icon: "audience", home: "/traffic/" },
+  { id: "google", label: "Google", icon: "search", home: "/search/" },
+  { id: "todo", label: "To do", icon: "todo", home: "/fix/" },
+  { id: "more", label: "More", icon: "more", home: "/jobs/" },
+];
+export const tabsOf = (g: GroupId) => TABS.filter((t) => t.group === g);
 
 export const ICONS: Record<string, string> = {
   overview: "M3 12l9-8 9 8M5 10v10h14V10",
@@ -117,4 +143,9 @@ export const ICONS: Record<string, string> = {
   chevron: "M6 9l6 6 6-6",
   bell: "M6 16V11a6 6 0 1112 0v5l1.5 2h-15zM10 20a2 2 0 004 0",
   refresh: "M20 11a8 8 0 10-2.3 5.7M20 5v6h-6",
+  todo: "M5 12l4 4 10-10M4 5h2M4 19h2",
+  help: "M12 3a9 9 0 100 18 9 9 0 000-18zM9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2M12 17h.01",
+  info: "M12 3a9 9 0 100 18 9 9 0 000-18zM12 11v5M12 7.5h.01",
+  open: "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5",
+  check: "M5 12l5 5 9-10",
 };

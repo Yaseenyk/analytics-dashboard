@@ -63,15 +63,15 @@ export interface KpiCalc {
   spark?: number[];
   note?: ReactNode;
 }
-export function GaKpi({ title, id, color, calc }: { title: string; id: string; color?: string; calc: (ga: GAFile, site: string, cmp: boolean) => KpiCalc }) {
+export function GaKpi({ title, id, color, calc, help }: { title: string; id: string; color?: string; help?: string; calc: (ga: GAFile, site: string, cmp: boolean) => KpiCalc }) {
   const { v, error } = useGaMemo(calc);
   if (error) return <ErrorCard what={title} />;
-  return v ? <Kpi title={title} id={id} color={color} value={v.value} delta={v.delta} spark={v.spark} note={v.note} /> : <SkKpi />;
+  return v ? <Kpi title={title} id={id} color={color} help={help} value={v.value} delta={v.delta} spark={v.spark} note={v.note} /> : <SkKpi />;
 }
-export function GscKpi({ title, id, color, calc }: { title: string; id: string; color?: string; calc: (g: GSCFile, site: string, cmp: boolean) => KpiCalc }) {
+export function GscKpi({ title, id, color, calc, help }: { title: string; id: string; color?: string; help?: string; calc: (g: GSCFile, site: string, cmp: boolean) => KpiCalc }) {
   const { v, error } = useGscMemo(calc);
   if (error) return <ErrorCard what={title} />;
-  return v ? <Kpi title={title} id={id} color={color} value={v.value} delta={v.delta} spark={v.spark} note={v.note} /> : <SkKpi />;
+  return v ? <Kpi title={title} id={id} color={color} help={help} value={v.value} delta={v.delta} spark={v.spark} note={v.note} /> : <SkKpi />;
 }
 
 export const grid4 = "grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4";

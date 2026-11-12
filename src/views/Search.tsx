@@ -1,5 +1,6 @@
 "use client";
 
+import { Term } from "@/components/Term";
 import { useMemo, useState } from "react";
 import { COLORS, DEFAULT_RANGES } from "@/lib/config";
 import { useBing, useGSC } from "@/lib/data";
@@ -92,7 +93,8 @@ function GoogleSearch() {
   const dateLabel = (calc.gd.length ? `${calc.gd[0].d} to ${calc.gd[calc.gd.length - 1].d}` : "").replace(/-/g, "/");
   return (
     <>
-      <div className="flex flex-wrap gap-2 text-[12.5px]" aria-label="Report filters">
+      <p className="px-1 text-[13px] leading-relaxed text-mute">New to these numbers? Tap a word: <Term k="clicks">Clicks</Term> · <Term k="impressions">Impressions</Term> · <Term k="ctr">CTR</Term> · <Term k="position">Position</Term></p>
+      <div className="hidden flex-wrap gap-2 text-[12.5px] sm:flex" aria-label="Report filters">
         <span className="rounded-full border border-line px-3 py-1 text-mute">Search type: <b className="text-ink">Web</b></span>
         <span className="rounded-full border border-line px-3 py-1 text-mute">Date: <b className="text-ink">{DEFAULT_RANGES.find((x) => x.id === f.range)?.label ?? f.range}</b>{dateLabel ? <span className="text-dim"> ({dateLabel})</span> : null}</span>
         <span className="rounded-full border border-line px-3 py-1 text-mute">Property: <b className="text-ink">{f.site === "all" ? "All sites" : label(f.site)}</b></span>
