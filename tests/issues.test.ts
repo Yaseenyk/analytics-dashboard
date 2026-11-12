@@ -132,8 +132,9 @@ describe("Search Console-style notifications and helpers", () => {
     expect(g.text).toMatch(/2 pages are no longer in Google/);
     expect(gscStyle({ id: "y", kind: "indexed", level: "good", title: "1 new page in Google on yk.streamerosai.com", at: "x" }).title).toBe("New pages indexed on Portfolio");
   });
-  it("opens the inspection page for the exact address", () => {
-    expect(inspectLink("https://esports.streamerosai.com/tools/bracket/")).toBe("https://search.google.com/search-console/inspect?resource_id=sc-domain%3Astreamerosai.com&id=https%3A%2F%2Fesports.streamerosai.com%2Ftools%2Fbracket%2F");
+  it("opens the site's page-indexing report (the inspect box is at the top), never a made-up per-page address", () => {
+    expect(inspectLink("https://esports.streamerosai.com/tools/bracket/")).toBe("https://search.google.com/search-console/index?resource_id=sc-domain%3Astreamerosai.com");
+    expect(inspectLink()).not.toMatch(/inspect\?|&id=/);
   });
   it("turns Google's status words into everyday sentences", () => {
     expect(plainState("Discovered - currently not indexed")).toMatch(/knows it exists/);

@@ -24,7 +24,7 @@ export function IssueSheet({ issue }: { issue: Issue }) {
   const send = async (url: string, host: string) => {
     const ok = await copyText(url);
     markSent(url, host);
-    setFlash(ok ? `Link copied: ${path(url)}. If Search Console opens empty, paste it in the top box.` : "Search Console is opening. Copy the address by hand if the box is empty.");
+    setFlash(ok ? `Link copied: ${path(url)}. Search Console is opening. Paste the link into the box at the very top and press Enter.` : "Search Console is opening. Copy the page address by hand and paste it into the box at the very top.");
     window.open(inspectLink(url), "_blank", "noopener");
   };
 
@@ -81,7 +81,7 @@ export function IssueSheet({ issue }: { issue: Issue }) {
                       ) : (
                         <>
                           <button type="button" className={btnMain} onClick={() => send(p.url, p.host)}>Open in Search Console <Icon name="open" className="h-4 w-4" /></button>
-                          <button type="button" className={btn} onClick={async () => { const ok = await copyText(p.url); markSent(p.url, p.host); setFlash(ok ? `Link copied: ${path(p.url)}.` : "Could not copy. Select the address by hand."); }}>Copy link</button>
+                          <button type="button" className={btn} onClick={async () => { const ok = await copyText(p.url); markSent(p.url, p.host); setFlash(ok ? `Link copied: ${path(p.url)}. Paste it into Search Console's top box.` : "Could not copy. Select the address by hand."); }}>Copy link</button>
                         </>
                       )
                     )}

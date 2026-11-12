@@ -28,8 +28,12 @@ export interface Issue {
 
 /** Search Console property that covers every subdomain of the sites. */
 export const PROPERTY = "sc-domain:streamerosai.com";
-/** The Search Console page that inspects one address, with the address filled in. */
-export const inspectLink = (url: string) => `https://search.google.com/search-console/inspect?resource_id=${encodeURIComponent(PROPERTY)}&id=${encodeURIComponent(url)}`;
+/**
+ * Where "Open in Search Console" goes: your site's page-indexing report, which has the "Inspect any URL" box at the top.
+ * Search Console has no public address that pre-fills one page (its per-page links carry an internal id), so the page link is
+ * copied to the clipboard at the same tap and the person pastes it into that box.
+ */
+export const inspectLink = (_url?: string) => `https://search.google.com/search-console/index?resource_id=${encodeURIComponent(PROPERTY)}`;
 
 /** Google's own status words in everyday language. */
 export function plainState(s: string): string {
@@ -46,7 +50,7 @@ export function plainState(s: string): string {
 }
 
 interface Help { match: RegExp; level: Level; source: Source; what: string; steps: string[]; action: Issue["action"] }
-const SEND = "Tap “Open in Search Console” on a page. If the box at the top of Search Console is empty, paste the link (it is already copied), press Enter, then tap REQUEST INDEXING.";
+const SEND = "Tap “Open in Search Console” on a page. The page's link is copied for you and Search Console opens on your site. Paste the link into the box at the very top (“Inspect any URL”), press Enter, wait a few seconds, then tap REQUEST INDEXING.";
 const HELP: Help[] = [
   { match: /unknown to google/i, level: "warn", source: "Google systems", action: "inspect", what: "Google has never seen these pages, so nobody can find them in search.",
     steps: ["Open one page below to check it loads and is not an error.", SEND, "Make sure another page on the same site links to it, so Google can find it on its own next time.", "Do about 10 a day. Google limits how many you can send."] },
