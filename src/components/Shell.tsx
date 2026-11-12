@@ -3,7 +3,7 @@
 import { LazyMotion, MotionConfig, m } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { DEFAULT_RANGES, GROUPS, SITES, TABS, tabsOf } from "@/lib/config";
 import { refreshAll, useMeta, useStamp } from "@/lib/data";
 import { FiltersProvider, useFilters } from "@/lib/filters";
@@ -43,7 +43,7 @@ function useTab() {
   return TABS.find((t) => t.href === path || (t.href !== "/" && path.startsWith(t.href))) ?? TABS[0];
 }
 
-const CHIP = "inline-flex h-10 items-center gap-1.5 rounded-full bg-card2 pl-3.5 pr-3 text-[13.5px] font-medium text-ink";
+const CHIP = "inline-flex h-10 items-center gap-1 rounded-full bg-card2 pl-3 pr-2.5 text-[13px] font-medium text-ink min-[380px]:gap-1.5 min-[380px]:pl-3.5 min-[380px]:pr-3 min-[380px]:text-[13.5px]";
 /** A list of choices shown in an animated popup. Picking one closes it. */
 function Choices({ value, options, onPick }: { value: string; options: [string, string][]; onPick: (v: string) => void }) {
   return (
@@ -160,7 +160,7 @@ function Header() {
                 ))}
               </div>
               <span className="inline-flex items-center gap-1.5">
-                <button type="button" role="switch" aria-checked={f.cmp} onClick={() => f.setCmp(!f.cmp)} className={`inline-flex h-10 items-center gap-2 rounded-full px-3.5 text-[13.5px] font-medium transition-colors ${f.cmp ? "bg-brand/15 text-brand" : "bg-card2 text-mute"}`}>
+                <button type="button" role="switch" aria-checked={f.cmp} onClick={() => f.setCmp(!f.cmp)} className={`inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition-colors min-[380px]:gap-2 min-[380px]:px-3.5 min-[380px]:text-[13.5px] ${f.cmp ? "bg-brand/15 text-brand" : "bg-card2 text-mute"}`}>
                   <span className={`relative h-[20px] w-[34px] rounded-full transition-colors ${f.cmp ? "bg-brand" : "bg-white/15"}`}><i className={`absolute top-[3px] h-[14px] w-[14px] rounded-full bg-black transition-all ${f.cmp ? "left-[17px]" : "left-[3px]"}`} /></span>
                   Compare
                 </button>
@@ -227,7 +227,8 @@ function Nav({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void
         <FootNote />
       </aside>
 
-      <nav aria-label="Main" className="fixed inset-x-3 bottom-[calc(10px+env(safe-area-inset-bottom))] z-40 grid grid-cols-4 gap-1 rounded-[26px] border border-line2 bg-card/95 p-1.5 shadow-[0_10px_40px_rgba(0,0,0,.6)] backdrop-blur-xl lg:hidden">
+      <div className="z-40 flex-none bg-black px-3 pb-[calc(18px+env(safe-area-inset-bottom))] pt-2 max-lg:order-2 lg:hidden">
+      <nav aria-label="Main" className="grid grid-cols-4 gap-1 rounded-[26px] bg-card p-1.5 shadow-[0_6px_30px_rgba(0,0,0,.5)] ring-1 ring-white/10">
         {GROUPS.map((g) => {
           const on = tab.group === g.id;
           const cls = `relative flex h-[54px] flex-col items-center justify-center gap-0.5 rounded-[20px] text-[11px] font-medium ${on ? "text-brand" : "text-dim"}`;
@@ -243,6 +244,7 @@ function Nav({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void
             : <Link key={g.id} href={g.home} aria-current={on ? "page" : undefined} className={cls}>{inner}</Link>;
         })}
       </nav>
+      </div>
 
       {more && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="More sections">
@@ -304,6 +306,9 @@ function useSpotlight() {
 
 export function Shell({ children }: { children: ReactNode }) {
   useSpotlight();
+  const mainRef = useRef<HTMLElement>(null);
+  const route = usePathname();
+  useEffect(() => { mainRef.current?.scrollTo({ top: 0 }); }, [route]);
   const [collapsed, setCollapsed] = useState(false);
   useEffect(() => {
     try { setCollapsed(localStorage.getItem("side-collapsed") === "1"); } catch { /* private window */ }
@@ -315,9 +320,9 @@ export function Shell({ children }: { children: ReactNode }) {
         <FiltersProvider>
           <PopProvider>
           <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:40px_40px]" />
-          <div className="shell-grid min-h-screen lg:grid lg:grid-cols-[var(--side)_minmax(0,1fr)]" style={{ "--side": collapsed ? "72px" : "224px" } as React.CSSProperties}>
+          <div className="shell-grid max-lg:fixed max-lg:inset-x-0 max-lg:top-0 max-lg:flex max-lg:h-[100dvh] max-lg:flex-col lg:grid lg:min-h-screen lg:grid-cols-[var(--side)_minmax(0,1fr)]" style={{ "--side": collapsed ? "72px" : "224px" } as React.CSSProperties}>
             <Nav collapsed={collapsed} onToggle={toggle} />
-            <main className="min-w-0 px-5 pb-[calc(112px+env(safe-area-inset-bottom))] sm:px-7 lg:pb-14">
+            <main ref={mainRef} className="min-w-0 px-5 pb-8 sm:px-7 max-lg:order-1 max-lg:min-h-0 max-lg:flex-1 max-lg:overflow-y-auto max-lg:overflow-x-hidden max-lg:overscroll-contain lg:pb-14">
               <Header />
               <Page>{children}</Page>
             </main>

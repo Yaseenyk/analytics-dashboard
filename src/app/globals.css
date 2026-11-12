@@ -174,3 +174,5 @@ body { -webkit-tap-highlight-color: transparent; }
 /* tap-clean: tappable things have no focus ring or box. They are told apart by fill, not by lines. */
 a, button, summary, select, [role=button] { outline: none !important; -webkit-tap-highlight-color: transparent; }
 a:focus-visible, button:focus-visible, summary:focus-visible { outline: none !important; box-shadow: none !important; }
+
+html, body { overflow-x: hidden; max-width: 100%; }

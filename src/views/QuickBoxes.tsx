@@ -104,7 +104,7 @@ function NeedsSheet({ issues }: { issues: Issue[] }) {
 }
 
 const Label = ({ dot, pulse, children }: { dot: string; pulse?: boolean; children: React.ReactNode }) => (
-  <div className="flex items-center gap-1.5 whitespace-nowrap text-[11.5px] text-mute"><i className={`h-2 w-2 flex-none rounded-full ${dot} ${pulse ? "animate-pulseglow" : ""}`} aria-hidden="true" />{children}</div>
+  <div className="flex items-center gap-1.5 whitespace-nowrap text-[11.5px] text-mute"><i className={`h-2 w-2 flex-none rounded-full max-[379px]:hidden ${dot} ${pulse ? "animate-pulseglow" : ""}`} aria-hidden="true" />{children}</div>
 );
 const Body = ({ label, big, small }: { label: React.ReactNode; big: string; small: string }) => (
   <div className="flex h-full flex-col justify-between">
