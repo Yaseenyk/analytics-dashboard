@@ -11,6 +11,7 @@ import { Banner, Card, Delta, Icon, Sk, SkCard, SkText, Wait } from "@/component
 import { HelpDot } from "@/components/Term";
 import QuickBoxes from "./QuickBoxes";
 import HomeKpis from "./HomeKpis";
+import NotIndexedLink from "./NotIndexed";
 import { GaArea, GaDonut, GaKpi, GaRank, GscKpi, GscRank, cols2, grid4, useGaMemo, useGscMemo } from "./kit";
 
 function GaBanner() {
@@ -210,6 +211,7 @@ export default function Overview() {
       <QuickBoxes />
       <GaBanner />
       <HomeKpis />
+      <NotIndexedLink />
       <Summary />
       <VisitsChart />
       <div className={cols2}>
