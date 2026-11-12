@@ -55,7 +55,7 @@ export function HelpDot({ k, label }: { k: string; label?: string }) {
   if (!t) return null;
   return (
     <>
-      <button type="button" onClick={(e) => { e.stopPropagation(); setOpen(true); }} aria-label={label ?? `What does ${t.name} mean?`} className="inline-grid h-5 w-5 flex-none place-items-center rounded-full border border-line2 text-[11px] font-semibold text-mute hover:text-brand">?</button>
+      <button type="button" onClick={(e) => { e.stopPropagation(); setOpen(true); }} aria-label={label ?? `What does ${t.name} mean?`} className="inline-grid h-5 w-5 flex-none place-items-center rounded-full bg-white/10 text-[11px] font-semibold text-mute active:text-brand">?</button>
       {open && <Sheet k={k} onClose={() => setOpen(false)} />}
     </>
   );

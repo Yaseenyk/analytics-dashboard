@@ -10,6 +10,7 @@ import { FiltersProvider, useFilters } from "@/lib/filters";
 import { NotificationBell } from "@/views/Alerts";
 import { Icon } from "./ui";
 import { HelpDot } from "./Term";
+import { PopBox, PopProvider } from "./Pop";
 
 const loadMotion = () => import("./motionFeatures").then((r) => r.default);
 
@@ -42,6 +43,23 @@ function useTab() {
   return TABS.find((t) => t.href === path || (t.href !== "/" && path.startsWith(t.href))) ?? TABS[0];
 }
 
+const CHIP = "inline-flex h-10 items-center gap-1.5 rounded-full bg-card2 pl-3.5 pr-3 text-[13.5px] font-medium text-ink";
+/** A list of choices shown in an animated popup. Picking one closes it. */
+function Choices({ value, options, onPick }: { value: string; options: [string, string][]; onPick: (v: string) => void }) {
+  return (
+    <ul className="m-0 list-none space-y-2 p-0">
+      {options.map(([v, l]) => (
+        <li key={v}>
+          <button type="button" onClick={() => onPick(v)} className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl px-4 text-left text-[15px] ${value === v ? "bg-brand/15 font-semibold text-brand" : "bg-white/[.04] text-ink active:bg-white/[.08]"}`}>
+            {l}
+            {value === v && <Icon name="check" className="h-5 w-5" />}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** "Updated 5 min ago", always visible (on a phone it used to be hidden). Tapping it fetches fresh numbers. */
 function ago(ms: number): string {
   const m = Math.max(0, Math.round((Date.now() - ms) / 60000));
@@ -53,12 +71,12 @@ function Fresh() {
   const [, tick] = useState(0);
   useEffect(() => { const t = setInterval(() => tick((x) => x + 1), 30000); return () => clearInterval(t); }, []);
   const at = stamp.liveAt || (meta.data?.generatedAt ? Date.parse(meta.data.generatedAt) : 0);
-  const text = stamp.busy ? "Refreshing…" : at ? `${stamp.live ? "Live numbers" : "Saved numbers"}, updated ${ago(at)}` : "Loading numbers…";
+  const text = stamp.busy ? "Refreshing…" : at ? `Updated ${ago(at)}` : "Loading…";
   return (
-    <button type="button" onClick={refreshAll} className="inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-1 text-[12px] text-dim active:text-brand" aria-label={`${text}. Tap to refresh.`}>
+    <button type="button" onClick={refreshAll} className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] leading-none text-dim active:text-brand" aria-label={`${text}. Tap to refresh.`}>
       <span className={`h-[7px] w-[7px] flex-none rounded-full ${stamp.live ? "animate-pulseglow bg-good" : "bg-dim"}`} aria-hidden="true" />
       {text}
-      <Icon name="refresh" className={`h-3.5 w-3.5 ${stamp.busy ? "animate-spin" : ""}`} />
+      <Icon name="refresh" className={`h-3 w-3 ${stamp.busy ? "animate-spin" : ""}`} />
     </button>
   );
 }
@@ -69,9 +87,9 @@ function Sections() {
   const list = tabsOf(tab.group);
   if (list.length < 2) return null;
   return (
-    <nav aria-label="In this section" className="-mx-4 mt-2.5 flex gap-1.5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] sm:mx-0 sm:px-0">
+    <nav aria-label="In this section" className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0">
       {list.map((t) => (
-        <Link key={t.id} href={t.href} aria-current={t.id === tab.id ? "page" : undefined} className={`flex-none whitespace-nowrap rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors ${t.id === tab.id ? "border-brand/50 bg-brand/10 text-brand" : "border-line text-mute active:bg-card2"}`}>
+        <Link key={t.id} href={t.href} aria-current={t.id === tab.id ? "page" : undefined} className={`flex-none whitespace-nowrap rounded-full px-4 py-2.5 text-[13.5px] font-medium transition-colors ${t.id === tab.id ? "bg-brand/15 text-brand" : "bg-card2 text-mute active:bg-white/10"}`}>
           {t.short === "Pages" ? "Top pages" : t.short}
         </Link>
       ))}
@@ -99,34 +117,40 @@ function Header() {
   }, [stamp.liveAt]);
 
   return (
-    <header className="sticky top-0 z-30 -mx-4 border-b border-line bg-black/90 px-4 pb-3 pt-3.5 backdrop-blur-md sm:-mx-7 sm:px-7">
-      <div className="flex items-end justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <Logo className="h-9 w-9 lg:hidden" />
+    <>
+      <header className="sticky top-0 z-30 -mx-5 flex items-center justify-between gap-3 border-b border-white/[.06] bg-black/90 px-5 py-3 backdrop-blur-md sm:-mx-7 sm:px-7">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <Logo className="h-8 w-8 lg:hidden" />
           <div className="min-w-0">
-            <div key={f.site} className="eyebrow head-in">{f.site === "all" ? "All sites" : SITES[f.site]}</div>
-            <h1 key={tab.id} className="head-in m-0 truncate text-[21px] font-bold leading-tight tracking-tight">{tab.title}</h1>
-            <div className="mt-0.5 text-[12.5px] leading-snug text-mute">{tab.what}</div>
+            <h1 key={tab.id} className="head-in m-0 truncate text-[19px] font-bold leading-tight tracking-tight">{tab.title}</h1>
+            <Fresh />
           </div>
         </div>
         <div className="flex flex-none items-center gap-2 font-mono text-[11.5px] text-dim">
           <NotificationBell />
-          <button type="button" onClick={refreshAll} aria-label="Refresh now" title="Fetch fresh data now" className="group grid h-[30px] w-[30px] place-items-center rounded-full bg-card2 text-mute transition-[color,transform] duration-300 hover:rotate-180 hover:text-brand active:scale-90">
+          <button type="button" onClick={refreshAll} aria-label="Refresh now" title="Fetch fresh data now" className="group grid h-[34px] w-[34px] place-items-center rounded-full bg-card2 text-mute transition-[color,transform] duration-300 hover:rotate-180 hover:text-brand active:scale-90">
             <Icon name="refresh" className={`h-4 w-4 ${stamp.busy ? "animate-spin" : ""}`} />
           </button>
         </div>
-      </div>
+      </header>
+      <div className="pt-3">
+      <div className="text-[13px] leading-snug text-mute">{tab.what}</div>
       {tab.filters !== "none" && (
-        <div className="-mx-4 mt-3 flex items-center gap-2 overflow-x-auto px-4 pb-0.5 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-          <select aria-label="Which site" value={f.site} onChange={(e) => f.setSite(e.target.value)}>
-            <option value="all">All sites</option>
-            {Object.entries(SITES).map(([h, nm]) => <option key={h} value={h}>{nm}</option>)}
-          </select>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <PopBox id="pick-site" title="Which site?" radius={999} className={CHIP} label="Choose a site" render={(close) => (
+            <Choices value={f.site} options={[["all", "All sites"], ...Object.entries(SITES)]} onPick={(v) => { f.setSite(v); close(); }} />
+          )}>
+            {f.site === "all" ? "All sites" : SITES[f.site]}
+            <Icon name="chevron" className="h-4 w-4 text-dim" />
+          </PopBox>
           {tab.filters === "all" && (
             <>
-              <select aria-label="How far back" value={f.range} onChange={(e) => f.setRange(e.target.value)} className="md:hidden">
-                {ranges.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
-              </select>
+              <PopBox id="pick-range" title="How far back?" radius={999} className={`${CHIP} md:hidden`} label="Choose how far back" render={(close) => (
+                <Choices value={f.range} options={ranges.map((x) => [x.id, x.label] as [string, string])} onPick={(v) => { f.setRange(v); close(); }} />
+              )}>
+                {r.label.replace("Last ", "")}
+                <Icon name="chevron" className="h-4 w-4 text-dim" />
+              </PopBox>
               <div className="hidden gap-0.5 overflow-x-auto rounded-xl bg-card p-[3px] shadow-inset md:flex">
                 {ranges.map((x) => (
                   <button key={x.id} type="button" onClick={() => f.setRange(x.id)} aria-pressed={f.range === x.id} className={`relative whitespace-nowrap rounded-[9px] px-3 py-1.5 transition-colors ${f.range === x.id ? "font-semibold text-brand" : "text-mute hover:text-ink"}`}>
@@ -135,23 +159,21 @@ function Header() {
                   </button>
                 ))}
               </div>
-              <span className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap text-[13px] text-mute">
-                <label className="inline-flex cursor-pointer items-center gap-2">
-                  <input type="checkbox" checked={f.cmp} onChange={(e) => f.setCmp(e.target.checked)} className="h-4 w-4 accent-cyan-400" />
-                  <span className="sm:hidden">Compare</span><span className="hidden sm:inline">Compare with before</span>
-                </label>
-                <HelpDot k="compare" />
+              <span className="inline-flex items-center gap-1.5">
+                <button type="button" role="switch" aria-checked={f.cmp} onClick={() => f.setCmp(!f.cmp)} className={`inline-flex h-10 items-center gap-2 rounded-full px-3.5 text-[13.5px] font-medium transition-colors ${f.cmp ? "bg-brand/15 text-brand" : "bg-card2 text-mute"}`}>
+                  <span className={`relative h-[20px] w-[34px] rounded-full transition-colors ${f.cmp ? "bg-brand" : "bg-white/15"}`}><i className={`absolute top-[3px] h-[14px] w-[14px] rounded-full bg-black transition-all ${f.cmp ? "left-[17px]" : "left-[3px]"}`} /></span>
+                  Compare
+                </button>
+                <span className="hidden sm:inline-flex"><HelpDot k="compare" /></span>
               </span>
             </>
           )}
         </div>
       )}
-      <div className="mt-1 flex items-center justify-between gap-2">
-        <Fresh />
-        <span className="hidden truncate text-[12px] text-dim sm:block">{tab.filters === "all" ? span : ""}</span>
-      </div>
+      {tab.filters === "all" && <div className="mt-2 hidden justify-end truncate text-[12px] text-dim sm:flex">{span}</div>}
       <Sections />
-    </header>
+      </div>
+    </>
   );
 }
 
@@ -205,15 +227,15 @@ function Nav({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void
         <FootNote />
       </aside>
 
-      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-black/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
+      <nav aria-label="Main" className="fixed inset-x-3 bottom-[calc(10px+env(safe-area-inset-bottom))] z-40 grid grid-cols-4 gap-1 rounded-[26px] border border-line2 bg-card/95 p-1.5 shadow-[0_10px_40px_rgba(0,0,0,.6)] backdrop-blur-xl lg:hidden">
         {GROUPS.map((g) => {
           const on = tab.group === g.id;
-          const cls = `relative flex min-h-[56px] flex-col items-center justify-center gap-1 text-[11px] ${on ? "text-brand" : "text-dim"}`;
+          const cls = `relative flex h-[54px] flex-col items-center justify-center gap-0.5 rounded-[20px] text-[11px] font-medium ${on ? "text-brand" : "text-dim"}`;
           const inner = (
             <>
-              {on && <m.span layoutId="tab-dot" aria-hidden="true" transition={{ type: "spring", stiffness: 420, damping: 30 }} className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-brand" />}
-              <m.span whileTap={{ scale: 0.8 }} transition={{ type: "spring", stiffness: 500, damping: 16 }}><Icon name={g.icon} className="h-[22px] w-[22px]" /></m.span>
-              {g.label}
+              {on && <m.span layoutId="tab-pill" aria-hidden="true" transition={{ type: "spring", stiffness: 420, damping: 32 }} className="absolute inset-0 rounded-[20px] bg-brand/12" />}
+              <m.span className="relative z-10 grid place-items-center" whileTap={{ scale: 0.8 }} transition={{ type: "spring", stiffness: 500, damping: 16 }}><Icon name={g.icon} className="h-[22px] w-[22px]" /></m.span>
+              <span className="relative z-10 leading-none">{g.label}</span>
             </>
           );
           return g.id === "more"
@@ -291,14 +313,16 @@ export function Shell({ children }: { children: ReactNode }) {
     <MotionConfig reducedMotion="user">
       <LazyMotion features={loadMotion} strict>
         <FiltersProvider>
+          <PopProvider>
           <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:40px_40px]" />
           <div className="shell-grid min-h-screen lg:grid lg:grid-cols-[var(--side)_minmax(0,1fr)]" style={{ "--side": collapsed ? "72px" : "224px" } as React.CSSProperties}>
             <Nav collapsed={collapsed} onToggle={toggle} />
-            <main className="min-w-0 px-4 pb-[calc(88px+env(safe-area-inset-bottom))] sm:px-7 lg:pb-14">
+            <main className="min-w-0 px-5 pb-[calc(112px+env(safe-area-inset-bottom))] sm:px-7 lg:pb-14">
               <Header />
               <Page>{children}</Page>
             </main>
           </div>
+          </PopProvider>
         </FiltersProvider>
       </LazyMotion>
     </MotionConfig>

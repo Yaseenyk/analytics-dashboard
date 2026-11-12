@@ -1,4 +1,4 @@
-import View from "@/views/Today";
+import View from "@/views/Overview";
 
 export default function Page() {
   return <View />;

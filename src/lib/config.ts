@@ -77,7 +77,7 @@ export const DEFAULT_RANGES: Range[] = [
   { id: "16m", days: 480, label: "Last 16 months" },
 ];
 
-export type GroupId = "today" | "visitors" | "google" | "todo" | "more";
+export type GroupId = "home" | "visitors" | "todo" | "more";
 /** Which filters make sense on a page: all three, only the site picker, or none (a filter that changes nothing is hidden). */
 export type FilterMode = "all" | "site" | "none";
 export interface Tab {
@@ -92,20 +92,21 @@ export interface Tab {
   filters: FilterMode;
 }
 export const TABS: Tab[] = [
-  { id: "today", href: "/", title: "Today", short: "Today", icon: "overview", group: "today", filters: "all", what: "A quick read of how your sites are doing, and what needs you." },
-  { id: "traffic", href: "/traffic/", title: "Traffic", short: "Traffic", icon: "sources", group: "visitors", filters: "all", what: "How many people visited, and whether it is going up or down." },
+  { id: "home", href: "/", title: "Home", short: "Home", icon: "overview", group: "home", filters: "all", what: "Your sites at a glance. Tap a box to see more." },
+  { id: "visitors", href: "/visitors/", title: "All visitor numbers", short: "Overview", icon: "audience", group: "visitors", filters: "all", what: "Google Analytics, Search Console, Bing and Clarity in one place." },
   { id: "sources", href: "/sources/", title: "Where visitors come from", short: "Sources", icon: "sources", group: "visitors", filters: "all", what: "Which websites, apps and searches sent people to you." },
-  { id: "pages", href: "/pages/", title: "Pages", short: "Pages", icon: "pages", group: "visitors", filters: "all", what: "Which pages people open the most." },
-  { id: "audience", href: "/audience/", title: "Audience", short: "Audience", icon: "audience", group: "visitors", filters: "all", what: "Which countries your visitors are in, and how they behave on the page." },
-  { id: "live", href: "/live/", title: "Live now", short: "Live", icon: "live", group: "visitors", filters: "site", what: "Who is on your sites right now (the last 30 minutes)." },
+  { id: "pages", href: "/pages/", title: "Pages", short: "Top pages", icon: "pages", group: "visitors", filters: "all", what: "Which pages people open the most." },
+  { id: "audience", href: "/audience/", title: "Audience", short: "Countries", icon: "audience", group: "visitors", filters: "all", what: "Which countries your visitors are in, and how they behave on the page." },
   { id: "leads", href: "/leads/", title: "Leads and clicks", short: "Leads", icon: "leads", group: "visitors", filters: "all", what: "People who took an action: WhatsApp, email, phone call, or a form." },
-  { id: "search", href: "/search/", title: "Google searches", short: "Searches", icon: "search", group: "google", filters: "all", what: "What people typed into Google before they found you." },
-  { id: "rankings", href: "/rankings/", title: "Rankings", short: "Rankings", icon: "rankings", group: "google", filters: "all", what: "Where you show up on Google for the phrases you care about, and easy wins." },
-  { id: "health", href: "/health/", title: "Pages in Google", short: "Checks", icon: "health", group: "google", filters: "site", what: "How many of your pages Google has added to its list, and the checks on them." },
-  { id: "ads", href: "/ads/", title: "Google Ads", short: "Ads", icon: "ads", group: "google", filters: "all", what: "Results of any Google ads you run." },
-  { id: "fix", href: "/fix/", title: "Get pages into Google", short: "Send to Google", icon: "health", group: "todo", filters: "site", what: "Pages Google does not have yet, and how to send them. About a minute each." },
-  { id: "tools", href: "/tools/", title: "Share a link", short: "Share a link", icon: "tools", group: "todo", filters: "none", what: "Make a link and a ready-to-post message for Discord, WhatsApp, LinkedIn and more." },
+  { id: "live", href: "/live/", title: "Live now", short: "Live", icon: "live", group: "visitors", filters: "site", what: "Who is on your sites right now (the last 30 minutes)." },
+  { id: "search", href: "/search/", title: "Search Console", short: "Search Console", icon: "search", group: "visitors", filters: "all", what: "What people typed into Google before they found you." },
+  { id: "bing", href: "/bing/", title: "Bing", short: "Bing", icon: "search", group: "visitors", filters: "all", what: "The same numbers for Bing search." },
+  { id: "clarity", href: "/clarity/", title: "Clarity", short: "Clarity", icon: "live", group: "visitors", filters: "site", what: "How people behave on your pages: scrolling, clicking, getting stuck." },
+  { id: "rankings", href: "/rankings/", title: "Rankings", short: "Rankings", icon: "rankings", group: "visitors", filters: "all", what: "Where you show up on Google for the phrases you care about, and easy wins." },
+  { id: "ads", href: "/ads/", title: "Google Ads", short: "Ads", icon: "ads", group: "visitors", filters: "all", what: "Results of any Google ads you run." },
+  { id: "fix", href: "/fix/", title: "To do", short: "To do", icon: "todo", group: "todo", filters: "site", what: "Everything that needs you, plus how each site is doing in Google. Tap a row to see what to do." },
   { id: "jobs", href: "/jobs/", title: "Automatic jobs", short: "Jobs", icon: "jobs", group: "more", filters: "none", what: "Posts, builds and checks that run by themselves. Did any of them fail?" },
+  { id: "tools", href: "/tools/", title: "Share a link", short: "Share a link", icon: "tools", group: "more", filters: "none", what: "Make a link and a ready-to-post message for Discord, WhatsApp, LinkedIn and more." },
   { id: "help", href: "/help/", title: "Help: what the words mean", short: "Help", icon: "help", group: "more", filters: "none", what: "Plain meanings for every term used here, and how to read the numbers." },
 ];
 
@@ -116,11 +117,10 @@ export interface Group {
   /** The page the bottom-bar button opens. */
   home: string;
 }
-/** The bottom bar on a phone: five big questions instead of twelve tool names. */
+/** The bottom bar on a phone: four big places instead of seventeen tool names. */
 export const GROUPS: Group[] = [
-  { id: "today", label: "Today", icon: "overview", home: "/" },
-  { id: "visitors", label: "Visitors", icon: "audience", home: "/traffic/" },
-  { id: "google", label: "Google", icon: "search", home: "/search/" },
+  { id: "home", label: "Home", icon: "overview", home: "/" },
+  { id: "visitors", label: "Visitors", icon: "audience", home: "/visitors/" },
   { id: "todo", label: "To do", icon: "todo", home: "/fix/" },
   { id: "more", label: "More", icon: "more", home: "/jobs/" },
 ];

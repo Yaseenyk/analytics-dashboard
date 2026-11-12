@@ -167,3 +167,10 @@
 .side-collapsed .nav-label { max-width: 0; opacity: 0; margin-left: -10px; }
 .side-collapsed .side-hide { opacity: 0; max-width: 0; }
 .side-hide { overflow: hidden; white-space: nowrap; max-width: 160px; transition: max-width .4s cubic-bezier(.22,1,.36,1), opacity .25s; }
+
+html, body { overscroll-behavior-y: none; }
+body { -webkit-tap-highlight-color: transparent; }
+
+/* tap-clean: tappable things have no focus ring or box. They are told apart by fill, not by lines. */
+a, button, summary, select, [role=button] { outline: none !important; -webkit-tap-highlight-color: transparent; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: none !important; box-shadow: none !important; }

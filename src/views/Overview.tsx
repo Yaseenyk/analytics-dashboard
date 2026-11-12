@@ -9,6 +9,8 @@ import {
 import { useFilters } from "@/lib/filters";
 import { Banner, Card, Delta, Icon, Sk, SkCard, SkText, Wait } from "@/components/ui";
 import { HelpDot } from "@/components/Term";
+import QuickBoxes from "./QuickBoxes";
+import HomeKpis from "./HomeKpis";
 import { GaArea, GaDonut, GaKpi, GaRank, GscKpi, GscRank, cols2, grid4, useGaMemo, useGscMemo } from "./kit";
 
 function GaBanner() {
@@ -205,27 +207,9 @@ function GscMissingNote() {
 export default function Overview() {
   return (
     <>
+      <QuickBoxes />
       <GaBanner />
-      <LiveCard />
-      <div className={grid4}>
-        <GaKpi title="People" id="people" help="people" color={COLORS[0]} calc={(ga, site, cmp) => {
-          const ok = hasGA(ga);
-          return { value: ok ? n(total(ga, "activeUsers", site)) : "–", delta: ok ? <Delta show={cmp} cur={total(ga, "activeUsers", site)} prev={total(ga, "activeUsers", site, true)} /> : <Wait />, spark: dailyTotal(rep(ga, "daily"), "activeUsers", site) };
-        }} />
-        <GaKpi title="Visits" id="visits" help="visits" color={COLORS[1]} calc={(ga, site, cmp) => {
-          const ok = hasGA(ga);
-          const ses = total(ga, "sessions", site), eng = total(ga, "engagedSessions", site);
-          return { value: ok ? n(ses) : "–", delta: ok ? <Delta show={cmp} cur={ses} prev={total(ga, "sessions", site, true)} /> : <Wait />, spark: dailyTotal(rep(ga, "daily"), "sessions", site), note: ok && ses ? <span className="mt-1.5 block font-mono text-[11px] text-dim" title="GA4 counts a visit as engaged when it lasts 10 seconds or more, has a key event, or views 2 or more pages. Bots and bounces rarely do.">{Math.round((100 * eng) / ses)}% engaged (real readers)</span> : undefined };
-        }} />
-        <GaKpi title="Leads and clicks" id="leads" help="leads" color={COLORS[2]} calc={(ga, site, cmp) => {
-          const ok = hasGA(ga);
-          return { value: ok ? n(total(ga, "keyEvents", site)) : "–", delta: ok ? <Delta show={cmp} cur={total(ga, "keyEvents", site)} prev={total(ga, "keyEvents", site, true)} /> : <Wait />, spark: dailyTotal(rep(ga, "daily"), "keyEvents", site) };
-        }} />
-        <GscKpi title="Google clicks" id="gclicks" help="clicks" color={COLORS[3]} calc={(g, site, cmp) => {
-          const a = gscTotals(g, site, false), b = gscTotals(g, site, true);
-          return { value: n(a.clicks), delta: <Delta show={cmp} cur={a.clicks} prev={b.clicks} />, spark: gscDaily(g, site).map((x) => x.clicks) };
-        }} />
-      </div>
+      <HomeKpis />
       <Summary />
       <VisitsChart />
       <div className={cols2}>

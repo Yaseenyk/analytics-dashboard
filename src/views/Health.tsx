@@ -28,20 +28,20 @@ function Explainer() {
   );
 }
 
-function SiteCards() {
+export function SiteCards() {
   const f = useFilters();
   const e = useHealth();
   const h = e.data;
   if (e.error && !h) return <ErrorCard what="index health" />;
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {SITE_HOSTS.map((host) => {
         const s = h?.index?.[host];
         const b = h?.bing?.[host];
         if (!h) return <SkCard key={host} className="space-y-3"><Sk w={40} h={14} /><Sk w={30} h={28} /><Sk h={8} /></SkCard>;
         const pct = s && s.inspected ? Math.round((100 * s.indexed) / s.inspected) : 0;
         return (
-          <button key={host} type="button" onClick={() => f.setSite(host)} className="card animate-fadein text-left transition-colors">
+          <button key={host} type="button" onClick={() => f.setSite(host)} className="card animate-fadein !border-transparent text-left transition-colors active:bg-card2">
             <div className="flex items-baseline justify-between gap-2">
               <h3 className="m-0 text-[15px] font-semibold">{SITES[host]}</h3>
               <span className="font-mono text-[11.5px] text-dim">{host}</span>
@@ -49,12 +49,12 @@ function SiteCards() {
             {s ? (
               <>
                 <div className="mt-3 text-[28px] font-bold leading-none tracking-tight">
-                  {n(s.indexed)}<span className="text-[15px] font-medium text-dim"> of {n(s.inspected)} pages in Google</span>
+                  {n(s.indexed)}<span className="text-[15px] font-medium text-dim"> of {n(s.inspected)} sitemap pages in Google</span>
                 </div>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[.06]" role="img" aria-label={`${pct}% indexed`}>
                   <div className="h-full rounded-full bg-gradient-to-r from-brand to-purple bar-grow" style={{ width: `${Math.max(pct, s.indexed ? 3 : 0)}%` }} />
                 </div>
-                <div className="mt-2 font-mono text-[12px] text-mute">{pct}% indexed · {n(s.notIndexed)} not yet</div>
+                <div className="mt-2 font-mono text-[12px] text-mute">{pct}% of your sitemap · {n(s.notIndexed)} not yet</div>
               </>
             ) : (
               <p className="mt-3 text-[13px] text-dim">Not checked yet. The next daily run adds it.</p>
