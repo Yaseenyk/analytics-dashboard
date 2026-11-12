@@ -234,7 +234,7 @@ function Nav({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void
           const cls = `relative flex h-[54px] flex-col items-center justify-center gap-0.5 rounded-[20px] text-[11px] font-medium ${on ? "text-brand" : "text-dim"}`;
           const inner = (
             <>
-              {on && <m.span layoutId="tab-pill" aria-hidden="true" transition={{ type: "spring", stiffness: 420, damping: 32 }} className="absolute inset-0 rounded-[20px] bg-brand/12" />}
+              <span aria-hidden="true" className={`absolute inset-0 rounded-[20px] transition-colors duration-200 ${on ? "bg-brand/15" : ""}`} />
               <m.span className="relative z-10 grid place-items-center" whileTap={{ scale: 0.8 }} transition={{ type: "spring", stiffness: 500, damping: 16 }}><Icon name={g.icon} className="h-[22px] w-[22px]" /></m.span>
               <span className="relative z-10 leading-none">{g.label}</span>
             </>
