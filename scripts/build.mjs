@@ -86,16 +86,18 @@ async function pool(tasks, limit) {
 
 // POST with a few retries on quota and server errors.
 async function post(url, body) {
+  let last = 'no answer';
   for (let attempt = 0; attempt < 4; attempt++) {
     // A call that never answers is retried like a server error; the run used to hang here for 20 minutes (13 Nov 2026).
     const res = await fetch(url, { method: 'POST', headers: auth, body: JSON.stringify(body), signal: AbortSignal.timeout(60000) }).catch(() => ({ status: 599, json: async () => ({}), text: async () => '' }));
     if (res.status === 429 || res.status >= 500) {
+      last = `HTTP ${res.status} ${((await res.text().catch(() => '')) || '').replace(/\s+/g, ' ').slice(0, 160)}`;
       await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
       continue;
     }
     return { res, json: await res.json().catch(() => ({})) };
   }
-  return { res: { ok: false, status: 599 }, json: { error: { message: 'retries exhausted' } } };
+  return { res: { ok: false, status: 599 }, json: { error: { message: `retries exhausted (${last})` } } };
 }
 
 // ---------------------------------------------------------------- GA4

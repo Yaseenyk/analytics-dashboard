@@ -109,6 +109,7 @@ async function accessToken(env) {
 
 async function post(env, url, body) {
   const token = await accessToken(env);
+  let last = 'no answer';
   for (let attempt = 0; attempt < 2; attempt++) {
     let res;
     try {
@@ -117,10 +118,10 @@ async function post(env, url, body) {
     } catch {
       return { res: { ok: false, status: 598 }, json: { error: { message: 'timed out' } } };
     }
-    if (res.status === 429 || res.status >= 500) { await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
+    if (res.status === 429 || res.status >= 500) { last = `HTTP ${res.status} ${((await res.text().catch(() => '')) || '').replace(/\s+/g, ' ').slice(0, 160)}`; await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
     return { res, json: await res.json().catch(() => ({})) };
   }
-  return { res: { ok: false, status: 599 }, json: { error: { message: 'retries exhausted' } } };
+  return { res: { ok: false, status: 599 }, json: { error: { message: `retries exhausted (${last})` } } };
 }
 // Run tasks with a concurrency limit (Workers allow 6 open connections per request).
 async function pool(tasks, limit) {
