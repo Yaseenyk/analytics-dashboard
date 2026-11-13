@@ -281,8 +281,19 @@ const T0 = Date.now();
 const step = (m) => console.log(`[${Math.round((Date.now() - T0) / 1000)}s] ${m}`);
 const generatedAt = new Date().toISOString();
 
+// One cheap probe first. When Google is refusing GA4 (quota, outage), every report would burn minutes in retries, so say why
+// once, skip the GA4 reports for this run and still publish everything else (13 Nov 2026: the pull timed out at 15 minutes).
+let gaDown = '';
+try {
+  const pr = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${PROPERTY}:runReport`, { method: 'POST', headers: auth, body: JSON.stringify({ dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }], metrics: [{ name: 'sessions' }] }), signal: AbortSignal.timeout(25000) });
+  const txt = (await pr.text()).replace(/\s+/g, ' ').slice(0, 400);
+  step(`GA4 probe: HTTP ${pr.status} ${pr.ok ? 'ok' : txt}`);
+  if (!pr.ok) gaDown = `HTTP ${pr.status} ${txt.slice(0, 160)}`;
+} catch (e) { gaDown = `no answer in 25s (${e.name})`; step(`GA4 probe: ${gaDown}`); }
+if (gaDown) errors.push(`GA4 skipped this run: ${gaDown}`);
+
 // GA4: one file per range. Requests are throttled to stay under the concurrent-request limit.
-for (const range of RANGES) {
+for (const range of gaDown ? [] : RANGES) {
   const names = Object.keys(PLAN);
   const results = await pool(names.map((n) => () => gaReport(`${range.id}/${n}`, PLAN[n], range.days)), 6);
   const reports = Object.fromEntries(names.map((n, i) => [n, results[i]]));
