@@ -248,7 +248,7 @@ async function build(kind, id, env) {
   if (kind === 'ga') {
     const names = Object.keys(PLAN);
     const deadline = Date.now() + 40000;
-    const results = await pool(names.map((n) => () => gaReport(env, `${range.id}/${n}`, PLAN[n], range.days, errors, deadline)), 6);
+    const results = await pool(names.map((n) => () => gaReport(env, `${range.id}/${n}`, PLAN[n], range.days, errors, deadline)), 3); // GA4 refuses more than a few at once ("Exhausted concurrent requests quota", 13 Nov 2026)
     return { range: range.id, days: range.days, generatedAt, reports: Object.fromEntries(names.map((n, i) => [n, results[i]])), errors, live: true };
   }
   if (kind === 'gsc') {
