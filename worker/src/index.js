@@ -508,6 +508,53 @@ const CRAWL_COOLDOWN_MIN = 90;
 const KV_FILES = { 'history.json': 'history:index', 'alerts.json': 'alerts', 'ranks.json': 'ranks:file', 'crawl.json': 'crawl:file' };
 
 const inflight = new Map();
+// ---- the saved copy (database) of GA4 and Search Console ----
+// Page loads read the last good result from KV and never call Google. Only Refresh (?refresh=1) asks Google, for the range on
+// screen, and the answer is merged into the saved copy: a report Google refused keeps its old rows (marked stale), and a whole
+// refusal leaves the saved copy untouched. GA4 is one invocation (about 31 outgoing calls). Search Console is 13 properties
+// x 8 reports, over the 50-call limit of one invocation, so it is refreshed in parts of 5 properties (?part=0,1,2).
+const GSC_PART = 5;
+const jres = (o, ch, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+async function snapshot(kind, id, url, env, ch) {
+  const range = RANGES.find((r) => r.id === id);
+  if (!range) return new Response('not found', { status: 404, headers: ch });
+  const key = `snap:${kind}-${id}`;
+  const snap = await kvJson(env, key).catch(() => null);
+  if (url.searchParams.get('refresh') !== '1') return snap ? jres(snap, ch) : new Response('not found', { status: 404, headers: ch });
+
+  if (kind === 'ga') {
+    // A double tap must not spend Google quota twice.
+    if (snap && !snap.staleSince && Date.now() - Date.parse(snap.generatedAt) < 60000) return jres(snap, ch);
+    const fresh = await build('ga', id, env);
+    const failed = new Set((fresh.errors || []).map((e) => /^GA4 [^/]+\/(\w+):/.exec(e)?.[1]).filter(Boolean));
+    const reports = {};
+    let kept = 0;
+    for (const n of Object.keys(PLAN)) {
+      const old = snap?.reports?.[n];
+      if (failed.has(n) && old?.rows?.length) { reports[n] = { ...old, stale: true }; kept++; } else reports[n] = fresh.reports[n];
+    }
+    const healthy = (reports.totals?.rows?.length ?? 0) > 0 || !(fresh.errors || []).length;
+    if (!healthy) return jres(snap ? { ...snap, staleSince: snap.staleSince || snap.generatedAt, errors: (fresh.errors || []).slice(0, 3) } : { range: id, days: range.days, generatedAt: fresh.generatedAt, reports, down: (fresh.errors || [])[0] || 'no answer' }, ch);
+    const doc = { range: id, days: range.days, generatedAt: fresh.generatedAt, reports, ...(kept ? { staleSince: snap?.staleSince || snap?.generatedAt } : {}) };
+    await env.DATA.put(key, JSON.stringify(doc));
+    return jres(doc, ch);
+  }
+
+  // Search Console, one part at a time
+  const parts = Math.ceil(GSC_SITES.length / GSC_PART);
+  const part = Math.max(0, Math.min(parts - 1, parseInt(url.searchParams.get('part') || '0', 10) || 0));
+  const slice = GSC_SITES.slice(part * GSC_PART, part * GSC_PART + GSC_PART);
+  const results = await pool(slice.map((s) => () => gscSite(env, s, range)), 3);
+  const now = new Date().toISOString();
+  let doc = snap?.search ? snap : { range: id, days: range.days, generatedAt: now, search: {} };
+  if (part === 0) doc = { ...doc, generatedAt: now };
+  const search = { ...doc.search };
+  slice.forEach((site, i) => { const old = search[site]; search[site] = !results[i].ok && old?.ok ? { ...old, stale: true } : results[i]; });
+  doc = { ...doc, range: id, days: range.days, search, ...gscDates(range.days, false) };
+  await env.DATA.put(key, JSON.stringify(doc));
+  return jres({ ...doc, part, parts, done: part === parts - 1 }, ch);
+}
+
 function cors(req) {
   const o = req.headers.get('Origin') || '';
   const h = { 'Vary': 'Origin' };
@@ -559,6 +606,8 @@ export default {
       body = await reconcileHealth(env, body).catch(() => body);
       return new Response(body, { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' } });
     }
+    const sm = req.method === 'GET' ? url.pathname.match(/^\/data\/(ga|gsc)-([a-z0-9]+)\.json$/) : null;
+    if (sm) return snapshot(sm[1], sm[2], url, env, ch);
     const m = url.pathname.match(/^\/data\/(meta|live|ga|gsc|bing)(?:-([a-z0-9]+))?\.json$/);
     if (!m || req.method !== 'GET') return new Response('not found', { status: 404, headers: ch });
     const kind = m[1], id = m[2] || '', key = kind + id;

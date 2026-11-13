@@ -14,7 +14,7 @@ export function useGaMemo<T>(build: (ga: GAFile, site: string, cmp: boolean) => 
   const e = useGA(f.range);
   const v = useMemo(() => (e.data ? build(e.data, f.site, f.cmp) : null), [e.data, f.site, f.cmp]); // eslint-disable-line react-hooks/exhaustive-deps
   const waiting = !!e.data && !(e.data.reports?.totals?.rows?.length > 0);
-  const msg = e.data?.down ? "Google Analytics is not answering right now." : WAIT_MSG;
+  const msg = e.data?.idle ? "Tap Updated at the top to load these numbers." : e.data?.down ? "Google Analytics is not answering right now." : WAIT_MSG;
   return { v, error: e.error && !e.data, f, waiting, msg };
 }
 export function useGscMemo<T>(build: (g: GSCFile, site: string, cmp: boolean) => T) {

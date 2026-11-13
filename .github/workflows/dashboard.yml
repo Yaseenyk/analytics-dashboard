@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "11 */2 * * *" # every 2 hours, off the top of the hour when GitHub delays runs
   workflow_dispatch:
+    inputs:
+      pull_google:
+        description: "Pull GA4 and Search Console from Google now (normally only the Refresh button does this)"
+        type: boolean
+        default: false
   push:
     branches: [main]
 
@@ -34,6 +39,7 @@ jobs:
         run: node scripts/build.mjs
         env:
           GA_SERVICE_ACCOUNT_JSON: ${{ secrets.GA_SERVICE_ACCOUNT_JSON }}
+          PULL_GOOGLE: ${{ inputs.pull_google && '1' || '' }}
           BING_API_KEY: ${{ secrets.BING_API_KEY }}
       - name: Install and build the Next.js app
         run: |

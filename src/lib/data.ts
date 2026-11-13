@@ -21,6 +21,8 @@ const subs = new Map<string, Set<() => void>>();
 const inflight = new Set<string>();
 /** Files that exist only on the Worker (kept in its KV), so they are fetched from it straight away. */
 const LIVE_FIRST = new Set(["history.json", "alerts.json", "ranks.json", "crawl.json", "health.json"]);
+/** GA4 and Search Console live in the Worker's database (KV). Opening a page reads the saved copy; only Refresh asks Google. */
+const SNAP = /^(ga|gsc)-/;
 
 function emit(key: string) {
   subs.get(key)?.forEach((f) => f());
@@ -139,11 +141,23 @@ export function ensure(file: string, force = false) {
     writeCache(file, j);
     if (!LIVE_FIRST.has(file)) setStamp({ liveAt: Date.now(), live: true });
   };
-  // Search Console and Bing numbers are final only 2 to 3 days later, so the published copy (rebuilt every 2 hours) is as
-  // fresh as they get. The Worker's one-shot fetch of 11 properties x 8 reports also exceeds its 50-subrequest limit, which
-  // showed up as sites with no search data after a refresh. So those files are never asked for live; Refresh re-reads the published copy.
-  const staticOnly = /^(gsc|bing)-|^optimizer\.json$/.test(file);
-  const live = base && !staticOnly && (force || LIVE_FIRST.has(file)) ? getJSON<unknown>(`${base}/data/${file}`, 45000).then(applyLive, () => {}) : Promise.resolve();
+  // Bing numbers come only from the published copy. GA4 and Search Console come from the Worker's saved copy (no Google call);
+  // Refresh asks Google through the Worker (Search Console in parts, because 13 properties x 8 reports exceed one invocation's
+  // 50-call limit) and the Worker merges the answer into the saved copy.
+  const staticOnly = /^bing-|^optimizer\.json$/.test(file);
+  const snapped = !!base && SNAP.test(file);
+  const holds = (x: unknown) => /^ga-/.test(file) ? ((x as GAFile | null)?.reports?.totals?.rows?.length ?? 0) > 0 : Object.values((x as GSCFile | null)?.search ?? {}).some((v) => (v as { ok?: boolean }).ok);
+  const applySaved = (j: unknown) => {
+    const cur = store.get(file);
+    if (!holds(j) && !(j as { down?: string; idle?: boolean }).down) return;
+    if (cur?.data && holds(cur.data) && !newer(j as { generatedAt?: string }, cur.data as { generatedAt?: string })) return;
+    put(file, { data: j, error: false });
+    const at = Date.parse(String((j as { generatedAt?: string }).generatedAt || ""));
+    if (at && at > stamp.liveAt) setStamp({ liveAt: at });
+  };
+  const saved = snapped && !force ? getJSON<unknown>(`${base}/data/${file}`, 20000).then(applySaved, () => {}) : Promise.resolve();
+  const refreshed = snapped && force ? refreshSaved(file, base, applyLive) : Promise.resolve();
+  const live = base && !staticOnly && !SNAP.test(file) && (force || LIVE_FIRST.has(file)) ? getJSON<unknown>(`${base}/data/${file}`, 45000).then(applyLive, () => {}) : Promise.resolve();
   const stat = (force && !staticOnly) || LIVE_FIRST.has(file)
     ? Promise.resolve()
     : getJSON<unknown>(`/data/${file}`, 30000).then(
@@ -163,10 +177,25 @@ export function ensure(file: string, force = false) {
           }
         },
       );
-  Promise.all([stat, live]).then(() => {
+  Promise.all([stat, live, saved, refreshed]).then(() => {
     inflight.delete(file);
     if (!store.get(file)?.data) put(file, { data: null, error: true });
   });
+}
+
+/** Refresh for GA4 or Search Console: the Worker asks Google and saves the answer. Search Console goes in parts of 5 properties. */
+async function refreshSaved(file: string, base: string, apply: (j: unknown) => void) {
+  if (file.startsWith("ga-")) {
+    const j = await getJSON<unknown>(`${base}/data/${file}?refresh=1`, 70000).catch(() => null);
+    if (j) apply(j);
+    return;
+  }
+  for (let part = 0; part < 8; part++) {
+    const j = await getJSON<{ done?: boolean }>(`${base}/data/${file}?refresh=1&part=${part}`, 70000).catch(() => null);
+    if (!j) break;
+    apply(j);
+    if (j.done) break;
+  }
 }
 
 /** Ask Google (through the Worker) again for everything on screen. */
