@@ -7,6 +7,12 @@ export interface Rep {
   dims: string[];
   mets: string[];
   rows: Cell[][];
+  /** When this report was last fetched from Google (set by a per-screen refresh). */
+  at?: string;
+  /** Per site: when that site's rows were last fetched (a per-site refresh). */
+  atHost?: Record<string, string>;
+  /** Google refused the last refresh, so these rows are the last good copy. */
+  stale?: boolean;
 }
 
 export interface GAFile {

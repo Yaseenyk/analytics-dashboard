@@ -514,6 +514,7 @@ const inflight = new Map();
 // refusal leaves the saved copy untouched. GA4 is one invocation (about 31 outgoing calls). Search Console is 13 properties
 // x 8 reports, over the 50-call limit of one invocation, so it is refreshed in parts of 5 properties (?part=0,1,2).
 const GSC_PART = 5;
+const PLAN_SHAPE = (n) => ({ dims: PLAN[n].dims, mets: PLAN[n].mets, rows: [] });
 const jres = (o, ch, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 // Search Console is stored one record per part (snap:gsc-<range>:<part>), so two parts never overwrite each other through a
 // stale read; a read puts the parts together.
@@ -535,19 +536,54 @@ async function snapshot(kind, id, url, env, ch) {
     if (!refresh) { const d = await gscCombined(env, id, range); return d ? jres(d, ch) : new Response('not found', { status: 404, headers: ch }); }
     const parts = gscParts();
     const part = Math.max(0, Math.min(parts - 1, parseInt(url.searchParams.get('part') || '0', 10) || 0));
-    const slice = GSC_SITES.slice(part * GSC_PART, part * GSC_PART + GSC_PART);
-    const old = await kvJson(env, `snap:gsc-${id}:${part}`).catch(() => null);
+    const one = url.searchParams.get('site');
+    const oneAt = one ? GSC_SITES.indexOf(one) : -1;
+    const partOf = oneAt >= 0 ? Math.floor(oneAt / GSC_PART) : part;
+    const slice = oneAt >= 0 ? [one] : GSC_SITES.slice(part * GSC_PART, part * GSC_PART + GSC_PART);
+    const old = await kvJson(env, `snap:gsc-${id}:${partOf}`).catch(() => null);
     const results = await pool(slice.map((site) => () => gscSite(env, site, range)), 3);
-    const search = {};
+    const search = { ...(oneAt >= 0 ? old?.search : {}) };
     slice.forEach((site, i) => { const o = old?.search?.[site]; search[site] = !results[i].ok && o?.ok ? { ...o, stale: true } : results[i]; });
     const doc = { generatedAt: new Date().toISOString(), search };
-    await env.DATA.put(`snap:gsc-${id}:${part}`, JSON.stringify(doc));
-    return jres({ ...(await gscCombined(env, id, range, { part, doc })), part, parts, done: part === parts - 1 }, ch);
+    await env.DATA.put(`snap:gsc-${id}:${partOf}`, JSON.stringify(doc));
+    return jres({ ...(await gscCombined(env, id, range, { part: partOf, doc })), part: partOf, parts, done: oneAt >= 0 || part === parts - 1 }, ch);
   }
 
   const key = `snap:${kind}-${id}`;
   const snap = await kvJson(env, key).catch(() => null);
   if (!refresh) return snap ? jres(snap, ch) : new Response('not found', { status: 404, headers: ch });
+  // Only some reports (one screen's worth): refresh just those and merge them into the saved copy. Far fewer Google calls.
+  const only = (url.searchParams.get('only') || '').split(',').filter((n) => PLAN[n]);
+  if (only.length) {
+    const at = new Date().toISOString();
+    // One site only: ask Google just for that host and swap its rows into the saved reports (a twelfth of the data).
+    const host = /^[a-z0-9.-]+\.?[a-z]+$/.test(url.searchParams.get('host') || '') ? url.searchParams.get('host') : '';
+    const hostIx = (n) => PLAN[n].dims.indexOf('hostName');
+    const specFor = (n) => {
+      if (!host || hostIx(n) < 0) return PLAN[n];
+      const h = { filter: { fieldName: 'hostName', stringFilter: { matchType: 'EXACT', value: host } } };
+      return { ...PLAN[n], filter: PLAN[n].filter ? { andGroup: { expressions: [h, PLAN[n].filter] } } : h };
+    };
+    const freshAt = (r) => (host ? r?.atHost?.[host] : r?.at);
+    if (snap && only.every((n) => freshAt(snap.reports?.[n]) && Date.now() - Date.parse(freshAt(snap.reports[n])) < 60000)) return jres(snap, ch);
+    const errors = [];
+    const got = await pool(only.map((n) => () => gaReport(env, `${id}/${n}`, specFor(n), range.days, errors, Date.now() + 40000)), 3);
+    const reports = { ...(snap?.reports || Object.fromEntries(Object.entries(PLAN).map(([n, sp]) => [n, { dims: sp.dims, mets: sp.mets, rows: [] }]))) };
+    let okAny = false;
+    only.forEach((n, i) => {
+      if (errors.some((e) => e.startsWith(`GA4 ${id}/${n}:`))) { if (reports[n]?.rows?.length) reports[n] = { ...reports[n], stale: true }; return; }
+      okAny = true;
+      if (host && hostIx(n) >= 0) {
+        const old = reports[n]?.rows ?? [];
+        reports[n] = { ...PLAN_SHAPE(n), ...reports[n], dims: PLAN[n].dims, mets: PLAN[n].mets, rows: [...old.filter((r) => r[hostIx(n)] !== host), ...got[i].rows], stale: undefined, atHost: { ...reports[n]?.atHost, [host]: at } };
+      } else reports[n] = { ...got[i], at };
+    });
+    if (!okAny) return jres(snap ? { ...snap, staleSince: snap.staleSince || snap.generatedAt, errors: errors.slice(0, 3) } : { range: id, days: range.days, generatedAt: at, reports, down: errors[0] || 'no answer' }, ch);
+    const anyStale = Object.values(reports).some((r) => r.stale);
+    const doc = { range: id, days: range.days, generatedAt: at, reports, ...(anyStale ? { staleSince: snap?.staleSince || snap?.generatedAt || at } : {}) };
+    await env.DATA.put(key, JSON.stringify(doc));
+    return jres(doc, ch);
+  }
   // A double tap must not spend Google quota twice.
   if (snap && !snap.staleSince && Date.now() - Date.parse(snap.generatedAt) < 60000) return jres(snap, ch);
   const fresh = await build('ga', id, env);

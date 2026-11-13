@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
-import { DEFAULT_API } from "./config";
+import { DEFAULT_API, gscProperty } from "./config";
 import type { AlertItem, BingFile, CrawlFile, GAFile, GSCFile, HealthFile, HistoryRow, Live, Meta, OptimizerFile, RankFile, SpeedFile, ClarityFile } from "./types";
 
 /**
@@ -126,8 +126,8 @@ function writeCache(file: string, data: unknown) {
 }
 const newer = (a?: { generatedAt?: string } | null, b?: { generatedAt?: string } | null) => !!a && String(a.generatedAt || "") > String((b as { generatedAt?: string } | null)?.generatedAt || "");
 
-export function ensure(file: string, force = false) {
-  if (inflight.has(file) && !force) return;
+export function ensure(file: string, force = false, only?: string[], site?: string): Promise<void> {
+  if (inflight.has(file) && !force) return Promise.resolve();
   inflight.add(file);
   const base = apiBase();
   const applyLive = (j: unknown) => {
@@ -156,7 +156,7 @@ export function ensure(file: string, force = false) {
     if (at && at > stamp.liveAt) setStamp({ liveAt: at });
   };
   const saved = snapped && !force ? getJSON<unknown>(`${base}/data/${file}`, 20000).then(applySaved, () => {}) : Promise.resolve();
-  const refreshed = snapped && force ? refreshSaved(file, base, applyLive) : Promise.resolve();
+  const refreshed = snapped && force ? refreshSaved(file, base, applyLive, only, site) : Promise.resolve();
   const live = base && !staticOnly && !SNAP.test(file) && (force || LIVE_FIRST.has(file)) ? getJSON<unknown>(`${base}/data/${file}`, 45000).then(applyLive, () => {}) : Promise.resolve();
   const stat = (force && !staticOnly) || LIVE_FIRST.has(file)
     ? Promise.resolve()
@@ -177,16 +177,21 @@ export function ensure(file: string, force = false) {
           }
         },
       );
-  Promise.all([stat, live, saved, refreshed]).then(() => {
+  return Promise.all([stat, live, saved, refreshed]).then(() => {
     inflight.delete(file);
     if (!store.get(file)?.data) put(file, { data: null, error: true });
   });
 }
 
 /** Refresh for GA4 or Search Console: the Worker asks Google and saves the answer. Search Console goes in parts of 5 properties. */
-async function refreshSaved(file: string, base: string, apply: (j: unknown) => void) {
+async function refreshSaved(file: string, base: string, apply: (j: unknown) => void, only?: string[], site?: string) {
   if (file.startsWith("ga-")) {
-    const j = await getJSON<unknown>(`${base}/data/${file}?refresh=1`, 70000).catch(() => null);
+    const j = await getJSON<unknown>(`${base}/data/${file}?refresh=1${only?.length ? `&only=${only.join(",")}` : ""}${only?.length && site ? `&host=${encodeURIComponent(site)}` : ""}`, 70000).catch(() => null);
+    if (j) apply(j);
+    return;
+  }
+  if (site) {
+    const j = await getJSON<unknown>(`${base}/data/${file}?refresh=1&site=${encodeURIComponent(gscProperty(site))}`, 70000).catch(() => null);
     if (j) apply(j);
     return;
   }
@@ -200,14 +205,20 @@ async function refreshSaved(file: string, base: string, apply: (j: unknown) => v
 }
 
 /** Ask Google (through the Worker) again for everything on screen. */
-export function refreshAll() {
+export interface Scope {
+  /** GA4 reports this screen reads; only these are asked for. */
+  ga?: string[];
+  /** One site (host) for Search Console, or "all". */
+  site?: string;
+}
+export function refreshAll(scope?: Scope) {
   const keys = [...subs.keys()].filter((k) => (subs.get(k)?.size ?? 0) > 0);
   setStamp({ busy: true });
   const done = () => setStamp({ busy: false });
   if (!keys.length) return done();
   let left = keys.length;
   keys.forEach((k) => {
-    ensure(k, true);
+    ensure(k, true, /^ga-/.test(k) ? scope?.ga : undefined, scope?.site && scope.site !== "all" ? scope.site : undefined);
     const t = setInterval(() => {
       if (!inflight.has(k)) {
         clearInterval(t);

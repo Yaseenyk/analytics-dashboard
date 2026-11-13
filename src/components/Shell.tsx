@@ -7,6 +7,8 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { DEFAULT_RANGES, GROUPS, SITES, TABS, tabsOf } from "@/lib/config";
 import { refreshAll, useMeta, useStamp } from "@/lib/data";
 import { FiltersProvider, useFilters } from "@/lib/filters";
+import { GA_NEEDS, GSC_TABS, scopeFor } from "@/lib/sections";
+import SavedChips from "@/components/SavedChips";
 import { NotificationBell } from "@/views/Alerts";
 import { Icon } from "./ui";
 import { HelpDot } from "./Term";
@@ -66,6 +68,8 @@ function ago(ms: number): string {
   return m < 1 ? "just now" : m < 90 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
 }
 function Fresh() {
+  const tabNow = useTab();
+  const fNow = useFilters();
   const stamp = useStamp();
   const meta = useMeta();
   const [, tick] = useState(0);
@@ -73,7 +77,7 @@ function Fresh() {
   const at = stamp.liveAt || (meta.data?.generatedAt ? Date.parse(meta.data.generatedAt) : 0);
   const text = stamp.busy ? "Refreshing…" : at ? `Updated ${ago(at)}` : "Loading…";
   return (
-    <button type="button" onClick={refreshAll} className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] leading-none text-dim active:text-brand" aria-label={`${text}. Tap to refresh.`}>
+    <button type="button" onClick={() => refreshAll(scopeFor(tabNow.id, fNow.site))} className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] leading-none text-dim active:text-brand" aria-label={`${text}. Tap to refresh.`}>
       <span className={`h-[7px] w-[7px] flex-none rounded-full ${stamp.live ? "animate-pulseglow bg-good" : "bg-dim"}`} aria-hidden="true" />
       {text}
       <Icon name="refresh" className={`h-3 w-3 ${stamp.busy ? "animate-spin" : ""}`} />
@@ -128,7 +132,7 @@ function Header() {
         </div>
         <div className="flex flex-none items-center gap-2 font-mono text-[11.5px] text-dim">
           <NotificationBell />
-          <button type="button" onClick={refreshAll} aria-label="Refresh now" title="Fetch fresh data now" className="group grid h-[34px] w-[34px] place-items-center rounded-full bg-card2 text-mute transition-[color,transform] duration-300 hover:rotate-180 hover:text-brand active:scale-90">
+          <button type="button" onClick={() => refreshAll(scopeFor(tab.id, f.site))} aria-label="Refresh now" title="Fetch fresh data now" className="group grid h-[34px] w-[34px] place-items-center rounded-full bg-card2 text-mute transition-[color,transform] duration-300 hover:rotate-180 hover:text-brand active:scale-90">
             <Icon name="refresh" className={`h-4 w-4 ${stamp.busy ? "animate-spin" : ""}`} />
           </button>
         </div>
@@ -172,6 +176,7 @@ function Header() {
       )}
       {tab.filters === "all" && <div className="mt-2 hidden justify-end truncate text-[12px] text-dim sm:flex">{span}</div>}
       <Sections />
+      {(GA_NEEDS[tab.id] || GSC_TABS.has(tab.id)) && <SavedChips tab={tab.id} />}
       </div>
     </>
   );
