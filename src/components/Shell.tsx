@@ -5,9 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { DEFAULT_RANGES, GROUPS, SITES, TABS, tabsOf } from "@/lib/config";
-import { refreshAll, useMeta, useStamp } from "@/lib/data";
+import { useMeta, useStamp } from "@/lib/data";
 import { FiltersProvider, useFilters } from "@/lib/filters";
-import { GA_NEEDS, GSC_TABS, scopeFor } from "@/lib/sections";
+import { GA_NEEDS, GSC_TABS } from "@/lib/sections";
 import SavedChips from "@/components/SavedChips";
 import { NotificationBell } from "@/views/Alerts";
 import { Icon } from "./ui";
@@ -63,28 +63,6 @@ function Choices({ value, options, onPick }: { value: string; options: [string, 
 }
 
 /** "Updated 5 min ago", always visible (on a phone it used to be hidden). Tapping it fetches fresh numbers. */
-function ago(ms: number): string {
-  const m = Math.max(0, Math.round((Date.now() - ms) / 60000));
-  return m < 1 ? "just now" : m < 90 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
-}
-function Fresh() {
-  const tabNow = useTab();
-  const fNow = useFilters();
-  const stamp = useStamp();
-  const meta = useMeta();
-  const [, tick] = useState(0);
-  useEffect(() => { const t = setInterval(() => tick((x) => x + 1), 30000); return () => clearInterval(t); }, []);
-  const at = stamp.liveAt || (meta.data?.generatedAt ? Date.parse(meta.data.generatedAt) : 0);
-  const text = stamp.busy ? "Refreshing…" : at ? `Updated ${ago(at)}` : "Loading…";
-  return (
-    <button type="button" onClick={() => refreshAll(scopeFor(tabNow.id, fNow.site))} className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] leading-none text-dim active:text-brand" aria-label={`${text}. Tap to refresh.`}>
-      <span className={`h-[7px] w-[7px] flex-none rounded-full ${stamp.live ? "animate-pulseglow bg-good" : "bg-dim"}`} aria-hidden="true" />
-      {text}
-      <Icon name="refresh" className={`h-3 w-3 ${stamp.busy ? "animate-spin" : ""}`} />
-    </button>
-  );
-}
-
 /** The other screens in the same group, one tap apart, so related things are not hidden behind a menu. */
 function Sections() {
   const tab = useTab();
@@ -127,14 +105,10 @@ function Header() {
           <Logo className="h-8 w-8 lg:hidden" />
           <div className="min-w-0">
             <h1 key={tab.id} className="head-in m-0 truncate text-[19px] font-bold leading-tight tracking-tight">{tab.title}</h1>
-            <Fresh />
           </div>
         </div>
         <div className="flex flex-none items-center gap-2 font-mono text-[11.5px] text-dim">
           <NotificationBell />
-          <button type="button" onClick={() => refreshAll(scopeFor(tab.id, f.site))} aria-label="Refresh now" title="Fetch fresh data now" className="group grid h-[34px] w-[34px] place-items-center rounded-full bg-card2 text-mute transition-[color,transform] duration-300 hover:rotate-180 hover:text-brand active:scale-90">
-            <Icon name="refresh" className={`h-4 w-4 ${stamp.busy ? "animate-spin" : ""}`} />
-          </button>
         </div>
       </header>
       <div className="pt-3">
@@ -176,7 +150,7 @@ function Header() {
       )}
       {tab.filters === "all" && <div className="mt-2 hidden justify-end truncate text-[12px] text-dim sm:flex">{span}</div>}
       <Sections />
-      {(GA_NEEDS[tab.id] || GSC_TABS.has(tab.id)) && <SavedChips tab={tab.id} />}
+      {(GA_NEEDS[tab.id] || GSC_TABS.has(tab.id) || tab.id === "live") && <SavedChips tab={tab.id} />}
       </div>
     </>
   );
@@ -276,7 +250,7 @@ function FootNote() {
   return (
     <div className="mt-auto p-2.5 font-mono text-[11.5px] leading-relaxed text-dim">
       <span className="mb-1.5 flex items-center gap-2 pl-[3px] text-good"><i className="live-dot flex-none" aria-hidden="true" /><span className="side-hide">{stamp.live ? "live" : "synced"}</span></span>
-      <div className="side-hide">GA4 + Search Console<br />{stamp.live ? "Fetched live on open" : "Rebuilt every 2 hours"}</div>
+      <div className="side-hide">GA4 + Search Console<br />Saved copy. Refresh from each screen.</div>
     </div>
   );
 }

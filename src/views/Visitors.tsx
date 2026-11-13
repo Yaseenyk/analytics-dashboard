@@ -6,7 +6,7 @@ import { COLORS, SITES, SITE_HOSTS, STREAMS, gscProperty } from "@/lib/config";
 import { useBing, useClarity, useGA, useGSC, useLive } from "@/lib/data";
 import { bingTotals, group, gscTotals, hasGA, n, rep, sum } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
-import { peopleByHost } from "@/lib/today";
+import { liveAge, peopleByHost } from "@/lib/today";
 import { Icon } from "@/components/ui";
 
 const LOOK: Record<string, [string, number]> = { "/sources/": ["audience", 0], "/search/": ["search", 3], "/bing/": ["search", 4], "/clarity/": ["live", 5], "/pages/": ["pages", 1], "/leads/": ["leads", 2], "/audience/": ["audience", 6], "/live/": ["live", 7] };
@@ -67,7 +67,7 @@ export default function Visitors() {
         <Box href="/pages/" tag="Google Analytics" title="Top page" value={m.topPage ? `${n(m.topPage.views)} views` : "–"} note={m.topPage ? m.topPage.path : "Most visited pages"} />
         <Box href="/leads/" tag="Google Analytics" title="Leads and clicks" value={dash(m.leads)} note="WhatsApp, email, phone, forms" />
         <Box href="/audience/" tag="Google Analytics" title="Countries" value="Map" note="Where visitors are, and how they behave" />
-        <Box href="/live/" tag="Google Analytics" title="Online now" value={dash(m.online)} note="People on the sites right now" />
+        <Box href="/live/" tag="Google Analytics" title="Online now" value={dash(m.online)} note={`People on the sites, ${liveAge(live?.generatedAt)}`} />
       </div>
 
       <section aria-labelledby="each-h">

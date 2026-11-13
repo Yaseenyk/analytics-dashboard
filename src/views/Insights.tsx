@@ -33,7 +33,7 @@ function VisitorsSheet() {
   const f = useFilters();
   const ga = useGA(f.range).data;
   const rows = botCheck(ga, f.site);
-  if (!rows.length) return <p className="m-0 text-[15px] text-mute">No visitor numbers are loaded yet. Tap Updated at the top.</p>;
+  if (!rows.length) return <p className="m-0 text-[15px] text-mute">No visitor numbers are loaded yet. Tap Refresh under Google Analytics.</p>;
   const total = rows.reduce((t, r) => t + r.sessions, 0), eng = rows.reduce((t, r) => t + r.engaged, 0);
   return (
     <div>

@@ -30,6 +30,16 @@ export function peopleByHost(ga: GAFile | null | undefined): Record<string, numb
 }
 
 /** One metric per host over the whole period (people, visits, key events...). */
+/** "right now" only when the live count really is that fresh; otherwise how old it is. */
+export function liveAge(iso?: string | null, now = Date.now()): string {
+  const t = iso ? Date.parse(iso) : NaN;
+  if (!Number.isFinite(t)) {
+    return "not loaded";
+  }
+  const m = Math.max(0, Math.round((now - t) / 60000));
+  return m < 5 ? "right now" : m < 90 ? `as of ${m} min ago` : m < 2880 ? `as of ${Math.round(m / 60)} h ago` : `as of ${Math.round(m / 1440)} days ago`;
+}
+
 export function metricByHost(ga: GAFile | null | undefined, name: string): Record<string, number> {
   const t = rep(ga, "totals");
   const h = ix(t, "hostName");

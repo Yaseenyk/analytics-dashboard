@@ -20,7 +20,7 @@ function GaBanner() {
   const ga = useGA(f.range).data;
   const stale = ga?.staleSince;
   const { v } = useGaMemo((ga) => !hasGA(ga));
-  if (ga?.idle) return <Banner><b>No Google Analytics numbers are saved yet.</b> Tap Updated at the top to load them. They are then kept, so opening the dashboard costs nothing.</Banner>;
+  if (ga?.idle) return <Banner><b>No Google Analytics numbers are saved yet.</b> Tap Refresh under Google Analytics to load them. They are then kept, so opening the dashboard costs nothing.</Banner>;
   if (ga?.down) return <Banner><b>Google Analytics is not answering right now.</b> Visitor numbers will appear by themselves once it does. Search Console, Bing and Live still show.</Banner>;
   if (stale) return <Banner><b>Google Analytics is not answering right now.</b> These visitor numbers are from {new Date(stale).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}. They update by themselves when Google answers again.</Banner>;
   return v ? <Banner><b>Google is still processing the new tags.</b> Visitor numbers appear about a day after a tag goes live. Live visitors and Search Console show meanwhile.</Banner> : null;

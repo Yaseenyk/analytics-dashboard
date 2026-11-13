@@ -7,7 +7,7 @@ import { useAlerts, useCrawl, useGA, useHealth, useLive } from "@/lib/data";
 import { n } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
 import { actionLine, actionTotals, buildIssues, type Issue } from "@/lib/issues";
-import { peopleByHost, todayBy } from "@/lib/today";
+import { liveAge, peopleByHost, todayBy } from "@/lib/today";
 import { PopBox } from "@/components/Pop";
 import { Icon } from "@/components/ui";
 import { IssueSheet } from "./IssueSheet";
@@ -134,7 +134,7 @@ export default function QuickBoxes() {
   return (
     <div className="grid grid-cols-3 gap-3">
       <PopBox id="online" title="Online now" radius={18} className={box} render={() => <OnlineSheet site={f.site} />} label={`Online now: ${online}`}>
-        <Body label={<Label dot="bg-good" pulse>Online now</Label>} big={live ? n(online) : "–"} small="right now" />
+        <Body label={<Label dot="bg-good" pulse>Online now</Label>} big={live ? n(online) : "–"} small={liveAge(live?.generatedAt)} />
       </PopBox>
       <PopBox id="today" title="Visited today" radius={18} className={box} render={() => <TodaySheet site={f.site} range={f.range} />} label={`Visited today: ${today?.people ?? 0}`}>
         <Body label={<Label dot="bg-brand">Visited today</Label>} big={today ? n(today.people) : "–"} small={today ? `${n(today.visits)} ${today.visits === 1 ? "visit" : "visits"}` : "tap to see"} />
