@@ -14,7 +14,8 @@ export function useGaMemo<T>(build: (ga: GAFile, site: string, cmp: boolean) => 
   const e = useGA(f.range);
   const v = useMemo(() => (e.data ? build(e.data, f.site, f.cmp) : null), [e.data, f.site, f.cmp]); // eslint-disable-line react-hooks/exhaustive-deps
   const waiting = !!e.data && !(e.data.reports?.totals?.rows?.length > 0);
-  return { v, error: e.error && !e.data, f, waiting };
+  const msg = e.data?.down ? "Google Analytics is not answering right now." : WAIT_MSG;
+  return { v, error: e.error && !e.data, f, waiting, msg };
 }
 export function useGscMemo<T>(build: (g: GSCFile, site: string, cmp: boolean) => T) {
   const f = useFilters();
@@ -27,9 +28,9 @@ type Opt<P> = Omit<P, "rows" | "items" | "series">;
 
 const WAIT_MSG = "Waiting for Google to finish processing.";
 export function GaTable({ build, ...p }: Opt<TableProps> & { build: (ga: GAFile, site: string) => Cell[][] }) {
-  const { v, error, waiting } = useGaMemo((ga, site) => build(ga, site));
+  const { v, error, waiting, msg } = useGaMemo((ga, site) => build(ga, site));
   if (error) return <ErrorCard what={p.title} />;
-  return v ? <DataTable {...p} empty={waiting ? WAIT_MSG : p.empty} rows={v} /> : <SkTable rows={Math.min(p.max ?? 5, 5)} />;
+  return v ? <DataTable {...p} empty={waiting ? msg : p.empty} rows={v} /> : <SkTable rows={Math.min(p.max ?? 5, 5)} />;
 }
 export function GscTable({ build, ...p }: Opt<TableProps> & { build: (g: GSCFile, site: string) => Cell[][] }) {
   const { v, error } = useGscMemo((g, site) => build(g, site));
@@ -37,9 +38,9 @@ export function GscTable({ build, ...p }: Opt<TableProps> & { build: (g: GSCFile
   return v ? <DataTable {...p} rows={v} /> : <SkTable rows={Math.min(p.max ?? 5, 5)} />;
 }
 export function GaRank({ build, ...p }: { title: string; max?: number; empty?: string; note?: ReactNode; build: (ga: GAFile, site: string) => Item[] }) {
-  const { v, error, waiting } = useGaMemo((ga, site) => build(ga, site));
+  const { v, error, waiting, msg } = useGaMemo((ga, site) => build(ga, site));
   if (error) return <ErrorCard what={p.title} />;
-  return v ? <Rank {...p} empty={waiting ? WAIT_MSG : p.empty} items={v} /> : <SkTable rows={4} />;
+  return v ? <Rank {...p} empty={waiting ? msg : p.empty} items={v} /> : <SkTable rows={4} />;
 }
 export function GscRank({ build, ...p }: { title: string; max?: number; empty?: string; note?: ReactNode; build: (g: GSCFile, site: string) => Item[] }) {
   const { v, error } = useGscMemo((g, site) => build(g, site));
@@ -47,14 +48,14 @@ export function GscRank({ build, ...p }: { title: string; max?: number; empty?: 
   return v ? <Rank {...p} items={v} /> : <SkTable rows={4} />;
 }
 export function GaDonut({ build, ...p }: { title: string; empty?: string; colorOf?: (n: string, i: number) => string; build: (ga: GAFile, site: string) => [string, number][] }) {
-  const { v, error, waiting } = useGaMemo((ga, site) => build(ga, site));
+  const { v, error, waiting, msg } = useGaMemo((ga, site) => build(ga, site));
   if (error) return <ErrorCard what={p.title} />;
-  return v ? <Donut {...p} empty={waiting ? WAIT_MSG : p.empty} items={v} /> : <SkChart />;
+  return v ? <Donut {...p} empty={waiting ? msg : p.empty} items={v} /> : <SkChart />;
 }
 export function GaArea({ build, ...p }: { title: string; norm?: boolean; empty?: string; extra?: ReactNode; build: (ga: GAFile, site: string) => Series[] }) {
-  const { v, error, waiting } = useGaMemo((ga, site) => build(ga, site));
+  const { v, error, waiting, msg } = useGaMemo((ga, site) => build(ga, site));
   if (error) return <ErrorCard what={p.title} />;
-  return v ? <AreaChart {...p} empty={waiting ? WAIT_MSG : p.empty} series={v} /> : <SkChart />;
+  return v ? <AreaChart {...p} empty={waiting ? msg : p.empty} series={v} /> : <SkChart />;
 }
 
 export interface KpiCalc {

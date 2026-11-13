@@ -313,6 +313,11 @@ if (gaDown) {
   for (const range of RANGES) {
     const old = prevGa[range.id];
     if (old) write(`ga-${range.id}`, { ...old, staleSince: old.staleSince || old.generatedAt });
+    else {
+      // Nothing to fall back on: publish an empty file that says why, so the page does not claim "not published yet".
+      const reports = Object.fromEntries(Object.entries(PLAN).map(([n, sp]) => [n, { dims: sp.dims, mets: sp.mets, rows: [] }]));
+      write(`ga-${range.id}`, { range: range.id, days: range.days, generatedAt, reports, down: gaDown });
+    }
   }
 }
 for (const range of gaDown ? [] : RANGES) {

@@ -15,6 +15,8 @@ export interface GAFile {
   generatedAt: string;
   /** Set when Google would not answer and some or all reports are the last good copy, from this time. */
   staleSince?: string;
+  /** Set when Google would not answer and there was no earlier copy: the reason. */
+  down?: string;
   reports: Record<string, Rep>;
 }
 
