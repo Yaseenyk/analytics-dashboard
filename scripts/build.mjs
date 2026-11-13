@@ -275,6 +275,8 @@ async function bingFetchAll() {
 // ---------------------------------------------------------------- run
 fs.mkdirSync('public/data', { recursive: true });
 const write = (name, obj) => fs.writeFileSync(`public/data/${name}.json`, JSON.stringify(obj));
+const T0 = Date.now();
+const step = (m) => console.log(`[${Math.round((Date.now() - T0) / 1000)}s] ${m}`);
 const generatedAt = new Date().toISOString();
 
 // GA4: one file per range. Requests are throttled to stay under the concurrent-request limit.
@@ -283,6 +285,7 @@ for (const range of RANGES) {
   const results = await pool(names.map((n) => () => gaReport(`${range.id}/${n}`, PLAN[n], range.days)), 6);
   const reports = Object.fromEntries(names.map((n, i) => [n, results[i]]));
   write(`ga-${range.id}`, { range: range.id, days: range.days, generatedAt, reports });
+  step(`GA4 ${range.id} done`);
 }
 
 // Search Console: one file per range, every property the service account can read.
@@ -292,6 +295,7 @@ for (const range of RANGES) {
   const search = Object.fromEntries(GSC_SITES.map((s, i) => [s, results[i]]));
   GSC_SITES.forEach((s, i) => (gscStatus[s] = results[i].ok ? 'ok' : results[i].status));
   write(`gsc-${range.id}`, { range: range.id, days: range.days, generatedAt, search, ...gscDates(range.days, false) });
+  step(`Search Console ${range.id} done`);
 }
 
 // keywords.json: every query Google shows one of our pages for, with position, clicks and the prior 28 days, per site.
@@ -317,6 +321,7 @@ for (const range of RANGES) {
 
 // Bing Webmaster Tools: one file per range. A failure writes a file that says why, so the page can show it.
 const bing = await bingFetchAll();
+step('Bing done');
 if (bing.error) errors.push(`Bing: ${bing.error}`);
 for (const range of RANGES) {
   const sites = Object.fromEntries(Object.entries(bing.raw).map(([h, raw]) => [h, bingRange(raw, range)]));
