@@ -60,6 +60,7 @@ async function accessToken() {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${head}.${claim}.${sig}` }),
+    signal: AbortSignal.timeout(30000),
   });
   const j = await res.json();
   if (!j.access_token) throw new Error(`token: ${JSON.stringify(j)}`);
@@ -86,7 +87,8 @@ async function pool(tasks, limit) {
 // POST with a few retries on quota and server errors.
 async function post(url, body) {
   for (let attempt = 0; attempt < 4; attempt++) {
-    const res = await fetch(url, { method: 'POST', headers: auth, body: JSON.stringify(body) });
+    // A call that never answers is retried like a server error; the run used to hang here for 20 minutes (13 Nov 2026).
+    const res = await fetch(url, { method: 'POST', headers: auth, body: JSON.stringify(body), signal: AbortSignal.timeout(60000) }).catch(() => ({ status: 599, json: async () => ({}), text: async () => '' }));
     if (res.status === 429 || res.status >= 500) {
       await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
       continue;
@@ -221,7 +223,7 @@ async function bingGet(method, params) {
   const u = new URL(`${BING}/${method}`);
   u.searchParams.set('apikey', process.env.BING_API_KEY);
   for (const [k, v] of Object.entries(params || {})) u.searchParams.set(k, v);
-  const res = await fetch(u);
+  const res = await fetch(u, { signal: AbortSignal.timeout(30000) }).catch(() => ({ ok: false, status: 599, text: async () => 'timeout' }));
   if (!res.ok) return { status: res.status, rows: [], detail: (await res.text().catch(() => '')).slice(0, 200) };
   const j = await res.json().catch(() => ({}));
   return { status: 200, rows: Array.isArray(j.d) ? j.d : j.d ? [j.d] : [] };
