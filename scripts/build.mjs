@@ -34,12 +34,13 @@ const GSC_SITES = [
 ];
 const KEY_EVENTS = ['whatsapp_click', 'email_click', 'phone_click', 'generate_lead', 'app_download', 'template_download', 'agreement_signed', 'calculator_use'];
 
+const PULL = process.env.PULL_GOOGLE === '1';
 const raw = process.env.GA_SERVICE_ACCOUNT_JSON;
-if (!raw) {
+if (!raw && PULL) {
   console.error('GA_SERVICE_ACCOUNT_JSON must be set as a repository secret.');
   process.exit(1);
 }
-const sa = JSON.parse(raw);
+const sa = raw ? JSON.parse(raw) : null;
 const errors = [];
 const b64u = (b) => Buffer.from(b).toString('base64url');
 
@@ -66,7 +67,9 @@ async function accessToken() {
   if (!j.access_token) throw new Error(`token: ${JSON.stringify(j)}`);
   return j.access_token;
 }
-const token = await accessToken();
+// Scheduled builds do not call Google for GA4 or Search Console: those live in the Worker's database and are refreshed only from
+// the Refresh button. A manual run with the pull_google option (PULL_GOOGLE=1) does the full pull.
+const token = PULL ? await accessToken() : '';
 const auth = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
 // Run async tasks with a concurrency limit (GA4 allows 10 concurrent requests per property).
@@ -107,6 +110,7 @@ const byDate = [{ dimension: { dimensionName: 'date' } }];
 const M = ['sessions', 'activeUsers', 'keyEvents'];
 const TOTAL_METS = ['sessions', 'activeUsers', 'newUsers', 'engagedSessions', 'screenPageViews', 'eventCount', 'keyEvents', 'userEngagementDuration'];
 const staleRanges = new Set();
+const gscStatus = {};
 const PLAN = {
   totals: { dims: ['hostName'], mets: TOTAL_METS },
   totalsPrev: { dims: ['hostName'], mets: TOTAL_METS, prev: true },
@@ -285,9 +289,15 @@ const T0 = Date.now();
 const step = (m) => console.log(`[${Math.round((Date.now() - T0) / 1000)}s] ${m}`);
 const generatedAt = new Date().toISOString();
 
+const SITE = 'https://analytics.streamerosai.com';
+const WORKER = 'https://analytics-api.yaseenyk.workers.dev';
+const grab = async (url) => { try { const r = await fetch(url, { signal: AbortSignal.timeout(20000) }); return r.ok ? await r.json() : null; } catch { return null; } };
+const newest = (list) => list.filter(Boolean).sort((x, y) => String(y.generatedAt).localeCompare(String(x.generatedAt)))[0];
+const emptyReports = () => Object.fromEntries(Object.entries(PLAN).map(([n, sp]) => [n, { dims: sp.dims, mets: sp.mets, rows: [] }]));
+
+if (PULL) {
 // The last good copy of every GA4 range is whatever is published now. When Google refuses a report, that old report is kept
 // (marked stale) instead of being replaced by an empty one, so the dashboard shows older numbers with their age, not blanks.
-const SITE = 'https://analytics.streamerosai.com';
 const prevGa = {};
 await Promise.all(RANGES.map(async (r) => {
   try {
@@ -329,7 +339,6 @@ for (const range of gaDown ? [] : RANGES) {
 }
 
 // Search Console: one file per range, every property the service account can read.
-const gscStatus = {};
 for (const range of RANGES) {
   const results = await pool(GSC_SITES.map((s) => () => gscSite(s, range)), 3);
   const search = Object.fromEntries(GSC_SITES.map((s, i) => [s, results[i]]));
@@ -357,6 +366,26 @@ for (const range of RANGES) {
     sites[host] = { property, ok: true, rows };
   }
   write('keywords', { generatedAt, window: cur, prior: prev, sites });
+}
+
+} else {
+// Not pulling: take what is already saved. The Worker's database copy (a read, no Google call) or, failing that, the copy
+// published last time. Nothing saved yet means an empty file that tells the page to ask for a Refresh.
+  for (const range of RANGES) {
+    const [saved, pub] = await Promise.all([grab(`${WORKER}/data/ga-${range.id}.json`), grab(`${SITE}/data/ga-${range.id}.json?x=${Date.now()}`)]);
+    const pick = newest([saved, pub].filter((d) => d?.reports?.totals?.rows?.length));
+    write(`ga-${range.id}`, pick || { range: range.id, days: range.days, generatedAt, reports: emptyReports(), idle: true });
+  }
+  for (const range of RANGES) {
+    const [saved, pub] = await Promise.all([grab(`${WORKER}/data/gsc-${range.id}.json`), grab(`${SITE}/data/gsc-${range.id}.json?x=${Date.now()}`)]);
+    const has = (d) => d?.search && Object.values(d.search).some((v) => v?.ok);
+    const pick = newest([saved, pub].filter(has));
+    write(`gsc-${range.id}`, pick || { range: range.id, days: range.days, generatedAt, search: Object.fromEntries(GSC_SITES.map((x) => [x, { ok: false, status: 0 }])), ...gscDates(range.days, false), idle: true });
+  }
+  const kw = await grab(`${SITE}/data/keywords.json?x=${Date.now()}`);
+  if (kw) write('keywords', kw);
+  const pm = await grab(`${SITE}/data/meta.json?x=${Date.now()}`);
+  Object.assign(gscStatus, pm?.gsc || {});
 }
 
 // Bing Webmaster Tools: one file per range. A failure writes a file that says why, so the page can show it.
@@ -395,6 +424,7 @@ try { write('clarity', JSON.parse(fs.readFileSync('data/clarity.json', 'utf8')))
 // The weekly content optimizer (scripts/optimizer.mjs) commits data/optimizer.json; publish it for the Rankings tab.
 try { write('optimizer', JSON.parse(fs.readFileSync('data/optimizer.json', 'utf8'))); } catch { /* no optimizer run yet */ }
 
+if (PULL) {
 const live = {
   generatedAt,
   streams: await realtime(['streamName'], ['activeUsers', 'screenPageViews', 'eventCount']),
@@ -404,6 +434,10 @@ const live = {
   devices: await realtime(['deviceCategory'], ['activeUsers']),
 };
 write('live', live);
+} else {
+  const old = await grab(`${SITE}/data/live.json?x=${Date.now()}`);
+  write('live', old || { generatedAt, streams: { dims: ['streamName'], mets: ['activeUsers', 'screenPageViews', 'eventCount'], rows: [] }, pages: { dims: [], mets: [], rows: [] }, countries: { dims: [], mets: [], rows: [] }, events: { dims: [], mets: [], rows: [] }, devices: { dims: [], mets: [], rows: [] } });
+}
 write('meta', { generatedAt, property: PROPERTY, ranges: RANGES, keyEvents: KEY_EVENTS, gsc: gscStatus, errors: [...new Set(errors)].slice(0, 30) });
 if (errors.length) console.warn(`Warnings (${errors.length}):\n${[...new Set(errors)].slice(0, 15).join('\n')}`);
 const gscOk = Object.values(gscStatus).filter((s) => s === 'ok').length;

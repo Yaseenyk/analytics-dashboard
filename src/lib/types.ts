@@ -17,6 +17,8 @@ export interface GAFile {
   staleSince?: string;
   /** Set when Google would not answer and there was no earlier copy: the reason. */
   down?: string;
+  /** Set when nothing is saved yet: the page asks for a Refresh. */
+  idle?: boolean;
   reports: Record<string, Rep>;
 }
 
