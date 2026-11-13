@@ -195,6 +195,7 @@ async function refreshSaved(file: string, base: string, apply: (j: unknown) => v
     if (!j) break;
     apply(j);
     if (j.done) break;
+    await new Promise((r) => setTimeout(r, 1500)); // the next part reads what this one saved
   }
 }
 

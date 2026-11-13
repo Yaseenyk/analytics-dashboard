@@ -515,46 +515,55 @@ const inflight = new Map();
 // x 8 reports, over the 50-call limit of one invocation, so it is refreshed in parts of 5 properties (?part=0,1,2).
 const GSC_PART = 5;
 const jres = (o, ch, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+// Search Console is stored one record per part (snap:gsc-<range>:<part>), so two parts never overwrite each other through a
+// stale read; a read puts the parts together.
+const gscParts = () => Math.ceil(GSC_SITES.length / GSC_PART);
+async function gscCombined(env, id, range, own) {
+  const docs = await Promise.all(Array.from({ length: gscParts() }, (_, p) => (own && own.part === p ? Promise.resolve(own.doc) : kvJson(env, `snap:gsc-${id}:${p}`).catch(() => null))));
+  const have = docs.filter(Boolean);
+  if (!have.length) return null;
+  const search = Object.assign({}, ...have.map((d) => d.search));
+  const generatedAt = have.map((d) => d.generatedAt).sort()[0];
+  return { range: id, days: range.days, generatedAt, search, ...gscDates(range.days, false) };
+}
 async function snapshot(kind, id, url, env, ch) {
   const range = RANGES.find((r) => r.id === id);
   if (!range) return new Response('not found', { status: 404, headers: ch });
-  const key = `snap:${kind}-${id}`;
-  const snap = await kvJson(env, key).catch(() => null);
-  if (url.searchParams.get('refresh') !== '1') return snap ? jres(snap, ch) : new Response('not found', { status: 404, headers: ch });
+  const refresh = url.searchParams.get('refresh') === '1';
 
-  if (kind === 'ga') {
-    // A double tap must not spend Google quota twice.
-    if (snap && !snap.staleSince && Date.now() - Date.parse(snap.generatedAt) < 60000) return jres(snap, ch);
-    const fresh = await build('ga', id, env);
-    const failed = new Set((fresh.errors || []).map((e) => /^GA4 [^/]+\/(\w+):/.exec(e)?.[1]).filter(Boolean));
-    const reports = {};
-    let kept = 0;
-    for (const n of Object.keys(PLAN)) {
-      const old = snap?.reports?.[n];
-      if (failed.has(n) && old?.rows?.length) { reports[n] = { ...old, stale: true }; kept++; } else reports[n] = fresh.reports[n];
-    }
-    const healthy = (reports.totals?.rows?.length ?? 0) > 0 || !(fresh.errors || []).length;
-    if (!healthy) return jres(snap ? { ...snap, staleSince: snap.staleSince || snap.generatedAt, errors: (fresh.errors || []).slice(0, 3) } : { range: id, days: range.days, generatedAt: fresh.generatedAt, reports, down: (fresh.errors || [])[0] || 'no answer' }, ch);
-    const doc = { range: id, days: range.days, generatedAt: fresh.generatedAt, reports, ...(kept ? { staleSince: snap?.staleSince || snap?.generatedAt } : {}) };
-    await env.DATA.put(key, JSON.stringify(doc));
-    return jres(doc, ch);
+  if (kind === 'gsc') {
+    if (!refresh) { const d = await gscCombined(env, id, range); return d ? jres(d, ch) : new Response('not found', { status: 404, headers: ch }); }
+    const parts = gscParts();
+    const part = Math.max(0, Math.min(parts - 1, parseInt(url.searchParams.get('part') || '0', 10) || 0));
+    const slice = GSC_SITES.slice(part * GSC_PART, part * GSC_PART + GSC_PART);
+    const old = await kvJson(env, `snap:gsc-${id}:${part}`).catch(() => null);
+    const results = await pool(slice.map((site) => () => gscSite(env, site, range)), 3);
+    const search = {};
+    slice.forEach((site, i) => { const o = old?.search?.[site]; search[site] = !results[i].ok && o?.ok ? { ...o, stale: true } : results[i]; });
+    const doc = { generatedAt: new Date().toISOString(), search };
+    await env.DATA.put(`snap:gsc-${id}:${part}`, JSON.stringify(doc));
+    return jres({ ...(await gscCombined(env, id, range, { part, doc })), part, parts, done: part === parts - 1 }, ch);
   }
 
-  // Search Console, one part at a time
-  const parts = Math.ceil(GSC_SITES.length / GSC_PART);
-  const part = Math.max(0, Math.min(parts - 1, parseInt(url.searchParams.get('part') || '0', 10) || 0));
-  const slice = GSC_SITES.slice(part * GSC_PART, part * GSC_PART + GSC_PART);
-  const results = await pool(slice.map((s) => () => gscSite(env, s, range)), 3);
-  const now = new Date().toISOString();
-  let doc = snap?.search ? snap : { range: id, days: range.days, generatedAt: now, search: {} };
-  if (part === 0) doc = { ...doc, generatedAt: now };
-  const search = { ...doc.search };
-  slice.forEach((site, i) => { const old = search[site]; search[site] = !results[i].ok && old?.ok ? { ...old, stale: true } : results[i]; });
-  doc = { ...doc, range: id, days: range.days, search, ...gscDates(range.days, false) };
+  const key = `snap:${kind}-${id}`;
+  const snap = await kvJson(env, key).catch(() => null);
+  if (!refresh) return snap ? jres(snap, ch) : new Response('not found', { status: 404, headers: ch });
+  // A double tap must not spend Google quota twice.
+  if (snap && !snap.staleSince && Date.now() - Date.parse(snap.generatedAt) < 60000) return jres(snap, ch);
+  const fresh = await build('ga', id, env);
+  const failed = new Set((fresh.errors || []).map((e) => /^GA4 [^/]+\/(\w+):/.exec(e)?.[1]).filter(Boolean));
+  const reports = {};
+  let kept = 0;
+  for (const n of Object.keys(PLAN)) {
+    const old = snap?.reports?.[n];
+    if (failed.has(n) && old?.rows?.length) { reports[n] = { ...old, stale: true }; kept++; } else reports[n] = fresh.reports[n];
+  }
+  const healthy = (reports.totals?.rows?.length ?? 0) > 0 || !(fresh.errors || []).length;
+  if (!healthy) return jres(snap ? { ...snap, staleSince: snap.staleSince || snap.generatedAt, errors: (fresh.errors || []).slice(0, 3) } : { range: id, days: range.days, generatedAt: fresh.generatedAt, reports, down: (fresh.errors || [])[0] || 'no answer' }, ch);
+  const doc = { range: id, days: range.days, generatedAt: fresh.generatedAt, reports, ...(kept ? { staleSince: snap?.staleSince || snap?.generatedAt } : {}) };
   await env.DATA.put(key, JSON.stringify(doc));
-  return jres({ ...doc, part, parts, done: part === parts - 1 }, ch);
+  return jres(doc, ch);
 }
-
 function cors(req) {
   const o = req.headers.get('Origin') || '';
   const h = { 'Vary': 'Origin' };
