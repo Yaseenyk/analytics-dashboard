@@ -12,6 +12,7 @@ import { HelpDot } from "@/components/Term";
 import QuickBoxes from "./QuickBoxes";
 import HomeKpis from "./HomeKpis";
 import NotIndexedLink from "./NotIndexed";
+import InsightLinks from "./Insights";
 import { GaArea, GaDonut, GaKpi, GaRank, GscKpi, GscRank, cols2, grid4, useGaMemo, useGscMemo } from "./kit";
 
 function GaBanner() {
@@ -217,6 +218,7 @@ export default function Overview() {
       <GaBanner />
       <HomeKpis />
       <NotIndexedLink />
+      <InsightLinks />
       <Summary />
       <VisitsChart />
       <div className={cols2}>

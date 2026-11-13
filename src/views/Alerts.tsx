@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { SITES } from "@/lib/config";
-import { useAlerts } from "@/lib/data";
+import { useAlerts, useGA, useGSC } from "@/lib/data";
+import { localAlerts } from "@/lib/insights";
 import type { AlertItem } from "@/lib/types";
 import { PopBox } from "@/components/Pop";
 import { Icon } from "@/components/ui";
@@ -23,6 +24,7 @@ export function gscStyle(a: AlertItem): { group: string; title: string; text: st
   const k = count(a.title);
   if (a.kind === "dropped") return { group: "Page indexing", title: `Page indexing issue detected${name ? ` on ${name}` : ""}`, text: `${k} ${k === 1 ? "page is" : "pages are"} no longer in Google. Pages that are not in Google cannot appear in search results.` };
   if (a.kind === "indexed") return { group: "Page indexing", title: `New pages indexed${name ? ` on ${name}` : ""}`, text: `${k} new ${k === 1 ? "page was" : "pages were"} added to Google and can now appear in search.` };
+  if (a.kind === "local") return { group: "Data checks", title: a.title, text: a.detail ?? "" };
   if (a.kind === "workflow") return { group: "Automation", title: a.title, text: a.detail ? `${a.detail} did not finish.` : "An automatic job did not finish." };
   return { group: "Other", title: a.title, text: a.detail ?? "" };
 }
@@ -92,7 +94,8 @@ export function NotificationBell() {
   const e = useAlerts();
   const [seen, setSeen] = useState(0);
   useEffect(() => { try { setSeen(Number(localStorage.getItem(SEEN)) || 0); } catch { /* private window */ } }, []);
-  const list = e.data ?? [];
+  const ga = useGA("28d").data, gsc = useGSC("28d").data;
+  const list = useMemo(() => [...localAlerts(ga, gsc), ...(e.data ?? [])], [ga, gsc, e.data]);
   const unread = list.filter((a) => Date.parse(a.at) > seen && a.level !== "good").length;
   const markSeen = () => { const now = Date.now(); setSeen(now); try { localStorage.setItem(SEEN, String(now)); } catch { /* ignore */ } };
   return (

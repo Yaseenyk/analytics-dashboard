@@ -1,3 +1,4 @@
+import { gscProperty } from "../src/lib/config";
 import { describe, expect, it } from "vitest";
 import { actionLine, actionTotals, buildIssues, inspectLink, needsLook, plainState } from "../src/lib/issues";
 import { GLOSSARY, termOf } from "../src/lib/glossary";
@@ -173,5 +174,28 @@ describe("words and navigation", () => {
     GROUPS.forEach((g) => expect(tabsOf(g.id).length, g.id).toBeGreaterThan(0));
     expect(TABS.map((t) => t.href)).toEqual(expect.arrayContaining(["/", "/visitors/", "/sources/", "/pages/", "/audience/", "/leads/", "/live/", "/search/", "/bing/", "/clarity/", "/rankings/", "/ads/", "/fix/", "/jobs/", "/tools/", "/help/"]));
     TABS.forEach((t) => expect(t.what.length, t.id).toBeGreaterThan(20));
+  });
+});
+
+import { botCheck, effects, localAlerts } from "../src/lib/insights";
+describe("insights", () => {
+  const ga = (rows: (string | number)[][]) => ({ range: "28d", days: 28, generatedAt: new Date().toISOString(), reports: { totals: { dims: ["hostName"], mets: ["sessions", "engagedSessions", "keyEvents"], rows } } }) as never;
+  it("flags a site with many visits and almost none engaged as bots", () => {
+    const r = botCheck(ga([["esports.streamerosai.com", 100, 3, 0], ["yk.streamerosai.com", 100, 60, 4]]), "all");
+    expect(r.find((x) => x.host === "esports.streamerosai.com")?.suspect).toBe(true);
+    expect(r.find((x) => x.host === "yk.streamerosai.com")?.suspect).toBe(false);
+  });
+  it("does not flag a tiny sample", () => {
+    expect(botCheck(ga([["esports.streamerosai.com", 10, 0, 0]]), "all")[0].suspect).toBe(false);
+  });
+  it("says too early when there is little data after a change", () => {
+    const day = (d: string, c: number, i: number) => [d, c, i, 0, 10];
+    const g = { range: "28d", days: 28, generatedAt: "", search: { "https://solar.streamerosai.com/": { ok: true, daily: [day("2026-11-05", 1, 10), day("2026-11-06", 1, 10), day("2026-11-07", 1, 10), day("2026-11-08", 1, 10), day("2026-11-12", 2, 40)] } } } as never;
+    const e = effects(g, [{ date: "2026-11-10", host: "solar.streamerosai.com", text: "x" }]);
+    expect(e[0].state).toBe("early");
+  });
+  it("warns when Google clicks fall by more than 40 percent", () => {
+    const g = { range: "28d", days: 28, generatedAt: "", search: { [gscProperty("yk.streamerosai.com")]: { ok: true, total: [10, 100, 1, 5], totalPrev: [50, 100, 1, 5] } } } as never;
+    expect(localAlerts(null, g).some((a) => a.id === "local-clicks-drop")).toBe(true);
   });
 });
