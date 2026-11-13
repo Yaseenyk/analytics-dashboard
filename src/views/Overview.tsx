@@ -15,7 +15,10 @@ import NotIndexedLink from "./NotIndexed";
 import { GaArea, GaDonut, GaKpi, GaRank, GscKpi, GscRank, cols2, grid4, useGaMemo, useGscMemo } from "./kit";
 
 function GaBanner() {
+  const f = useFilters();
+  const stale = useGA(f.range).data?.staleSince;
   const { v } = useGaMemo((ga) => !hasGA(ga));
+  if (stale) return <Banner><b>Google Analytics is not answering right now.</b> These visitor numbers are from {new Date(stale).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}. They update by themselves when Google answers again.</Banner>;
   return v ? <Banner><b>Google is still processing the new tags.</b> Visitor numbers appear about a day after a tag goes live. Live visitors and Search Console show meanwhile.</Banner> : null;
 }
 

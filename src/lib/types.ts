@@ -13,6 +13,8 @@ export interface GAFile {
   range: string;
   days: number;
   generatedAt: string;
+  /** Set when Google would not answer and some or all reports are the last good copy, from this time. */
+  staleSince?: string;
   reports: Record<string, Rep>;
 }
 

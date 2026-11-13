@@ -130,6 +130,11 @@ export function ensure(file: string, force = false) {
   const base = apiBase();
   const applyLive = (j: unknown) => {
     const cur = store.get(file);
+    // Google sometimes answers a live GA4 request with nothing. Never swap numbers we already hold for an empty answer.
+    if (/^ga-/.test(file)) {
+      const has = (x: unknown) => ((x as GAFile | null)?.reports?.totals?.rows?.length ?? 0) > 0;
+      if (cur?.data && has(cur.data) && !has(j)) return;
+    }
     if (!cur?.data || sig(cur.data) !== sig(j)) put(file, { data: j, error: false });
     writeCache(file, j);
     if (!LIVE_FIRST.has(file)) setStamp({ liveAt: Date.now(), live: true });

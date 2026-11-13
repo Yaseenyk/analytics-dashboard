@@ -106,6 +106,7 @@ const keyEventFilter = inList('eventName', KEY_EVENTS);
 const byDate = [{ dimension: { dimensionName: 'date' } }];
 const M = ['sessions', 'activeUsers', 'keyEvents'];
 const TOTAL_METS = ['sessions', 'activeUsers', 'newUsers', 'engagedSessions', 'screenPageViews', 'eventCount', 'keyEvents', 'userEngagementDuration'];
+const staleRanges = new Set();
 const PLAN = {
   totals: { dims: ['hostName'], mets: TOTAL_METS },
   totalsPrev: { dims: ['hostName'], mets: TOTAL_METS, prev: true },
@@ -164,6 +165,9 @@ async function gaReport(label, spec, days) {
   const { res, json } = await post(`https://analyticsdata.googleapis.com/v1beta/properties/${PROPERTY}:runReport`, body);
   if (!res.ok) {
     errors.push(`GA4 ${label}: ${json.error?.message ?? res.status}`);
+    const [rid, rname] = label.split('/');
+    const old = prevGa[rid]?.reports?.[rname];
+    if (old?.rows?.length) { staleRanges.add(rid); return { ...old, stale: true }; }
     return { dims: spec.dims, mets: spec.mets, rows: [] };
   }
   const rows = (json.rows ?? []).map((r) => [...r.dimensionValues.map((v) => v.value), ...r.metricValues.map((v) => Number(v.value))]);
@@ -281,6 +285,18 @@ const T0 = Date.now();
 const step = (m) => console.log(`[${Math.round((Date.now() - T0) / 1000)}s] ${m}`);
 const generatedAt = new Date().toISOString();
 
+// The last good copy of every GA4 range is whatever is published now. When Google refuses a report, that old report is kept
+// (marked stale) instead of being replaced by an empty one, so the dashboard shows older numbers with their age, not blanks.
+const SITE = 'https://analytics.streamerosai.com';
+const prevGa = {};
+await Promise.all(RANGES.map(async (r) => {
+  try {
+    const j = await fetch(`${SITE}/data/ga-${r.id}.json?x=${Date.now()}`, { signal: AbortSignal.timeout(20000) }).then((x) => (x.ok ? x.json() : null));
+    if (j?.reports?.totals?.rows?.length) prevGa[r.id] = j;
+  } catch { /* nothing published yet */ }
+}));
+step(`previous GA4 copies kept for: ${Object.keys(prevGa).join(', ') || 'none'}`);
+
 // One cheap probe first. When Google is refusing GA4 (quota, outage), every report would burn minutes in retries, so say why
 // once, skip the GA4 reports for this run and still publish everything else (13 Nov 2026: the pull timed out at 15 minutes).
 let gaDown = '';
@@ -293,11 +309,17 @@ try {
 if (gaDown) errors.push(`GA4 skipped this run: ${gaDown}`);
 
 // GA4: one file per range. Requests are throttled to stay under the concurrent-request limit.
+if (gaDown) {
+  for (const range of RANGES) {
+    const old = prevGa[range.id];
+    if (old) write(`ga-${range.id}`, { ...old, staleSince: old.staleSince || old.generatedAt });
+  }
+}
 for (const range of gaDown ? [] : RANGES) {
   const names = Object.keys(PLAN);
   const results = await pool(names.map((n) => () => gaReport(`${range.id}/${n}`, PLAN[n], range.days)), 6);
   const reports = Object.fromEntries(names.map((n, i) => [n, results[i]]));
-  write(`ga-${range.id}`, { range: range.id, days: range.days, generatedAt, reports });
+  write(`ga-${range.id}`, { range: range.id, days: range.days, generatedAt, reports, ...(staleRanges.has(range.id) ? { staleSince: prevGa[range.id]?.staleSince || prevGa[range.id]?.generatedAt } : {}) });
   step(`GA4 ${range.id} done`);
 }
 
