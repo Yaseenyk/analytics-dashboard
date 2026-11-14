@@ -13,6 +13,10 @@ const kvJson = async (env, key) => { const v = await env.DATA.get(key); return v
 export const TRACKED_KEYWORDS = [
   'streamlabs vs obs', 'obs encoding overloaded', 'nvenc vs x264', 'obs settings', 'obs low cpu',
   'pm surya ghar', 'solar subsidy', 'final year project', 'viva questions', 'fitrank',
+  // added 14 Nov 2026 (SEO gap study, docs/seo-gap-2026-11-14.md in the portfolio repo)
+  'mca final year project', 'mca project', 'mca project report', 'mca synopsis', 'bca final year project', 'mern stack project',
+  'crawled currently not indexed', 'discovered currently not indexed', 'currently not indexed next', 'blank page google not indexed',
+  'free fire tournament', 'bgmi tournament', 'tournament bracket', 'esports tournament',
 ];
 export const RANK_PROPERTY = 'sc-domain:streamerosai.com';
 

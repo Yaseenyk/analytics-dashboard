@@ -10,6 +10,7 @@ import type { Cell, Series } from "@/lib/types";
 import { AreaChart } from "@/components/charts";
 import { DataTable } from "@/components/DataTable";
 import { Card, Delta, Empty, ErrorCard, Kpi, SkChart, SkKpi, SkTable } from "@/components/ui";
+import AllPages from "./AllPages";
 import { grid4 } from "./kit";
 
 type Metric = "clicks" | "impr" | "ctr" | "pos";
@@ -189,5 +190,10 @@ export function BingSearch() {
 }
 
 export default function Search() {
-  return <GoogleSearch />;
+  return (
+    <>
+      <GoogleSearch />
+      <AllPages />
+    </>
+  );
 }
