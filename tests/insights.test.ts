@@ -67,6 +67,11 @@ describe("recordHealth", () => {
     await recordHealth(env, prior, { "x.test": site([A], [[B, "Could not inspect (429)", null]]) }, "2026-11-06T01:00:00Z");
     expect(await read("alerts")).toBeNull();
   });
+  it("does not call a page new when its check failed last time", async () => {
+    const prior = { index: { "x.test": site([A], [[B, "Could not inspect (429)", null]]) } };
+    await recordHealth(env, prior, { "x.test": site([A, B]) }, "2026-11-06T01:00:00Z");
+    expect(await read("alerts")).toBeNull();
+  });
   it("warns when a site returned no pages at all", async () => {
     await recordHealth(env, null, { "x.test": site([]) }, "2026-11-06T01:00:00Z");
     expect((await read("alerts"))[0].kind).toBe("health");

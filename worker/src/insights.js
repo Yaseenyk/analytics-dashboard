@@ -64,7 +64,9 @@ export async function recordHealth(env, prior, index, nowIso) {
     const errored = new Set((s.urls || []).filter((u) => String(u[1]).startsWith('Could not inspect')).map((u) => u[0]));
     const nowSet = new Set(s.indexedUrls ?? []);
     const lost = [...before].filter((u) => !nowSet.has(u) && !errored.has(u));
-    const gained = [...nowSet].filter((u) => !before.has(u));
+    // A page whose check failed last time is not in `before` even if it was already indexed; do not call it new.
+    const failedBefore = new Set((prior?.index?.[h]?.urls ?? []).filter((u) => String(u[1]).startsWith('Could not inspect')).map((u) => u[0]));
+    const gained = [...nowSet].filter((u) => !before.has(u) && !failedBefore.has(u));
     if (lost.length) alerts.push({ kind: 'dropped', level: 'bad', title: `${lost.length} page${lost.length > 1 ? 's' : ''} dropped out of Google on ${h}`, detail: lost.slice(0, 3).map((u) => u.replace(/^https?:\/\/[^/]+/, '') || '/').join(', '), id: `dropped:${h}:${d}` });
     if (gained.length) alerts.push({ kind: 'indexed', level: 'good', title: `${gained.length} new page${gained.length > 1 ? 's' : ''} in Google on ${h}`, detail: gained.slice(0, 3).map((u) => u.replace(/^https?:\/\/[^/]+/, '') || '/').join(', '), id: `indexed:${h}:${d}` });
   }

@@ -81,7 +81,7 @@ export function localAlerts(ga: GAFile | null | undefined, gsc: GSCFile | null |
     const a = gscTotals(gsc, "all", false), b = gscTotals(gsc, "all", true);
     if (b.clicks >= 20 && a.clicks < b.clicks * 0.6) out.push({ id: "local-clicks-drop", kind: "local", level: "bad", title: "Google clicks fell sharply", detail: `${a.clicks} clicks against ${b.clicks} in the period before (down ${Math.round((100 * (b.clicks - a.clicks)) / b.clicks)}%). Check the Search Console tab and the Not indexed list.`, at });
   }
-  botCheck(ga, "all").filter((r) => r.suspect).slice(0, 3).forEach((r) =>
-    out.push({ id: `local-bots-${r.host}`, kind: "local", level: "warn", title: `Traffic on ${SITES[r.host] ?? r.host} looks like bots`, detail: `${r.sessions} visits but only ${Math.round(100 * r.rate)}% were engaged.`, at }));
+  botCheck(ga, "all").filter((r) => r.sessions >= 100 && r.rate < 0.1).slice(0, 3).forEach((r) =>
+    out.push({ id: `local-bots-${r.host}`, kind: "local", level: "warn", title: `Very few engaged visits on ${SITES[r.host] ?? r.host}`, detail: `${r.engaged} of ${r.sessions} visits in this period (${Math.round(100 * r.rate)}%) stayed 10 seconds, opened a second page or took an action. This can be bots, or real visitors who leave fast; it is not proof of bots.`, at }));
   return out;
 }
