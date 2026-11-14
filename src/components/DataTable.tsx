@@ -102,7 +102,7 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
                       )}
                     </td>
                   ) : (
-                    <td key={j} className={`w-px min-w-[5rem] whitespace-nowrap px-3 py-2.5 align-top text-[12.5px] ${numeric(j) ? "text-right font-mono text-ink/90" : "text-left text-mute"}`}>
+                    <td key={j} className={`w-px min-w-[5rem] whitespace-nowrap px-3 py-2.5 align-top text-[12.5px] ${numeric(j) ? "text-right text-ink/90" : "text-left text-mute"}`}>
                       {fmtCell(c, fmt[j])}
                     </td>
                   ),
@@ -124,7 +124,7 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
                 {r.slice(1).map((c, j) => (
                   <div key={j} className="min-w-0">
                     <dt className="text-[11px] text-dim">{cols[j + 1]}</dt>
-                    <dd className={`break-words text-[12.5px] ${numeric(j + 1) ? "font-mono text-ink/90" : "text-mute"}`}>{fmtCell(c, fmt[j + 1])}</dd>
+                    <dd className={`break-words text-[12.5px] ${numeric(j + 1) ? "text-ink/90" : "text-mute"}`}>{fmtCell(c, fmt[j + 1])}</dd>
                   </div>
                 ))}
               </dl>
@@ -135,7 +135,7 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
       </ul>
 
       {(shown.length > vis.length || q) && (
-        <p className="mt-2 font-mono text-[11.5px] text-dim">Showing {Math.min(shown.length, vis.length)} of {shown.length}{q ? " matching" : ""} rows</p>
+        <p className="mt-2 text-[11.5px] text-dim">Showing {Math.min(shown.length, vis.length)} of {shown.length}{q ? " matching" : ""} rows</p>
       )}
       {!vis.length && <Empty msg="No rows match that filter." />}
     </Card>

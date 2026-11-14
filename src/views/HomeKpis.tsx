@@ -83,8 +83,10 @@ export default function HomeKpis() {
         return (
           <PopBox key={k} id={`kpi-${k}`} title={meta.title} className="card w-full !border-transparent !p-3.5" label={`${meta.title}: ${n(c.value)}`} render={() => <Sheet k={k} c={c} days={days} />}>
             <div className="text-[12.5px] text-mute">{meta.title}</div>
-            <div className="mt-1 text-[26px] font-bold leading-tight tracking-tight">{n(c.value)}</div>
-            <Delta show={f.cmp} cur={c.value} prev={c.prev} />
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-[24px] font-semibold leading-none tracking-tight sm:text-[26px]">{n(c.value)}</span>
+              <Delta show={f.cmp} cur={c.value} prev={c.prev} />
+            </div>
             <Spark vals={c.spark} color={meta.color} id={`hk-${k}`} />
           </PopBox>
         );

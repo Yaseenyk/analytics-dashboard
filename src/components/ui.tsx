@@ -84,7 +84,7 @@ export function Delta({ cur, prev, invert, show }: { cur: number; prev: number; 
   const good = invert ? p < 0 : p > 0;
   const tone = flat ? "bg-white/5 text-dim" : good ? "bg-good/10 text-good" : "bg-bad/10 text-bad";
   return (
-    <span className={`pop mt-1.5 inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[11px] font-semibold ${tone}`}>
+    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11.5px] font-medium ${tone}`}>
       {p > 0 ? "▲ " : p < 0 ? "▼ " : ""}
       {Math.abs(p).toFixed(0)}%
     </span>
@@ -140,9 +140,11 @@ function CountUp({ value }: { value: string }) {
 export function Kpi({ title, value, delta, spark, color, id, note, help }: { title: string; value: ReactNode; delta?: ReactNode; spark?: number[]; color?: string; id: string; note?: ReactNode; help?: string }) {
   return (
     <div className="card animate-fadein !p-3.5 sm:!p-5">
-      <div className="flex items-center gap-1.5 text-[12px] text-mute sm:text-[12.5px]"><span className="truncate">{title}</span>{help && <HelpDot k={help} />}</div>
-      <div className="mt-1 text-[24px] font-bold leading-tight tracking-tight sm:text-[28px]">{typeof value === "string" ? <CountUp value={value} /> : value}</div>
-      {delta}
+      <div className="flex items-center gap-1.5 text-[12.5px] text-mute"><span className="truncate">{title}</span>{help && <HelpDot k={help} />}</div>
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="text-[24px] font-semibold leading-none tracking-tight sm:text-[26px]">{typeof value === "string" ? <CountUp value={value} /> : value}</span>
+        {delta}
+      </div>
       {note}
       {spark && <Spark vals={spark} color={color} id={`sp-${id}`} />}
     </div>

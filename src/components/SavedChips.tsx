@@ -18,20 +18,20 @@ const dotOf = (saved: number | null, fastMs: number) => (!saved ? "bg-bad" : Dat
 
 function Row({ name, saved, busy, fastMs = 6 * 3600e3, onRefresh }: { name: string; saved: number | null; busy: boolean; fastMs?: number; onRefresh: () => void }) {
   return (
-    <li className="flex min-h-[50px] items-center gap-3 py-1.5">
-      <i className={`h-2.5 w-2.5 flex-none rounded-full ${dotOf(saved, fastMs)}`} aria-hidden="true" />
+    <li className="flex min-h-[44px] w-full min-w-0 items-center gap-3 rounded-lg border border-line bg-card px-3 py-1.5 sm:w-auto sm:min-w-[250px]">
+      <i className={`h-2 w-2 flex-none rounded-full ${dotOf(saved, fastMs)}`} aria-hidden="true" />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14.5px] font-semibold leading-tight">{name}</div>
-        <div className="mt-0.5 text-[12.5px] leading-tight text-dim">{busy ? "Asking Google…" : saved ? `Saved ${age(saved)}` : "Not saved yet"}</div>
+        <div className="truncate text-[13px] font-medium leading-tight">{name}</div>
+        <div className="mt-0.5 text-[12px] leading-tight text-dim">{busy ? "Asking Google…" : saved ? `Saved ${age(saved)}` : "Not saved yet"}</div>
       </div>
       <button
         type="button"
         onClick={onRefresh}
         disabled={busy}
         aria-label={`Refresh ${name}`}
-        className="inline-flex min-h-10 flex-none items-center gap-1.5 rounded-xl bg-brand/15 px-3.5 text-[13.5px] font-semibold text-brand active:scale-[.98] disabled:opacity-60"
+        className="inline-flex h-8 flex-none items-center gap-1.5 rounded-md border border-line px-2.5 text-[12.5px] font-medium text-mute hover:border-line2 hover:text-ink disabled:opacity-60"
       >
-        <Icon name="refresh" className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} />
+        <Icon name="refresh" className={`h-3.5 w-3.5 ${busy ? "animate-spin" : ""}`} />
         {busy ? "Wait" : "Refresh"}
       </button>
     </li>
@@ -85,14 +85,14 @@ export default function SavedChips({ tab }: { tab: string }) {
     return null;
   }
   return (
-    <section aria-label="Data" className="mt-3 rounded-2xl bg-white/[.04] px-4 py-1">
-      <ul className="m-0 list-none divide-y divide-white/[.06] p-0">
+    <section aria-label="Data" className="mt-4">
+      <ul className="m-0 flex list-none flex-col gap-2 p-0 sm:flex-row sm:flex-wrap">
         {needs && <Row name="Google Analytics" saved={gaAt} busy={busy === "ga"} onRefresh={() => go("ga")} />}
         {wantsGsc && <Row name="Search Console" saved={gscAt} busy={busy === "gsc"} onRefresh={() => go("gsc")} />}
         {wantsLive && <Row name="Live visitors" fastMs={10 * 60e3} saved={liveAt} busy={busy === "live"} onRefresh={() => go("live")} />}
       </ul>
       {f.site === "all" && (needs || wantsGsc) && (
-        <p className="m-0 border-t border-white/[.06] py-2 text-[12px] leading-snug text-dim">Tip: pick one site above to refresh just that site.</p>
+        <p className="m-0 mt-2 text-[12px] leading-snug text-dim">Tip: pick one site above to refresh just that site.</p>
       )}
     </section>
   );

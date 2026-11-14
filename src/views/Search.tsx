@@ -95,9 +95,9 @@ function GoogleSearch() {
     <>
       <p className="px-1 text-[13px] leading-relaxed text-mute">New to these numbers? Tap a word: <Term k="clicks">Clicks</Term> · <Term k="impressions">Impressions</Term> · <Term k="ctr">CTR</Term> · <Term k="position">Position</Term></p>
       <div className="hidden flex-wrap gap-2 text-[12.5px] sm:flex" aria-label="Report filters">
-        <span className="rounded-full border border-line px-3 py-1 text-mute">Search type: <b className="text-ink">Web</b></span>
-        <span className="rounded-full border border-line px-3 py-1 text-mute">Date: <b className="text-ink">{DEFAULT_RANGES.find((x) => x.id === f.range)?.label ?? f.range}</b>{dateLabel ? <span className="text-dim"> ({dateLabel})</span> : null}</span>
-        <span className="rounded-full border border-line px-3 py-1 text-mute">Property: <b className="text-ink">{f.site === "all" ? "All sites" : label(f.site)}</b></span>
+        <span className="rounded-lg border border-line px-3 py-1 text-mute">Search type: <b className="text-ink">Web</b></span>
+        <span className="rounded-lg border border-line px-3 py-1 text-mute">Date: <b className="text-ink">{DEFAULT_RANGES.find((x) => x.id === f.range)?.label ?? f.range}</b>{dateLabel ? <span className="text-dim"> ({dateLabel})</span> : null}</span>
+        <span className="rounded-lg border border-line px-3 py-1 text-mute">Property: <b className="text-ink">{f.site === "all" ? "All sites" : label(f.site)}</b></span>
       </div>
       <div className="overflow-hidden rounded-2xl border border-line bg-card animate-fadein">
         <div className="grid grid-cols-2 lg:grid-cols-4">
@@ -105,13 +105,13 @@ function GoogleSearch() {
             const on = sm[t.key];
             const c = GSC_COLOR[t.key];
             return (
-              <button key={t.key} type="button" aria-pressed={on} onClick={() => setSm({ ...sm, [t.key]: !sm[t.key] })} className="text-left transition-colors" style={on ? { background: c, color: "#fff" } : undefined}>
+              <button key={t.key} type="button" aria-pressed={on} onClick={() => setSm({ ...sm, [t.key]: !sm[t.key] })} className="text-left transition-colors" style={on ? { background: `${c}1f`, boxShadow: `inset 0 2px 0 ${c}` } : undefined}>
                 <div className="px-4 py-3.5">
-                  <div className="flex items-center gap-2 text-[12.5px]" style={on ? { color: "rgba(255,255,255,.9)" } : { color: "var(--mute)" }}>
-                    <i className="grid h-3.5 w-3.5 place-items-center rounded-[3px] border-2 text-[9px] leading-none" style={{ borderColor: on ? "#fff" : c, background: on ? "rgba(255,255,255,.25)" : "transparent" }}>{on ? "✓" : ""}</i>
+                  <div className="flex items-center gap-2 text-[12.5px]" style={{ color: "var(--mute)" }}>
+                    <i className="grid h-3.5 w-3.5 place-items-center rounded-[3px] border-2 text-[9px] leading-none" style={{ borderColor: c, background: on ? c : "transparent", color: "#fff" }}>{on ? "✓" : ""}</i>
                     {t.name}
                   </div>
-                  <div className="mt-1 text-[26px] font-bold leading-tight tracking-tight">{t.value}</div>
+                  <div className="mt-1 text-[24px] font-semibold leading-tight tracking-tight">{t.value}</div>
                   {f.cmp && t.prev ? <div className="mt-0.5 font-mono text-[11px]" style={{ opacity: on ? 0.85 : 0.6 }}>{t.cur >= t.prev ? "▲" : "▼"} {Math.abs(((t.cur - t.prev) / t.prev) * 100).toFixed(0)}% vs previous</div> : null}
                 </div>
               </button>
