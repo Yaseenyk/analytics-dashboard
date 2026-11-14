@@ -389,12 +389,27 @@ for (const range of RANGES) {
 }
 
 // Bing Webmaster Tools: one file per range. A failure writes a file that says why, so the page can show it.
-const bing = await bingFetchAll();
-step('Bing done');
-if (bing.error) errors.push(`Bing: ${bing.error}`);
-for (const range of RANGES) {
-  const sites = Object.fromEntries(Object.entries(bing.raw).map(([h, raw]) => [h, bingRange(raw, range)]));
-  write(`bing-${range.id}`, { range: range.id, days: range.days, generatedAt, sites, error: bing.error });
+// Bing is called only by the daily scheduled run (or a manual run). A build started by a push re-publishes the copy that is already
+// live, so pushing code never calls Bing.
+const bingCall = process.env.GITHUB_EVENT_NAME === 'schedule' || process.env.GITHUB_EVENT_NAME === 'workflow_dispatch' || !process.env.GITHUB_EVENT_NAME;
+let bing = { raw: {}, error: null };
+let bingKept = null;
+if (bingCall) {
+  bing = await bingFetchAll();
+  step('Bing done');
+  if (bing.error) errors.push(`Bing: ${bing.error}`);
+  for (const range of RANGES) {
+    const sites = Object.fromEntries(Object.entries(bing.raw).map(([h, raw]) => [h, bingRange(raw, range)]));
+    write(`bing-${range.id}`, { range: range.id, days: range.days, generatedAt, sites, error: bing.error });
+  }
+} else {
+  for (const range of RANGES) {
+    const old = await fetch(`${SITE}/data/bing-${range.id}.json?x=${Date.now()}`, { signal: AbortSignal.timeout(20000) }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
+    if (old) write(`bing-${range.id}`, old);
+  }
+  const pub = await fetch(`${SITE}/data/health.json?x=${Date.now()}`, { signal: AbortSignal.timeout(20000) }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
+  if (pub?.bing) bingKept = pub.bing;
+  step('Bing: kept the published copy (no call on a push)');
 }
 
 // Index health is computed by its own daily job (scripts/health.mjs) and committed as data/health.json; this run
@@ -411,7 +426,8 @@ try {
   }
 } catch { /* the Worker is a bonus here: keep the committed copy */ }
 const latest = (rows) => rows.slice().sort((a, b) => (bingDate(b.Date)?.getTime() ?? 0) - (bingDate(a.Date)?.getTime() ?? 0))[0];
-health.bing = Object.fromEntries(Object.entries(bing.raw).map(([h, r]) => {
+if (!bingCall && bingKept) health.bing = bingKept;
+if (bingCall) health.bing = Object.fromEntries(Object.entries(bing.raw).map(([h, r]) => {
   const c = latest(r.crawl || []);
   return [h, c ? { date: bingDate(c.Date) ? iso(bingDate(c.Date)) : null, crawled: +c.CrawledPages || 0, errors: +c.CrawlErrors || 0, inIndex: +c.InIndex || 0, c4xx: +c.Code4xx || 0, c5xx: +c.Code5xx || 0, blocked: +c.BlockedByRobotsTxt || 0 } : null];
 }));

@@ -159,7 +159,7 @@ export function ensure(file: string, force = false, only?: string[], site?: stri
   const fetchSaved = () => getJSON<unknown>(`${base}/data/${file}`, 20000).catch(() => new Promise<unknown>((r) => setTimeout(r, 1500)).then(() => getJSON<unknown>(`${base}/data/${file}`, 20000)));
   const saved = snapped && !force ? fetchSaved().then(applySaved, () => {}) : Promise.resolve();
   const refreshed = snapped && force ? refreshSaved(file, base, applyLive, only, site) : Promise.resolve();
-  const live = base && !staticOnly && !SNAP.test(file) && (force || LIVE_FIRST.has(file) || file === "live.json") ? getJSON<unknown>(`${base}/data/${file}`, 45000).then(applyLive, () => {}) : Promise.resolve();
+  const live = base && !staticOnly && !SNAP.test(file) && (force || LIVE_FIRST.has(file)) ? getJSON<unknown>(`${base}/data/${file}`, 45000).then(applyLive, () => {}) : Promise.resolve();
   const stat = (force && !staticOnly) || LIVE_FIRST.has(file)
     ? Promise.resolve()
     : getJSON<unknown>(`/data/${file}`, 30000).then(
