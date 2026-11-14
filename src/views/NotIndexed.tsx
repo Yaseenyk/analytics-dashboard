@@ -2,15 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { SITES, SITE_HOSTS } from "@/lib/config";
-import { useHealth } from "@/lib/data";
+import { useGSC, useHealth } from "@/lib/data";
+import { gscMerge } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
-import { splitAll, isReal } from "@/lib/indexing";
+import { splitAll, isReal, priorityOf, PRIORITY_ORDER, type Priority, type PriorityInfo } from "@/lib/indexing";
 import { inspectLink, plainState } from "@/lib/issues";
 import { copyText, markSent, unmarkSent, useReview } from "@/lib/reviewStore";
 import { PopBox } from "@/components/Pop";
 import { Icon } from "@/components/ui";
 
-interface Row { url: string; host: string; state: string; crawled: string | null }
+interface Row { url: string; host: string; state: string; crawled: string | null; pri: PriorityInfo; impr: number }
+const PRI_STYLE: Record<Priority, string> = { high: "bg-bad/15 text-bad", medium: "bg-yellow-400/15 text-yellow-300", low: "bg-white/[.07] text-mute" };
+const norm = (u: string) => u.replace(/\/+$/, "");
 const path = (u: string) => u.replace(/^https?:\/\/[^/]+/, "") || "/";
 const ago = (iso: string) => { const d = Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / 86400000)); return d === 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`; };
 const btn = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-white/[.07] px-4 text-[13.5px] font-semibold text-ink active:scale-[.98]";
@@ -18,11 +21,20 @@ const btnMain = "inline-flex min-h-11 items-center justify-center gap-1.5 rounde
 
 function useRows(site: string): Row[] | null {
   const h = useHealth().data;
+  const f = useFilters();
+  const gsc = useGSC(f.range).data;
   return useMemo(() => {
     if (!h) return null;
+    const impr = new Map<string, number>();
+    if (gsc) gscMerge(gsc, "all", "pages", 1).forEach((r) => impr.set(norm(String(r[0])), +r[2] || 0));
     const hosts = site === "all" ? SITE_HOSTS : [site];
-    return hosts.flatMap((host) => (h.index?.[host]?.urls ?? []).filter((u) => isReal(u[1])).map(([url, state, crawled]) => ({ url, host, state, crawled })));
-  }, [h, site]);
+    return hosts
+      .flatMap((host) => (h.index?.[host]?.urls ?? []).filter((u) => isReal(u[1])).map(([url, state, crawled]) => {
+        const n = impr.get(norm(url)) ?? 0;
+        return { url, host, state, crawled, impr: n, pri: priorityOf(url, state, n) };
+      }))
+      .sort((a, b) => PRIORITY_ORDER[a.pri.level] - PRIORITY_ORDER[b.pri.level] || b.impr - a.impr);
+  }, [h, gsc, site]);
 }
 
 /** Every page that is not in Google yet, by site, with a button to send each one. */
@@ -30,12 +42,14 @@ function Sheet({ site }: { site: string }) {
   const rows = useRows(site);
   const review = useReview();
   const [q, setQ] = useState("");
+  const [pri, setPri] = useState<Priority | "all">("all");
   const [flash, setFlash] = useState("");
 
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase();
-    return (rows ?? []).filter((r) => !t || r.url.toLowerCase().includes(t) || r.state.toLowerCase().includes(t));
-  }, [rows, q]);
+    return (rows ?? []).filter((r) => (pri === "all" || r.pri.level === pri) && (!t || r.url.toLowerCase().includes(t) || r.state.toLowerCase().includes(t)));
+  }, [rows, q, pri]);
+  const count = (l: Priority) => (rows ?? []).filter((r) => r.pri.level === l).length;
   const groups = useMemo(() => {
     const m = new Map<string, Row[]>();
     shown.forEach((r) => m.set(r.host, [...(m.get(r.host) ?? []), r]));
@@ -63,6 +77,14 @@ function Sheet({ site }: { site: string }) {
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search these pages" aria-label="Search these pages" className="field min-h-11 min-w-0 flex-1 !rounded-xl" inputMode="search" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
         <button type="button" className={btn} onClick={copyAll}>Copy all</button>
       </div>
+      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Priority">
+        {(["all", "high", "medium", "low"] as const).map((l) => (
+          <button key={l} type="button" aria-pressed={pri === l} onClick={() => setPri(l)} className={`min-h-9 rounded-lg px-3 text-[13px] font-semibold ${pri === l ? "bg-brand/15 text-brand" : "bg-white/[.07] text-mute"}`}>
+            {l === "all" ? `All ${rows.length}` : `${l[0].toUpperCase()}${l.slice(1)} ${count(l)}`}
+          </button>
+        ))}
+      </div>
+      <p className="m-0 mt-2 text-[12px] leading-snug text-dim">High: people already search for it, it is a key page, or Google read it and said no. Medium: Google found it, has not crawled it. Low: translated copies, list pages, pages nobody asked for. Fix High first.</p>
       {q && <p className="m-0 mt-2 text-[12.5px] text-dim">{shown.length.toLocaleString("en-US")} match{shown.length === 1 ? "" : "es"}.</p>}
       {flash && <p role="status" className="m-0 mt-3 rounded-xl bg-brand/10 px-4 py-3 text-[13.5px] text-ink">{flash}</p>}
 
@@ -78,8 +100,8 @@ function Sheet({ site }: { site: string }) {
                 const sent = review[r.url];
                 return (
                   <li key={r.url} className="border-t border-white/[.06] py-3.5">
-                    <a href={r.url} target="_blank" rel="noreferrer" className="break-all font-mono text-[12.5px] text-ink" title={r.url}>{path(r.url)}</a>
-                    <p className="m-0 mt-0.5 text-[12px] leading-snug text-dim">{plainState(r.state)}{r.crawled ? ` Last crawled ${r.crawled}.` : ""}</p>
+                    <div className="flex items-start gap-2"><span className={`mt-0.5 flex-none rounded-md px-1.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wide ${PRI_STYLE[r.pri.level]}`}>{r.pri.level}</span><a href={r.url} target="_blank" rel="noreferrer" className="min-w-0 break-all font-mono text-[12.5px] text-ink" title={r.url}>{path(r.url)}</a></div>
+                    <p className="m-0 mt-0.5 text-[12px] leading-snug text-dim">{r.pri.reason}. {plainState(r.state)}{r.crawled ? ` Last crawled ${r.crawled}.` : ""}</p>
                     <div className="mt-2.5 flex flex-wrap items-center gap-2">
                       {sent ? (
                         <>
