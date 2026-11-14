@@ -73,7 +73,7 @@ for (const [host, property] of Object.entries(SITE_PROPS)) {
   const byState = {};
   rows.forEach((r) => (byState[r.s] = (byState[r.s] || 0) + 1));
   const indexed = rows.filter((r) => r.v === 'PASS').length;
-  index[host] = { property, inspected: rows.length, indexed, notIndexed: rows.length - indexed, byState, urls: rows.filter((r) => r.v !== 'PASS').map((r) => [r.u, r.s, r.c]).slice(0, 150) };
+  index[host] = { property, inspected: rows.length, indexed, notIndexed: rows.length - indexed, byState, urls: rows.filter((r) => r.v !== 'PASS').map((r) => [r.u, r.s, r.c]).slice(0, 1000) };
   console.log(`${host}: ${indexed}/${rows.length} indexed`);
 }
 fs.mkdirSync('data', { recursive: true });

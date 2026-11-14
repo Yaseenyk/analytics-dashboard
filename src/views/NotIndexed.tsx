@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { SITES, SITE_HOSTS } from "@/lib/config";
 import { useHealth } from "@/lib/data";
 import { useFilters } from "@/lib/filters";
+import { splitAll, isReal } from "@/lib/indexing";
 import { inspectLink, plainState } from "@/lib/issues";
 import { copyText, markSent, unmarkSent, useReview } from "@/lib/reviewStore";
 import { PopBox } from "@/components/Pop";
@@ -20,7 +21,7 @@ function useRows(site: string): Row[] | null {
   return useMemo(() => {
     if (!h) return null;
     const hosts = site === "all" ? SITE_HOSTS : [site];
-    return hosts.flatMap((host) => (h.index?.[host]?.urls ?? []).map(([url, state, crawled]) => ({ url, host, state, crawled })));
+    return hosts.flatMap((host) => (h.index?.[host]?.urls ?? []).filter((u) => isReal(u[1])).map(([url, state, crawled]) => ({ url, host, state, crawled })));
   }, [h, site]);
 }
 
@@ -57,7 +58,7 @@ function Sheet({ site }: { site: string }) {
 
   return (
     <div>
-      <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[28px] text-ink">{rows.length.toLocaleString("en-US")}</b> {rows.length === 1 ? "page is" : "pages are"} not in Google yet. This is every page in your sitemaps that Google says it has not added.</p>
+      <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[28px] text-ink">{rows.length.toLocaleString("en-US")}</b> {rows.length === 1 ? "page is" : "pages are"} not in Google yet. These are sitemap pages Google has looked at, or knows about, and has not added. New pages Google has not checked yet, and pages that say noindex on purpose, are left out.</p>
       <div className="mt-4 flex gap-2">
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search these pages" aria-label="Search these pages" className="field min-h-11 min-w-0 flex-1 !rounded-xl" inputMode="search" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
         <button type="button" className={btn} onClick={copyAll}>Copy all</button>
@@ -109,14 +110,17 @@ function Sheet({ site }: { site: string }) {
 export default function NotIndexedLink() {
   const f = useFilters();
   const rows = useRows(f.site);
+  const h = useHealth().data;
+  const sp = h ? splitAll((f.site === "all" ? SITE_HOSTS : [f.site]).map((x) => h.index?.[x])) : null;
+  const extra = sp ? [sp.waiting ? `${sp.waiting.toLocaleString("en-US")} new, not checked yet` : "", sp.onPurpose ? `${sp.onPurpose.toLocaleString("en-US")} noindex on purpose` : ""].filter(Boolean).join(" · ") : "";
   return (
     <PopBox id="not-indexed" title="Not indexed" radius={20} className="card flex w-full items-center gap-3 !border-transparent !p-4" label={`Not indexed: ${rows?.length ?? 0} pages`} render={() => <Sheet site={f.site} />}>
       <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-white/[.06] text-mute"><Icon name="health" className="h-5 w-5" /></span>
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-semibold">Not indexed</span>
-        <span className="block text-[12.5px] text-dim">{rows ? (rows.length ? "Pages Google has not added yet. Tap to see them all." : "Every page is in Google.") : "Loading…"}</span>
+        <span className="block text-[12.5px] text-dim">{rows ? (rows.length ? "Pages Google knows about but has not added." : "Every page Google has checked is in.") + (extra ? ` Not counted: ${extra}.` : "") : "Loading…"}</span>
       </span>
-      <span className="font-mono text-[18px] font-semibold">{rows ? rows.length.toLocaleString("en-US") : "–"}</span>
+      <span className="text-[18px] font-semibold">{rows ? rows.length.toLocaleString("en-US") : "–"}</span>
       <Icon name="chevron" className="h-4 w-4 flex-none -rotate-90 text-dim" />
     </PopBox>
   );

@@ -72,7 +72,8 @@ export function effects(g: GSCFile | null | undefined, changes: Change[] = CHANG
 /** Warnings that need no nightly job: old or missing numbers, a fall in Google clicks, traffic that looks like bots. */
 export function localAlerts(ga: GAFile | null | undefined, gsc: GSCFile | null | undefined, now = Date.now()): AlertItem[] {
   const out: AlertItem[] = [];
-  const at = new Date(now).toISOString();
+  // Dated by the numbers they are about, not by "now": otherwise every page load would make them look brand new.
+  const at = ga?.generatedAt ?? gsc?.generatedAt ?? new Date(now).toISOString();
   if ((ga as { idle?: boolean } | null | undefined)?.idle || ga?.down) out.push({ id: "local-ga-missing", kind: "local", level: "warn", title: "Google Analytics numbers are missing", detail: "Tap Refresh under Google Analytics to load them. They are kept after that.", at });
   else if (ga?.staleSince) out.push({ id: "local-ga-stale", kind: "local", level: "warn", title: "Google Analytics numbers are old", detail: `Google did not answer the last refresh, so these are from ${ga.staleSince.slice(0, 16).replace("T", " ")} UTC.`, at });
   else if (ga?.generatedAt && now - Date.parse(ga.generatedAt) > 2 * 86400e3) out.push({ id: "local-ga-old", kind: "local", level: "warn", title: "Google Analytics numbers are more than 2 days old", detail: "Tap Refresh under Google Analytics to load fresh ones.", at });

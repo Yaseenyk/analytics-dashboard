@@ -5,6 +5,7 @@ import { SITES, SITE_HOSTS } from "@/lib/config";
 import { useHealth } from "@/lib/data";
 import { n } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
+import { splitIndex } from "@/lib/indexing";
 import type { Cell } from "@/lib/types";
 import { DataTable } from "@/components/DataTable";
 import { Card, ErrorCard, Icon, Sk, SkCard, SkTable } from "@/components/ui";
@@ -54,7 +55,7 @@ export function SiteCards() {
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[.06]" role="img" aria-label={`${pct}% indexed`}>
                   <div className="h-full rounded-full bg-gradient-to-r from-brand to-purple bar-grow" style={{ width: `${Math.max(pct, s.indexed ? 3 : 0)}%` }} />
                 </div>
-                <div className="mt-2 font-mono text-[12px] text-mute">{pct}% of your sitemap · {n(s.notIndexed)} not yet</div>
+                <div className="mt-2 font-mono text-[12px] text-mute">{pct}% of your sitemap · {n(splitIndex(s).real)} not yet</div>
               </>
             ) : (
               <p className="mt-3 text-[13px] text-dim">Not checked yet. The next daily run adds it.</p>

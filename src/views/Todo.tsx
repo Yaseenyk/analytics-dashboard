@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { SITE_HOSTS } from "@/lib/config";
 import { useAlerts, useCrawl, useHealth, useHistory } from "@/lib/data";
 import { useFilters } from "@/lib/filters";
+import { splitAll } from "@/lib/indexing";
 import { actionLine, actionTotals, buildIssues, type Issue } from "@/lib/issues";
 import { useReview } from "@/lib/reviewStore";
 import type { Series } from "@/lib/types";
@@ -52,14 +53,14 @@ function Summary({ need }: { need: number }) {
   const c = useMemo(() => {
     if (!h) return null;
     const hosts = f.site === "all" ? SITE_HOSTS : [f.site];
-    let indexed = 0, not = 0;
-    hosts.forEach((host) => { const s = h.index?.[host]; if (s) { indexed += s.indexed; not += s.notIndexed; } });
+    const sp = splitAll(hosts.map((host) => h.index?.[host]));
+    const indexed = sp.indexed, not = sp.real;
     const series: Series[] = [];
     if (hist?.length) {
       const pts = (fn: (x: [number, number]) => number) => hist.map((r) => [r.d, hosts.reduce((a, host) => a + (r.sites[host] ? fn(r.sites[host]) : 0), 0)] as [string, number]);
       series.push({ name: "Not indexed", color: NOT_COLOR, fmt: "n", pts: pts((x) => x[1] - x[0]) }, { name: "Indexed", color: IN_COLOR, fmt: "n", pts: pts((x) => x[0]) });
     }
-    return { indexed, not, series, at: h.indexAt };
+    return { indexed, not, waiting: sp.waiting, onPurpose: sp.onPurpose, series, at: h.indexAt };
   }, [h, hist, f.site]);
   if (!c) return <SkCard className="space-y-3"><div className="h-24" /></SkCard>;
   const tile = (name: string, v: number, color: string, note: string) => (
@@ -75,7 +76,7 @@ function Summary({ need }: { need: number }) {
         <h2 className="h2">Page indexing</h2>
         <span className="font-mono text-[11.5px] text-dim">Checked {c.at ? new Date(c.at).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "not yet"}</span>
       </div>
-      <div className="mt-4 grid grid-cols-2">{tile("Not indexed", c.not, NOT_COLOR, need ? `${need.toLocaleString("en-US")} of them need action` : "none need action")}{tile("Indexed", c.indexed, IN_COLOR, "in Google now")}</div>
+      <div className="mt-4 grid grid-cols-2">{tile("Not indexed", c.not, NOT_COLOR, need ? `${need.toLocaleString("en-US")} of them need action` : "none need action")}{tile("Indexed", c.indexed, IN_COLOR, [c.waiting ? `${c.waiting.toLocaleString("en-US")} new pages not checked yet` : "", c.onPurpose ? `${c.onPurpose.toLocaleString("en-US")} noindex on purpose` : ""].filter(Boolean).join(" · ") || "in Google now")}</div>
       <div className="px-5 pt-1">
         <PopBox id="why-diff" title="Why the numbers differ" radius={999} className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-card2 pl-3.5 pr-3 text-[13px] font-medium text-mute" render={() => <WhyDifferent indexed={c.indexed} not={c.not} at={c.at} />}>
           Counts your sitemap pages only. Why different from Search Console?

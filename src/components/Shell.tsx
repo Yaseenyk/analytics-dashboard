@@ -9,6 +9,7 @@ import { useMeta, useStamp } from "@/lib/data";
 import { FiltersProvider, useFilters } from "@/lib/filters";
 import { GA_NEEDS, GSC_TABS } from "@/lib/sections";
 import SavedChips from "@/components/SavedChips";
+import Backdrop from "@/components/Backdrop";
 import { NotificationBell } from "@/views/Alerts";
 import { Icon } from "./ui";
 import { HelpDot } from "./Term";
@@ -282,6 +283,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <LazyMotion features={loadMotion} strict>
         <FiltersProvider>
           <PopProvider>
+          <Backdrop />
           <div className="shell-grid max-lg:fixed max-lg:inset-x-0 max-lg:top-0 max-lg:flex max-lg:h-[100dvh] max-lg:flex-col lg:grid lg:min-h-screen lg:grid-cols-[var(--side)_minmax(0,1fr)]" style={{ "--side": collapsed ? "72px" : "224px" } as React.CSSProperties}>
             <Nav collapsed={collapsed} onToggle={toggle} />
             <main ref={mainRef} className="min-w-0 px-5 pb-8 sm:px-7 max-lg:order-1 max-lg:min-h-0 max-lg:flex-1 max-lg:overflow-y-auto max-lg:overflow-x-hidden max-lg:overscroll-contain lg:pb-14">
