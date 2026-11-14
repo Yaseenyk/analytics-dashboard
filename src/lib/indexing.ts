@@ -45,6 +45,7 @@ export interface PriorityInfo { level: Priority; reason: string }
 
 const LANG = /^\/[a-z]{2}(-[a-z]{2,4})?\//i; // /hi/..., /zh/..., /pt-br/...
 const THIN = /^\/(tag|tags|category|categories|author|page|search|archive)\//i;
+const CONTENT = /^\/(blog|guides|posts|articles|final-year-projects|projects)\//i; // pages people write on purpose
 const KEY = /^\/(products?|hire|about|projects?|services?|solutions?|pricing|download|contact|interview)(\/|$)/i;
 
 /**
@@ -62,6 +63,7 @@ export function priorityOf(url: string, state: string, impressions: number): Pri
   if (/crawled/i.test(state)) return { level: "high", reason: "Google read it and chose not to keep it: improve the page" };
   if (/discovered/i.test(state)) return { level: "medium", reason: "Google found it but has not crawled it yet: link to it from other pages" };
   if (impressions > 0) return { level: "medium", reason: `Has ${impressions} impression${impressions === 1 ? "" : "s"}` };
+  if (/unknown/i.test(state) && CONTENT.test(p)) return { level: "medium", reason: "A content page Google has not seen yet: request indexing and link to it from another page" };
   return { level: "low", reason: "Google does not know it yet and nobody searched for it" };
 }
 export const PRIORITY_ORDER: Record<Priority, number> = { high: 0, medium: 1, low: 2 };

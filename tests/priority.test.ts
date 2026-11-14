@@ -12,6 +12,9 @@ describe("priorityOf", () => {
   it("is medium for a found-but-not-crawled content page", () => {
     expect(priorityOf("https://yk.x.test/blog/b/", "Discovered - currently not indexed", 0).level).toBe("medium");
   });
+  it("is medium for a new content page Google has not seen", () => {
+    expect(priorityOf("https://campus.x.test/guides/bca-final-year-project/", "URL is unknown to Google", 0).level).toBe("medium");
+  });
   it("is low for translated copies, tag pages and unknown pages nobody asked for", () => {
     expect(priorityOf("https://solar.x.test/ta/rooftop/", "URL is unknown to Google", 0).level).toBe("low");
     expect(priorityOf("https://yk.x.test/tag/rag/", "Discovered - currently not indexed", 0).level).toBe("low");
