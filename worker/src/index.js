@@ -241,7 +241,7 @@ async function build(kind, id, env) {
       realtime(env, ['streamName'], ['activeUsers', 'screenPageViews', 'eventCount'], errors), realtime(env, ['streamName', 'unifiedScreenName'], ['activeUsers'], errors),
       realtime(env, ['country'], ['activeUsers'], errors), realtime(env, ['streamName', 'eventName'], ['eventCount'], errors), realtime(env, ['deviceCategory'], ['activeUsers'], errors),
     ]);
-    return { generatedAt, streams, pages, countries, events, devices, live: true };
+    return { generatedAt, streams, pages, countries, events, devices, errors, live: true };
   }
   const range = RANGES.find((r) => r.id === id);
   if (!range) return null;
@@ -650,6 +650,16 @@ export default {
       if (!body) return new Response('not found', { status: 404, headers: ch });
       body = await reconcileHealth(env, body).catch(() => body);
       return new Response(body, { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' } });
+    }
+    // Live visitors: Refresh asks GA4 realtime and saves the answer; opening the app only reads the saved copy (no Google call).
+    if (req.method === 'GET' && url.pathname === '/data/live.json') {
+      const saved = await kvJson(env, 'snap:live').catch(() => null);
+      if (url.searchParams.get('refresh') !== '1') return saved ? jres(saved, ch) : new Response('not found', { status: 404, headers: ch });
+      if (saved && Date.now() - Date.parse(saved.generatedAt) < 20000) return jres(saved, ch); // a double tap must not spend quota twice
+      const fresh = await build('live', '', env);
+      if (fresh.errors && fresh.errors.length) return jres(saved ? { ...saved, errors: fresh.errors.slice(0, 3) } : { ...fresh, down: fresh.errors[0] }, ch);
+      await env.DATA.put('snap:live', JSON.stringify(fresh));
+      return jres(fresh, ch);
     }
     const sm = req.method === 'GET' ? url.pathname.match(/^\/data\/(ga|gsc)-([a-z0-9]+)\.json$/) : null;
     if (sm) return snapshot(sm[1], sm[2], url, env, ch);

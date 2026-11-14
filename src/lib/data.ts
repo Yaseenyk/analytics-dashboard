@@ -22,7 +22,7 @@ const inflight = new Set<string>();
 /** Files that exist only on the Worker (kept in its KV), so they are fetched from it straight away. */
 const LIVE_FIRST = new Set(["history.json", "alerts.json", "ranks.json", "crawl.json", "health.json"]);
 /** GA4 and Search Console live in the Worker's database (KV). Opening a page reads the saved copy; only Refresh asks Google. */
-const SNAP = /^(ga|gsc)-/;
+const SNAP = /^(ga|gsc)-|^live\.json$/;
 
 function emit(key: string) {
   subs.get(key)?.forEach((f) => f());
@@ -137,7 +137,7 @@ export function ensure(file: string, force = false, only?: string[], site?: stri
       const has = (x: unknown) => ((x as GAFile | null)?.reports?.totals?.rows?.length ?? 0) > 0;
       if (cur?.data && has(cur.data) && !has(j)) return;
     }
-    if (!cur?.data || sig(cur.data) !== sig(j)) put(file, { data: j, error: false });
+    if (!cur?.data || file === "live.json" || sig(cur.data) !== sig(j)) put(file, { data: j, error: false });
     writeCache(file, j);
     if (!LIVE_FIRST.has(file)) setStamp({ liveAt: Date.now(), live: true });
   };
@@ -146,7 +146,7 @@ export function ensure(file: string, force = false, only?: string[], site?: stri
   // 50-call limit) and the Worker merges the answer into the saved copy.
   const staticOnly = /^bing-|^optimizer\.json$/.test(file);
   const snapped = !!base && SNAP.test(file);
-  const holds = (x: unknown) => /^ga-/.test(file) ? ((x as GAFile | null)?.reports?.totals?.rows?.length ?? 0) > 0 : Object.values((x as GSCFile | null)?.search ?? {}).some((v) => (v as { ok?: boolean }).ok);
+  const holds = (x: unknown) => file === "live.json" ? !!(x as { generatedAt?: string } | null)?.generatedAt : /^ga-/.test(file) ? ((x as GAFile | null)?.reports?.totals?.rows?.length ?? 0) > 0 : Object.values((x as GSCFile | null)?.search ?? {}).some((v) => (v as { ok?: boolean }).ok);
   const applySaved = (j: unknown) => {
     const cur = store.get(file);
     if (!holds(j) && !(j as { down?: string; idle?: boolean }).down) return;
@@ -187,6 +187,11 @@ export function ensure(file: string, force = false, only?: string[], site?: stri
 
 /** Refresh for GA4 or Search Console: the Worker asks Google and saves the answer. Search Console goes in parts of 5 properties. */
 async function refreshSaved(file: string, base: string, apply: (j: unknown) => void, only?: string[], site?: string) {
+  if (file === "live.json") {
+    const j = await getJSON<{ down?: string }>(`${base}/data/live.json?refresh=1`, 45000).catch(() => null);
+    if (j && !j.down) apply(j);
+    return;
+  }
   if (file.startsWith("ga-")) {
     const j = await getJSON<unknown>(`${base}/data/${file}?refresh=1${only?.length ? `&only=${only.join(",")}` : ""}${only?.length && site ? `&host=${encodeURIComponent(site)}` : ""}`, 70000).catch(() => null);
     if (j) apply(j);
