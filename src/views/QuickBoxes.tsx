@@ -123,7 +123,6 @@ export default function QuickBoxes() {
   const crawl = useCrawl().data;
   const alerts = useAlerts().data;
   const online = useMemo(() => (live?.streams.rows ?? []).filter((r) => f.site === "all" || STREAMS[String(r[0])] === SITES[f.site]).reduce((a, r) => a + (+r[1] || 0), 0), [live, f.site]);
-  const liveFresh = !!live?.generatedAt && Date.now() - Date.parse(live.generatedAt) < 30 * 60e3;
   const today = useMemo(() => todayBy(ga, f.site), [ga, f.site]);
   const issues = useMemo(() => buildIssues({ site: f.site, health, crawl, alerts, live, peopleBy: peopleByHost(ga) }), [f.site, health, crawl, alerts, live, ga]);
   const totals = actionTotals(issues);
@@ -135,7 +134,7 @@ export default function QuickBoxes() {
   return (
     <div className="grid grid-cols-3 gap-3">
       <PopBox id="online" title="Online now" radius={18} className={box} render={() => <OnlineSheet site={f.site} />} label={`Online now: ${online}`}>
-        <Body label={<Label dot="bg-good" pulse>Online now</Label>} big={liveFresh ? n(online) : "–"} small={liveFresh ? liveAge(live?.generatedAt) : "tap Refresh"} />
+        <Body label={<Label dot="bg-good" pulse>Online now</Label>} big={live ? n(online) : "–"} small={liveAge(live?.generatedAt)} />
       </PopBox>
       <PopBox id="today" title="Visited today" radius={18} className={box} render={() => <TodaySheet site={f.site} range={f.range} />} label={`Visited today: ${today?.people ?? 0}`}>
         <Body label={<Label dot="bg-brand">Visited today</Label>} big={today ? n(today.people) : "–"} small={today ? `${n(today.visits)} ${today.visits === 1 ? "visit" : "visits"}` : "tap to see"} />
