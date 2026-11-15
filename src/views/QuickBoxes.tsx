@@ -6,6 +6,7 @@ import { SITES, STREAMS } from "@/lib/config";
 import { useAlerts, useCrawl, useGA, useHealth, useLive } from "@/lib/data";
 import { n } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
+import { usePulse, type Live } from "@/lib/pulse";
 import { actionLine, actionTotals, buildIssues, type Issue } from "@/lib/issues";
 import { liveAge, peopleByHost, todayBy } from "@/lib/today";
 import { PopBox } from "@/components/Pop";
@@ -25,10 +26,32 @@ function Bar({ label, value, max, suffix = "" }: { label: string; value: number;
 }
 const H = ({ children }: { children: React.ReactNode }) => <h3 className="m-0 mb-1 mt-5 text-[12.5px] font-semibold uppercase tracking-wider text-dim first:mt-0">{children}</h3>;
 
+/** Real people on the sites this moment, from our own tracker. */
+function PulsePart({ pulse, pn }: { pulse: Live; pn: (s: string) => number }) {
+  const real = pn("real");
+  const others = pn("unclear") + pn("bot");
+  return (
+    <div>
+      <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[28px] text-ink">{n(real)}</b> real {real === 1 ? "person is" : "people are"} on your sites right now. {others ? `${n(others)} more ${others === 1 ? "visit is" : "visits are"} bots or did nothing a person would do.` : "Nobody else is there."}</p>
+      {pulse.pages.length > 0 && (
+        <>
+          <H>Pages real people are on</H>
+          <ul className="m-0 list-none p-0">{pulse.pages.slice(0, 8).map((r) => <Bar key={r.site + r.path} label={`${SITES[r.site] ?? r.site}  ${r.path}`} value={r.n} max={pulse.pages[0].n || 1} />)}</ul>
+        </>
+      )}
+      <Link href="/watch/" className="mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-brand/10 text-[13.5px] font-semibold text-brand">See who they are and what they click</Link>
+    </div>
+  );
+}
+
 /** Everything happening on the sites in the last 30 minutes. */
 function OnlineSheet({ site }: { site: string }) {
   const l = useLive().data;
-  if (!l) return <p className="sub">Loading…</p>;
+  const params = useMemo(() => ({ site: site === "all" ? undefined : site }), [site]);
+  const pulse = usePulse<Live>("/v/live", params, { poll: 10000 }).data;
+  const pn = (st: string) => pulse?.status.find((x) => x.status === st)?.n ?? 0;
+  if (!l && !pulse) return <p className="sub">Loading…</p>;
+  if (!l) return <PulsePart pulse={pulse!} pn={pn} />;
   const mine = (x: unknown) => site === "all" || STREAMS[String(x)] === SITES[site];
   const by = l.streams.rows.filter((r) => mine(r[0])).map((r) => ({ name: STREAMS[String(r[0])] || String(r[0]), v: +r[1] || 0 })).sort((a, b) => b.v - a.v);
   const pages = l.pages.rows.filter((r) => mine(r[0])).slice(0, 8);
@@ -36,7 +59,9 @@ function OnlineSheet({ site }: { site: string }) {
   const total = by.reduce((a, x) => a + x.v, 0);
   return (
     <div>
-      <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[28px] text-ink">{n(total)}</b> {total === 1 ? "person is" : "people are"} on your sites right now (last 30 minutes).</p>
+      {pulse && <PulsePart pulse={pulse} pn={pn} />}
+      <H>What Google Analytics sees (it counts bots too)</H>
+      <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[22px] text-ink">{n(total)}</b> {total === 1 ? "visitor" : "visitors"} in the last 30 minutes, with no way to tell robots from people.</p>
       <H>By site</H>
       <ul className="m-0 list-none p-0">{by.length ? by.map((x) => <Bar key={x.name} label={x.name} value={x.v} max={by[0].v} />) : <li className="text-[14px] text-dim">Nobody right now.</li>}</ul>
       <H>Pages being viewed</H>
@@ -122,6 +147,9 @@ export default function QuickBoxes() {
   const health = useHealth().data;
   const crawl = useCrawl().data;
   const alerts = useAlerts().data;
+  const pulseNow = usePulse<Live>("/v/live", useMemo(() => ({ site: f.site === "all" ? undefined : f.site }), [f.site]), { poll: 10000 }).data;
+  const realNow = pulseNow?.status.find((x) => x.status === "real")?.n ?? 0;
+  const otherNow = (pulseNow?.status ?? []).filter((x) => x.status !== "real").reduce((a, x) => a + x.n, 0);
   const online = useMemo(() => (live?.streams.rows ?? []).filter((r) => f.site === "all" || STREAMS[String(r[0])] === SITES[f.site]).reduce((a, r) => a + (+r[1] || 0), 0), [live, f.site]);
   const today = useMemo(() => todayBy(ga, f.site), [ga, f.site]);
   const issues = useMemo(() => buildIssues({ site: f.site, health, crawl, alerts, live, peopleBy: peopleByHost(ga) }), [f.site, health, crawl, alerts, live, ga]);
@@ -133,8 +161,8 @@ export default function QuickBoxes() {
 
   return (
     <div className="grid grid-cols-3 gap-3">
-      <PopBox id="online" title="Online now" radius={18} className={box} render={() => <OnlineSheet site={f.site} />} label={`Online now: ${online}`}>
-        <Body label={<Label dot="bg-good" pulse>Online now</Label>} big={live ? n(online) : "–"} small={liveAge(live?.generatedAt)} />
+      <PopBox id="online" title="Online now" radius={18} className={box} render={() => <OnlineSheet site={f.site} />} label={pulseNow ? `Online now: ${realNow} real people` : `Online now: ${online}`}>
+        <Body label={<Label dot="bg-good" pulse>Online now</Label>} big={pulseNow ? n(realNow) : live ? n(online) : "–"} small={pulseNow ? (otherNow ? `${n(otherNow)} not real` : "real people") : liveAge(live?.generatedAt)} />
       </PopBox>
       <PopBox id="today" title="Visited today" radius={18} className={box} render={() => <TodaySheet site={f.site} range={f.range} />} label={`Visited today: ${today?.people ?? 0}`}>
         <Body label={<Label dot="bg-brand">Visited today</Label>} big={today ? n(today.people) : "–"} small={today ? `${n(today.visits)} ${today.visits === 1 ? "visit" : "visits"}` : "tap to see"} />

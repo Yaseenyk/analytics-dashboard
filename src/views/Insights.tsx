@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { SITES } from "@/lib/config";
+import { useMemo } from "react";
 import { useGA, useGSC } from "@/lib/data";
 import { n, quickWins } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
+import { STATUS_HELP, STATUS_LABEL, daysFor, usePulse, type Status, type Summary } from "@/lib/pulse";
 import { CHANGES, botCheck, effects } from "@/lib/insights";
 import { PopBox } from "@/components/Pop";
 import { Icon } from "@/components/ui";
@@ -29,14 +31,59 @@ function Row({ icon, title, sub, value }: { icon: "live" | "search" | "health"; 
 }
 
 /* ---- real visitors ---- */
+/** The tracker's verdict for the chosen period: how many visits were a person. */
+function usePulseVerdict() {
+  const f = useFilters();
+  const days = daysFor(f.range);
+  const params = useMemo(() => ({ days, site: f.site === "all" ? undefined : f.site, who: "all" }), [days, f.site]);
+  const sum = usePulse<Summary>("/v/summary", params, { poll: 60000 }).data;
+  const by = (s: Status) => sum?.status.find((r) => r.status === s)?.hits ?? 0;
+  const total = by("real") + by("unclear") + by("bot");
+  return { sum, total, real: by("real"), unclear: by("unclear"), bot: by("bot"), days };
+}
+
+function PulseVerdict() {
+  const v = usePulseVerdict();
+  if (!v.sum || !v.total) return null;
+  const sites = new Map<string, Record<Status, number>>();
+  v.sum.bySite.forEach((r) => {
+    const o = sites.get(r.site) ?? { real: 0, unclear: 0, bot: 0 };
+    o[r.status] += r.n;
+    sites.set(r.site, o);
+  });
+  const list = [...sites.entries()].sort((a, b) => b[1].real + b[1].unclear + b[1].bot - (a[1].real + a[1].unclear + a[1].bot));
+  return (
+    <div className="mb-6">
+      <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[28px] text-ink">{Math.round((100 * v.real) / v.total)}%</b> of {n(v.total)} visits in the last {v.days} days were a real person, counted by our own tracker. {n(v.unclear)} did nothing a person would do and {n(v.bot)} were known bots.</p>
+      <p className="m-0 mt-2 text-[12.5px] leading-relaxed text-dim">{STATUS_LABEL.real}: {STATUS_HELP.real} Counting began on the day each site got the tracker, so this fills in over the next days.</p>
+      <ul className="m-0 mt-3 list-none p-0">
+        {list.map(([h, o]) => {
+          const tt = o.real + o.unclear + o.bot;
+          return (
+            <li key={h} className="border-t border-white/[.06] py-3 first:border-t-0">
+              <div className="flex items-baseline justify-between gap-3"><span className="text-[15px] font-semibold">{SITES[h] ?? h}</span><span className="font-mono text-[13px] text-mute">{n(o.real)} real of {n(tt)}</span></div>
+              <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-white/5" aria-hidden="true">
+                <i className="block h-full bg-good" style={{ width: `${(100 * o.real) / tt}%` }} /><i className="block h-full" style={{ width: `${(100 * o.unclear) / tt}%`, background: "var(--s3)" }} /><i className="block h-full bg-bad" style={{ width: `${(100 * o.bot) / tt}%` }} />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <Link href="/watch/" className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-brand/10 text-[13.5px] font-semibold text-brand">See who they are and what they click</Link>
+    </div>
+  );
+}
+
 function VisitorsSheet() {
   const f = useFilters();
   const ga = useGA(f.range).data;
   const rows = botCheck(ga, f.site);
-  if (!rows.length) return <p className="m-0 text-[15px] text-mute">No visitor numbers are loaded yet. Tap Refresh under Google Analytics.</p>;
+  if (!rows.length) return <div><PulseVerdict /><p className="m-0 text-[15px] text-mute">No Google Analytics numbers are loaded yet. Tap Refresh under Google Analytics.</p></div>;
   const total = rows.reduce((t, r) => t + r.sessions, 0), eng = rows.reduce((t, r) => t + r.engaged, 0);
   return (
     <div>
+      <PulseVerdict />
+      <H>Google Analytics view (a hint, not proof)</H>
       <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[28px] text-ink">{total ? Math.round((100 * eng) / total) : 0}%</b> of {n(total)} visits were real, engaged visits. An engaged visit lasts 10 seconds, opens 2 pages or does a key action. Bots usually load one page and leave.</p>
       <H>Visits, engaged visits, actions</H>
       <ul className="m-0 list-none p-0">
@@ -55,9 +102,17 @@ function VisitorsSheet() {
 export function RealVisitorsLink() {
   const f = useFilters();
   const ga = useGA(f.range).data;
+  const v = usePulseVerdict();
   const rows = botCheck(ga, f.site);
   const total = rows.reduce((t, r) => t + r.sessions, 0), eng = rows.reduce((t, r) => t + r.engaged, 0);
   const sus = rows.filter((r) => r.suspect).length;
+  if (v.total > 0) {
+    return (
+      <PopBox id="real-visitors" title="Real visitors" radius={20} className={rowCls} label="Real visitors and funnel" render={() => <VisitorsSheet />}>
+        <Row icon="live" title="Real visitors" sub={`${n(v.real)} of ${n(v.total)} visits were a real person. Tap to see by site.`} value={`${Math.round((100 * v.real) / v.total)}%`} />
+      </PopBox>
+    );
+  }
   return (
     <PopBox id="real-visitors" title="Real visitors" radius={20} className={rowCls} label="Real visitors and funnel" render={() => <VisitorsSheet />}>
       <Row icon="live" title="Real visitors" sub={rows.length ? (sus ? `${sus} ${sus === 1 ? "site looks" : "sites look"} like bots. Tap to see.` : "Visits that were really engaged, by site.") : "Loads with the Google Analytics numbers."} value={rows.length && total ? `${Math.round((100 * eng) / total)}%` : "–"} />
