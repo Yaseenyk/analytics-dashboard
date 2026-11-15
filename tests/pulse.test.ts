@@ -207,7 +207,7 @@ describe("reads", () => {
     expect(jr.hits).toHaveLength(1);
     expect(jr.clicks[0]).toMatchObject({ label: "SIP", kind: "link" });
     const cm = await (await get(env, "/v/clickmap?site=calc.streamerosai.com&path=/emi-calculator/", "open-sesame")).json();
-    expect(cm.visits).toBe(5);
+    expect(cm.visits).toBe(1);
     expect(cm.clicks).toHaveLength(1);
   });
 

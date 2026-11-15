@@ -220,7 +220,7 @@ export async function clickmap(env, q) {
   if (!site || !path.startsWith('/')) return { visits: 0, clicks: [] };
   const since = Date.now() - num(q.get('days'), 28, 1, 90) * 864e5;
   const [v, clicks] = await Promise.all([
-    all(env, `SELECT COUNT(*) AS n FROM hits WHERE site=? AND path=? AND ts>=?`, [site, path, since]),
+    all(env, `SELECT COUNT(*) AS n FROM hits WHERE site=? AND path=? AND ts>=? AND ${STATUS}='real'`, [site, path, since]),
     all(env, `SELECT kind, label, x, y, z FROM clicks WHERE site=? AND path=? AND ts>=? ORDER BY ts DESC LIMIT 600`, [site, path, since]),
   ]);
   return { visits: (v[0] && v[0].n) || 0, clicks };
