@@ -1,0 +1,17 @@
+# pulse: our own visit tracker (free plan). Browser script at /p.js, receiver at /e, reads at /v/*.
+# Database: `wrangler d1 execute site-pulse --remote --file=schema.sql` (once).
+# Optional secret that unlocks the one-by-one views: `wrangler secret put PULSE_KEY`.
+name = "pulse"
+main = "src/index.js"
+compatibility_date = "2026-06-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "site-pulse"
+database_id = "5e096572-927d-4f8b-bcdf-fe206936d8fb"
+
+[triggers]
+crons = ["17 3 * * *"]
+
+[observability]
+enabled = true

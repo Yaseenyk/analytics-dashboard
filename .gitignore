@@ -6,3 +6,6 @@ worker/.wrangler/
 worker/node_modules/
 *.tsbuildinfo
 tmp-optimizer/
+
+# pulse Worker local test state
+pulse/.wrangler/
