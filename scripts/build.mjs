@@ -276,7 +276,9 @@ async function bingFetchAll() {
     const pages = await bingGet('GetPageStats', { siteUrl: s.Url }); await pause(400);
 
     const crawl = await bingGet('GetCrawlStats', { siteUrl: s.Url }); await pause(400);
-    if (traffic.status === 200 || queries.status === 200) raw[host] = { url: s.Url, traffic: traffic.rows, queries: queries.rows, pages: pages.rows, crawl: crawl.rows };
+    // The URLs behind the crawl error count (404s, robots blocks, timeouts). A failure here only leaves the list empty.
+    const issues = await bingGet('GetCrawlIssues', { siteUrl: s.Url }); await pause(400);
+    if (traffic.status === 200 || queries.status === 200) raw[host] = { url: s.Url, traffic: traffic.rows, queries: queries.rows, pages: pages.rows, crawl: crawl.rows, issues: issues.rows };
   }
   return { raw, error: Object.keys(raw).length ? null : 'Bing listed no readable sites' };
 }
@@ -429,7 +431,7 @@ const latest = (rows) => rows.slice().sort((a, b) => (bingDate(b.Date)?.getTime(
 if (!bingCall && bingKept) health.bing = bingKept;
 if (bingCall) health.bing = Object.fromEntries(Object.entries(bing.raw).map(([h, r]) => {
   const c = latest(r.crawl || []);
-  return [h, c ? { date: bingDate(c.Date) ? iso(bingDate(c.Date)) : null, crawled: +c.CrawledPages || 0, errors: +c.CrawlErrors || 0, inIndex: +c.InIndex || 0, c4xx: +c.Code4xx || 0, c5xx: +c.Code5xx || 0, blocked: +c.BlockedByRobotsTxt || 0 } : null];
+  return [h, c ? { date: bingDate(c.Date) ? iso(bingDate(c.Date)) : null, crawled: +c.CrawledPages || 0, errors: +c.CrawlErrors || 0, inIndex: +c.InIndex || 0, c4xx: +c.Code4xx || 0, c5xx: +c.Code5xx || 0, blocked: +c.BlockedByRobotsTxt || 0, issues: (r.issues || []).filter((x) => x && x.Url).slice(0, 150).map((x) => [String(x.Url), +x.HttpCode || 0, +x.Issues || 0]) } : null];
 }));
 write('health', health);
 

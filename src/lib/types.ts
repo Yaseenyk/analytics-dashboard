@@ -85,7 +85,7 @@ export interface HealthFile {
   generatedAt: string;
   indexAt: string | null;
   index: Record<string, HealthSite>;
-  bing?: Record<string, { date: string | null; crawled: number; errors: number; inIndex: number; c4xx: number; c5xx: number; blocked: number } | null>;
+  bing?: Record<string, { date: string | null; crawled: number; errors: number; inIndex: number; c4xx: number; c5xx: number; blocked: number; issues?: [string, number, number][] } | null>;
 }
 
 export interface Meta {

@@ -143,9 +143,24 @@ export function IndexHistory() {
 const KIND: Record<string, string> = { broken: "Broken", redirect: "Redirects", noindex: "Noindex in sitemap", "no-title": "No title", "not-in-sitemap": "Not in sitemap" };
 
 /** Daily check of every sitemap URL (does it load, redirect, say noindex, have a title) plus pages linked from the home page but missing from the sitemap. */
+/** Bing's own issue flags (GetCrawlIssues), as plain words. A URL can carry several. */
+const BING_FLAGS: [number, string][] = [[1, "Moved (301)"], [2, "Redirect (302)"], [4, "Not found or client error (4xx)"], [8, "Server error (5xx)"], [16, "Blocked by robots.txt"], [32, "Malware flagged"], [64, "Important page blocked by robots.txt"], [128, "DNS error"], [256, "Timed out"]];
+const bingWhy = (code: number, flags: number) => {
+  const w = BING_FLAGS.filter(([bit]) => (flags & bit) !== 0).map(([, t]) => t);
+  return w.length ? w.join(", ") : code ? `HTTP ${code}` : "Not specified by Bing";
+};
+
 export function CrawlIssues() {
   const f = useFilters();
   const e = useCrawl();
+  const bingH = useHealth().data;
+  const bingRows = useMemo(() => {
+    const hosts = f.site === "all" ? SITE_HOSTS : [f.site];
+    const rows: Cell[][] = [];
+    hosts.forEach((h) => (bingH?.bing?.[h]?.issues ?? []).forEach(([url, code, flags]) => rows.push([url.replace(/^https?:\/\//, ""), bingWhy(code, flags), code ? String(code) : "-"])));
+    const withIssues = hosts.some((h) => (bingH?.bing?.[h]?.issues?.length ?? 0) > 0);
+    return { rows, withIssues };
+  }, [bingH, f.site]);
   const calc = useMemo(() => {
     if (!e.data) return null;
     const hosts = f.site === "all" ? SITE_HOSTS : [f.site];
@@ -173,6 +188,7 @@ export function CrawlIssues() {
         <DataTable title="Site check: what we found" cols={["Problem", "Pages"]} rows={calc.counts} fmt={[0, "n"]} bar={1} max={8} empty={`All ${calc.checked} pages loaded cleanly.`} note={`${calc.checked} pages checked ${new Date(calc.at).toLocaleDateString([], { day: "numeric", month: "short" })}.`} />
         <DataTable title="Pages to fix" cols={["Page", "Problem", "Detail"]} rows={calc.rows} fmt={[0, 0, 0]} max={12} empty="Nothing to fix." note="Broken pages first. A redirect in the sitemap should be replaced by its final address." />
       </div>
+      <DataTable title="Pages Bing could not crawl" cols={["Page", "What Bing reports", "Code"]} rows={bingRows.rows} fmt={[0, 0, 0]} max={12} empty={bingRows.withIssues ? "Nothing to fix." : "Bing's list of problem pages is added by the next nightly run."} note="This is Bing's own list from Bing Webmaster Tools, saved by the nightly run (Bing is never called when you open the page). Deleted pages that Bing remembers show here as 4xx: they stop once Bing recrawls and drops them." />
     </>
   );
 }
