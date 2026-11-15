@@ -145,14 +145,17 @@
 .side-collapsed .side-hide { opacity: 0; max-width: 0; }
 .side-hide { overflow: hidden; white-space: nowrap; max-width: 160px; transition: max-width .4s cubic-bezier(.22,1,.36,1), opacity .25s; }
 
-html, body { overscroll-behavior-y: none; }
+/* Only the page itself (html) is the scroller. Putting overflow or overscroll rules on body as well made body a
+   second scroll box with nothing to scroll, and the mouse wheel stopped there on desktop. */
+html { overscroll-behavior-y: none; }
 body { -webkit-tap-highlight-color: transparent; }
 
 /* tap-clean: tappable things have no focus ring or box. They are told apart by fill, not by lines. */
 a, button, summary, select, [role=button] { outline: none !important; -webkit-tap-highlight-color: transparent; }
 a:focus-visible, button:focus-visible, summary:focus-visible { outline: none !important; box-shadow: none !important; }
 
-html, body { overflow-x: hidden; max-width: 100%; }
+html { overflow-x: hidden; max-width: 100%; }
+body { overflow-x: clip; max-width: 100%; }
 
 /* ---- background graphics: aurora glows, dot grid, a faint chart line ---- */
 .bd-glow { position: absolute; border-radius: 9999px; filter: blur(90px); will-change: transform; }
