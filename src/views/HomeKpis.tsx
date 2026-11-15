@@ -76,7 +76,7 @@ export default function HomeKpis() {
   const days = ga?.days ?? gsc?.days ?? 28;
   const all = useMemo(() => (["people", "visits", "leads", "clicks"] as Key[]).map((k) => [k, calc(k, ga, gsc, f.site)] as const), [ga, gsc, f.site]);
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {all.map(([k, c]) => {
         const meta = META[k];
         if (!c) return <div key={k} className="card !p-3.5"><div className="text-[12.5px] text-mute">{meta.title}</div><Sk w={50} h={26} className="mt-2" /></div>;

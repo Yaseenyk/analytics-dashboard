@@ -59,7 +59,7 @@ export default function Visitors() {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3.5">
+      <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         <Box href="/sources/" tag="Google Analytics" title="People" value={dash(m.people)} note={m.visits === null ? "Where they came from" : `${n(m.visits)} visits. Tap for sources`} />
         <Box href="/search/" tag="Search Console" title="Google clicks" value={m.gsc ? n(m.gsc.clicks) : "–"} note={m.gsc ? `${n(m.gsc.impr)} times shown in Google` : "Searches and pages"} />
         <Box href="/bing/" tag="Bing" title="Bing clicks" value={m.bing ? n(m.bing.clicks) : "–"} note={m.bing ? `${n(m.bing.impr)} times shown in Bing` : "Searches and pages"} />
@@ -75,7 +75,7 @@ export default function Visitors() {
           <h2 id="each-h" className="h2">Each site</h2>
           <span className="text-[12.5px] text-dim">All the numbers, side by side</span>
         </div>
-        <ul className="m-0 list-none space-y-3 p-0">
+        <ul className="m-0 list-none space-y-3 p-0 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0 xl:grid-cols-3">
           {hosts.map((h) => {
             const g = gsc?.search?.[gscProperty(h)];
             const bs = bing?.sites?.[h];
@@ -84,7 +84,7 @@ export default function Visitors() {
             const cell = (k: string, v: string) => <div className="min-w-0"><small className="block text-[11px] text-dim">{k}</small><b className="text-[15px]">{v}</b></div>;
             return (
               <li key={h}>
-                <button type="button" onClick={() => f.setSite(h)} className="card w-full !border-transparent text-left !p-4 active:bg-card2">
+                <button type="button" onClick={() => f.setSite(h)} className="card w-full !border-transparent text-left !p-4 active:bg-card2 lg:h-full">
                   <div className="flex items-baseline justify-between gap-2"><h3 className="m-0 text-[15px] font-semibold">{SITES[h]}</h3><span className="truncate font-mono text-[11px] text-dim">{h}</span></div>
                   <div className="mt-2.5 grid grid-cols-3 gap-x-3 gap-y-2.5">
                     {cell("People", ga && hasGA(ga) ? n(people[h] ?? 0) : "–")}

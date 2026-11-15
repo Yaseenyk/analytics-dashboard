@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { BRAND, COLORS } from "@/lib/config";
 import { n, pct } from "@/lib/derive";
 import type { Series } from "@/lib/types";
@@ -23,17 +23,21 @@ function niceMax(v: number) {
   return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
 }
 
-function useWidth(): [React.RefObject<HTMLDivElement>, number] {
-  const ref = useRef<HTMLDivElement>(null);
+/** Width of the chart's box, measured whenever the box appears. A callback ref, not an effect that runs once: the box is
+ *  only drawn after the data arrives, so a one-time effect could miss it and leave the chart at the 600px default. */
+function useWidth(): [(el: HTMLDivElement | null) => void, number] {
   const [w, setW] = useState(600);
-  useEffect(() => {
-    const el = ref.current;
+  const ro = useRef<ResizeObserver | null>(null);
+  const ref = useCallback((el: HTMLDivElement | null) => {
+    ro.current?.disconnect();
+    ro.current = null;
     if (!el) return;
-    const ro = new ResizeObserver(() => setW(Math.max(240, Math.round(el.clientWidth))));
-    ro.observe(el);
-    setW(Math.max(240, Math.round(el.clientWidth)));
-    return () => ro.disconnect();
+    const measure = () => setW(Math.max(240, Math.round(el.clientWidth)));
+    ro.current = new ResizeObserver(measure);
+    ro.current.observe(el);
+    measure();
   }, []);
+  useEffect(() => () => ro.current?.disconnect(), []);
   return [ref, w];
 }
 

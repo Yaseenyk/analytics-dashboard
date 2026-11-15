@@ -136,7 +136,7 @@ export function ChangesLink() {
 
 export default function InsightLinks() {
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2.5 lg:grid lg:grid-cols-3 lg:items-stretch lg:gap-3 lg:space-y-0">
       <RealVisitorsLink />
       <WinsLink />
       <ChangesLink />
