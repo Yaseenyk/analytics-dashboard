@@ -1,35 +1,49 @@
 {
-  "generatedAt": "2026-11-09T12:02:31.164Z",
+  "generatedAt": "2026-11-16T12:00:50.659Z",
   "lastRun": {
-    "date": "2026-11-09",
-    "proposed": 15,
+    "date": "2026-11-16",
+    "proposed": 34,
     "judged": 0,
     "mode": "pr",
-    "costUsd": 0.071,
+    "costUsd": 0.118,
     "log": [
-      "optimizer 2026-11-09: pull requests on, indexed sites frozen until 2026-11-18",
-      "20 candidate page(s)",
-      "no change for https://math.streamerosai.com/percentage-calculator: Rejected by the numbers check: the proposal introduced 1, 6, 5, 2.4, 25, 0.25, which the page does not have. The query a",
-      "report only for https://fitrank.streamerosai.com/blog/staffing-vs-scheduling/ (frozen)",
-      "report only for https://fitrank.streamerosai.com/features/decision-api/ (frozen)",
-      "report only for https://streamerosai.com/blog/popout-chat-masterclass (frozen)",
-      "no change for https://yk.streamerosai.com/blog/ai-engineer-portfolio-examples/: Rejected by the numbers check: the proposal introduced 5, which the page does not have. Adding a short, practical \"how t",
-      "no change for https://yk.streamerosai.com/blog/mern-stack-developer-vs-full-stack-developer/: Rejected by the numbers check: the proposal introduced 20, which the page does not have. The page already lists what div",
-      "report only for https://yk.streamerosai.com/blog/when-usememo-actually-helps-in-react-19-and-how-to-measure-it/ (frozen)",
-      "report only for https://yk.streamerosai.com/blog/my-journey-web-developer-to-ai-engineer/ (frozen)",
-      "no change for https://yk.streamerosai.com/blog/shipped-5-products-solo-12-months/: Rejected by the numbers check: the proposal introduced 1, 2, 3, 4, which the page does not have. Adds a short, crawlable",
-      "report only for https://streamerosai.com/features/live-cockpit (frozen)",
-      "report only for https://streamerosai.com/features/ai-sidekick (frozen)",
-      "no change for https://streamerosai.com/features/scene-switcher: No usable linking page (How to auto-switch OBS scenes, including from chat activity). Adding an internal link from the r",
-      "report only for https://streamerosai.com/vs/streamlabs (frozen)",
-      "report only for https://fitrank.streamerosai.com/blog/rotating-shifts-explained/ (frozen)",
-      "report only for https://fitrank.streamerosai.com/blog/automated-employee-scheduling-excel/ (frozen)",
-      "skip https://spotai.streamerosai.com/bn/: marked noindex on purpose",
-      "skip https://spotai.streamerosai.com/bn/features/food-log/: marked noindex on purpose",
-      "skip https://spotai.streamerosai.com/bn/features/leaderboard/: marked noindex on purpose",
-      "skip https://spotai.streamerosai.com/bn/features/owners/: marked noindex on purpose",
-      "skip https://spotai.streamerosai.com/bn/guides/: marked noindex on purpose",
-      "OpenAI: 18 calls, 61906 in / 27584 out tokens, about $0.071"
+      "optimizer 2026-11-16: pull requests on, indexed sites frozen until 2026-11-18",
+      "34 candidate page(s)",
+      "no change for https://streamerosai.com/blog/obs-timer-plugin: Rejected by the numbers check: the proposal introduced 1610, 3, which the page does not have. People searching this quer",
+      "report only for https://math.streamerosai.com/percentage-increase-calculator/ (frozen)",
+      "report only for https://yk.streamerosai.com/solutions/food-delivery-app-development/ (frozen)",
+      "no change for https://streamerosai.com/blog/how-to-track-sponsor-deals-as-a-streamer: Rejected by the numbers check: the proposal introduced 10, 4, which the page does not have. The page is practical but sh",
+      "report only for https://streamerosai.com/blog/stream-automation-101 (frozen)",
+      "report only for https://spotai.streamerosai.com/hi/guides/ (frozen)",
+      "report only for https://math.streamerosai.com/percent-change-calculator/ (frozen)",
+      "report only for https://math.streamerosai.com/date-calculator/ (frozen)",
+      "report only for https://math.streamerosai.com/hours-calculator/ (frozen)",
+      "report only for https://math.streamerosai.com/time-calculator/ (frozen)",
+      "report only for https://esports.streamerosai.com/guides/cod-mobile-tournament-rules-template/ (no token or dry run)",
+      "no change for https://esports.streamerosai.com/guides/bgmi-team-names-ideas/: Rejected by the numbers check: the proposal introduced 2, which the page does not have. The page provides useful ideas b",
+      "report only for https://yk.streamerosai.com/products/tool-sites/ (frozen)",
+      "report only for https://yk.streamerosai.com/blog/crawled-currently-not-indexed-blank-render-bug/ (frozen)",
+      "report only for https://streamerosai.com/vs/streamer-bot (frozen)",
+      "report only for https://streamerosai.com/blog/ai-tools-for-streamers-the-setup-that-works (frozen)",
+      "report only for https://spotai.streamerosai.com/guides/gym-attendance-register/ (frozen)",
+      "report only for https://spotai.streamerosai.com/guides/gym-software-for-small-gyms/ (frozen)",
+      "report only for https://solar.streamerosai.com/mr/rooftop-solar-technical-specifications-india/ (frozen)",
+      "report only for https://calc.streamerosai.com/hourly-to-salary-calculator/ (frozen)",
+      "report only for https://calc.streamerosai.com/salary-to-hourly-calculator/ (frozen)",
+      "report only for https://calc.streamerosai.com/emi-calculator/ (frozen)",
+      "report only for https://calc.streamerosai.com/home-loan-emi-calculator/ (frozen)",
+      "report only for https://calc.streamerosai.com/car-loan-emi-calculator/ (frozen)",
+      "report only for https://images.streamerosai.com/jpeg-compressor/ (frozen)",
+      "report only for https://images.streamerosai.com/png-to-jpg/ (frozen)",
+      "report only for https://images.streamerosai.com/avif-to-jpg/ (frozen)",
+      "report only for https://images.streamerosai.com/image-to-jpg/ (frozen)",
+      "report only for https://images.streamerosai.com/guides/ (frozen)",
+      "report only for https://exams.streamerosai.com/jee-main/exam-pattern/ (frozen)",
+      "report only for https://exams.streamerosai.com/neet-ug/exam-pattern/ (frozen)",
+      "report only for https://esports.streamerosai.com/tools/ (no token or dry run)",
+      "report only for https://esports.streamerosai.com/tools/brackets/ (no token or dry run)",
+      "report only for https://esports.streamerosai.com/tools/display-screen/ (no token or dry run)",
+      "OpenAI: 37 calls, 118808 in / 44088 out tokens, about $0.118"
     ]
   },
   "experiments": [
@@ -896,6 +910,946 @@
       "competitors": [],
       "authorityGap": false,
       "gap": "Google has discovered the URL but not fetched it because the page appears isolated (no important internal links point to it)."
+    },
+    {
+      "id": "2026-11-16-streamerosai-blog-obs-timer-plugin",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/blog/obs-timer-plugin",
+      "q": "ashmanix countdown timer",
+      "kind": "rank",
+      "state": null,
+      "type": "none",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": 8.7,
+        "ctr": 0,
+        "impr": 21,
+        "clicks": 0
+      },
+      "before": "## Installing it on Windows",
+      "after": "### Where to download Ashmanix\n\nGet the official releases and the downloadable plugin files from the OBS Resources page for Ashmanix: https://obsproject.com/forum/resources/ashmanix-countdown-timer.1610/\n\nFor step‑by‑step install notes, configuration options and the plugin wiki: https://ashmanix.com/wiki/doku.php?id=coding_projects%3Aobs_plugin_countdown_timer\n\nTo inspect the source, file issues or follow development: https://github.com/ashmanix/obs-plugin-countdown\n\nTip: prefer the OBS Resources page for stable releases, the wiki for usage details, and GitHub for source/issue tracking.",
+      "rationale": "Rejected by the numbers check: the proposal introduced 1610, 3, which the page does not have. People searching this query often want the plugin download or its docs. Competitors rank higher because they are the plugin's release page, official wiki or source. Adding a concise “Where to download Ashmanix” section with direct links will increase relevance for the query and should raise CTR. If rankings remain lower, the problem is likely an authority gap (the competitors are primary sources and have stronger backlinks), which requires earning links or being referenced by those primary pages.",
+      "evidence": [
+        "https://obsproject.com/forum/resources/ashmanix-countdown-timer.1610/",
+        "https://ashmanix.com/wiki/doku.php?id=coding_projects%3Aobs_plugin_countdown_timer",
+        "https://obsproject.com/forum/threads/ashmanix-countdown-timer.160421/"
+      ],
+      "competitors": [
+        {
+          "url": "https://obsproject.com/forum/resources/ashmanix-countdown-timer.1610/",
+          "does_better": "Official OBS Resources listing with the downloadable release, release notes and platform/version fields — the primary place users go to get the plugin."
+        },
+        {
+          "url": "https://ashmanix.com/wiki/doku.php?id=coding_projects%3Aobs_plugin_countdown_timer",
+          "does_better": "Author-maintained wiki with detailed install and usage instructions that users consult for configuration and troubleshooting."
+        },
+        {
+          "url": "https://obsproject.com/forum/threads/ashmanix-countdown-timer.160421/",
+          "does_better": "Forum thread with discussion, changelogs and user reports — helps users confirm behaviour, bugs and updates."
+        }
+      ],
+      "authorityGap": true,
+      "gap": "Users searching for “ashmanix countdown timer” usually want the plugin download, install instructions or source. The page describes Ashmanix but does not provide direct links to the OBS Resources release, the author wiki or the GitHub repo — adding a short download/links section will improve relevance and CTR."
+    },
+    {
+      "id": "2026-11-16-math-percentage-increase-calculator",
+      "host": "math.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://math.streamerosai.com/percentage-increase-calculator/",
+      "q": "percentage increase calculator",
+      "kind": "rank",
+      "state": null,
+      "type": "title",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": 60.3,
+        "ctr": 0,
+        "impr": 14,
+        "clicks": 0
+      },
+      "before": "Percentage Increase Calculator: 50 to 65 Is +30%",
+      "after": "Percentage Increase Calculator: Solve % / New / Original",
+      "rationale": "The present title uses an example rather than matching common search intent. People searching \"percentage increase calculator\" expect a tool that computes percent change or finds the original/new value. Competitors use concise, descriptive titles mentioning solve/compute capabilities. The proposed title (56 chars) keeps the page voice, is keyword-centred, and explicitly signals it can solve for percentage, new value or original value, which should raise CTR from impressions and better match the query. Evidence: competing pages use clearer, intent-focused titles and features (see URLs).",
+      "evidence": [
+        "https://www.pearson.com/channels/calculators/percentage-increase-calculator",
+        "https://percentincreasecalculator.com/",
+        "https://percentageincreasecalculator.app/"
+      ],
+      "competitors": [
+        {
+          "url": "https://www.pearson.com/channels/calculators/percentage-increase-calculator",
+          "does_better": "Clear, functional title that describes calculator capabilities (compute % change, new or original)."
+        },
+        {
+          "url": "https://percentincreasecalculator.com/",
+          "does_better": "Direct, query-focused title and immediate explanation of what the tool does; emphasises instant calculation."
+        },
+        {
+          "url": "https://percentageincreasecalculator.app/",
+          "does_better": "Title and UI text explicitly state you can fill any two values and the third is calculated, matching user intent."
+        }
+      ],
+      "authorityGap": false,
+      "gap": "The current title uses a specific example ('50 to 65 Is +30%') which doesn't match the direct query intent. Competing pages use concise, intent-focused titles that promise the ability to compute percent change or solve for the missing value (new/original/percent). A clearer title that explicitly mentions solving % / new / original should increase CTR for the query."
+    },
+    {
+      "id": "2026-11-16-yk-solutions-food-delivery-app-development",
+      "host": "yk.streamerosai.com",
+      "repo": "Yaseenyk/portfolio",
+      "page": "https://yk.streamerosai.com/solutions/food-delivery-app-development/",
+      "q": "desarrollo de app para delivery",
+      "kind": "rank",
+      "state": null,
+      "type": "section",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": 57,
+        "ctr": 0,
+        "impr": 13,
+        "clicks": 0
+      },
+      "before": "The short answer",
+      "after": "### Desarrollo de app para delivery\n\nIf you're searching for \"desarrollo de app para delivery\", this page covers a practical, single-outlet delivery app for restaurants and cloud kitchens. It includes customer ordering by link or QR, a kitchen screen that shows new orders, and payment confirmation before the kitchen starts. Start with a one-outlet pilot and add native apps, rider tracking and multiple outlets later. Send a few lines describing what you want and you get an honest opinion, a written scope and a fixed price, usually within a day.",
+      "rationale": "Competitors outranking us use Spanish headings and copy that directly match the query. Adding a short section with the exact Spanish query phrase and a concise summary of the same offering improves topical and lexical relevance for that query without changing facts. This helps Google see a stronger match and should increase CTR for Spanish searches. This change avoids inventing claims and reuses features already described on the page.",
+      "evidence": [
+        "https://www.freelancer.com.co/projects/mobile-phone/desarrollo-app-para-delivery",
+        "https://factoriabiz.com/subservicios/desarrollo-app-movil-para-delivery/",
+        "https://www.freelancer.ie/projects/app-developer/desarrollo-aplicaci-para-delivery"
+      ],
+      "competitors": [
+        {
+          "url": "https://www.freelancer.com.co/projects/mobile-phone/desarrollo-app-para-delivery",
+          "does_better": "Uses the Spanish query phrase in title and page content; site is in Spanish and clearly matches intent to 'desarrollo app para delivery'."
+        },
+        {
+          "url": "https://factoriabiz.com/subservicios/desarrollo-app-movil-para-delivery/",
+          "does_better": "Spanish-language agency page that targets delivery app development with clear headings, types of delivery apps and an FAQ matching search intent."
+        },
+        {
+          "url": "https://www.freelancer.ie/projects/app-developer/desarrollo-aplicaci-para-delivery",
+          "does_better": "Another Spanish-targeted listing using the query phrase and Spanish content, improving language match for the query."
+        }
+      ],
+      "authorityGap": false,
+      "gap": "The page is English-only and does not contain the exact Spanish query phrase. Competing pages use Spanish content and dedicated headings for \"desarrollo de app para delivery\", so the page may be losing relevance and CTR for that query."
+    },
+    {
+      "id": "2026-11-16-streamerosai-blog-how-to-track-sponsor-deals-as-a-str",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/blog/how-to-track-sponsor-deals-as-a-streamer",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "none",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "No compact, scannable sponsor-card template or printable checklist is present on the page.",
+      "after": "### Quick sponsor-card template (copy this)\nUse one card per sponsor. Keep it short and actionable so you can triage in 10 seconds:\n\n- Brand & contact: person and email/handle\n- Source: inbound / your outreach / marketplace / referral\n- Stage: Prospect · Contacted · Negotiating · Won · Lost\n- Estimated value: best guess; update as scope changes\n- Scope (one line): e.g. “Four 60s reads, one clip, 30-day code”\n- Last contact date\n- Next action + due date: specific task and a deadline (e.g. “Send revised quote — Thu”)\n- Notes: promises, don’t-say items, delivery details, invoice terms, renewal date\n\nWeekly play: spend 15 minutes moving cards, complete overdue next actions, update values, and add three new prospects. Follow-up rule: initial message, a follow-up ~4 days later adding value, a final note a week after then mark Lost if no reply.",
+      "rationale": "Rejected by the numbers check: the proposal introduced 10, 4, which the page does not have. The page is practical but short; adding a single, copyable template/checklist gives readers an immediate, stand-alone asset to use. That increases utility and scannability (helping searchers and Google judge the page as unique and actionable) without inventing new facts. The section draws only on guidance already in the article (fields, stages, weekly review, follow-up cadence).",
+      "evidence": [
+        "https://streamerosai.com/blog/how-to-track-sponsor-deals-as-a-streamer",
+        "https://streamerosai.com/features/sponsor-crm"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely marked the page 'not indexed' because it reads as concise practical advice that is useful but thin and similar to generic CRM/how-to guidance, so it lacks a single scannable asset that makes it uniquely useful on its own."
+    },
+    {
+      "id": "2026-11-16-streamerosai-blog-stream-automation-101",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/blog/stream-automation-101",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "End of page",
+      "after": "### Pre-live automation checklist\n\nFollow these steps before you trust automation on a live stream:\n\n- Tally chores across two or three streams (note alt-tabs, missed clip opportunities, and overlay fixes).\n- Build two simple scene rules (example: \"starting soon → gameplay\" and \"gameplay → BRB\").\n- Test every rule by screen recording; never try it first live.\n- Add one override hotkey that always beats automation.\n- Go live with the rules for a few streams and write down every misfire.\n- Measure CPU and dropped frames with OBS stats while playing your usual game.\n- Only add clip marking or reactive overlays after you’ve fixed misfires and confirmed performance.\n",
+      "rationale": "Google judged the page as low-value because it stays high-level; adding a compact, step-by-step checklist turns the article into a self-contained how-to that readers (and search) can act on immediately. The checklist uses only items already present on the page (tallying, two scene rules, record testing, override hotkey, OBS stats, staged rollout) and keeps the page's plain voice and no new claims.",
+      "evidence": [
+        "https://streamerosai.com/blog/stream-automation-101"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped this page because it reads as high-level advice without a single, clearly actionable checklist or unique, standalone section that would make it directly useful on its own."
+    },
+    {
+      "id": "2026-11-16-spotai-hi-guides",
+      "host": "spotai.streamerosai.com",
+      "repo": "Yaseenyk/spotai-website",
+      "page": "https://spotai.streamerosai.com/hi/guides/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "सीधे कंटेंट पर जाएँ SpotAI हिन्दी English\nहिन्दी\nతెలుగు\nதமிழ்\nಕನ್ನಡ\nमराठी\nবাংলা\nजिम के लिए फ्री पायलट\n## गाइड\nभारत में ट्रेनिंग करने वालों और जिम चलाने वालों के लिए छोटे, काम के जवाब।\nजिम ओनर्स\n## जिम मेंबर्स को छोड़कर जाने से कैसे रोकें\nनए मेंबर्स को वापस आते रहने और रिन्यू करने के लिए 30 दिन का प्लान。\nमेंबर्स\n## हैदराबाद में जिम फीस: 2026 में मेंबरशिप कितने की है\nहैदराबाद में जिम हर महीने कितनी फीस लेते हैं, और कौन-से एक्स्ट्रा खर्च पूछने चाहिए。\nजिम ओनर्स\n## जिम फीस समय पर कैसे वसूलें\nफीस पॉलिसी, रिमाइंडर का शेड्यूल और हफ़्ते का बकाया रूटीन, जिससे लेट पेमेंट कम हों。\nमेंबर्स\n## स्क्वैट में घुटने अंदर जाना: इसे कैसे ठीक करें\nस्क्वैट में घुटने अंदर क्यों जाते हैं, और 5 उपाय जो आप आज से कर सकते हैं。\nमेंबर्स\n## रोटी, चावल, दाल और दूसरे भारतीय खाने की कैलोरी\nएक रोटी, एक इडली, एक कटोरी दाल: रोज़ के भारतीय खाने की हर सर्विंग की कैलोरी और प्रोटीन。\nमेंबर्स\n## शुरुआती लोगों के लिए जिम वर्कआउट प्लान\n3 दिन का फुल बॉडी प्लान और 4 दिन का अपर/लोअर स्प्लिट, सेट, रेप्स और आगे बढ़ने के तरीके के साथ。\nजिम ओनर्स\n## जिम फीस रिमाइंडर मैसेज टेम्पलेट\nअंग्रेज़ी और हिंदी में भेजने को तैयार WhatsApp रिमाइंडर, ड्यू डेट से पहले, उसी दिन और उसके बाद。\nजिम ओनर्स\n## जिम अटेंडेंस रजिस्टर: फ्री शीट\nExcel या Google Sheets के लिए फ्री अटेंडेंस शीट, और तीन जाँच जिनसे मेंबर रिन्यू करते रहते हैं。\nWhatsApp ऐप डाउनलोड",
+      "after": "### इस पेज को कैसे इस्तेमाल करें\n- अपना रोल चुनें: \"जिम ओनर\" या \"मेंबर\" देखकर पहले वही सेक्शन खोलें जो आपकी ज़रूरत के मुताबिक़ हो।\n- एक काम तुरंत कर लें: अगर फीस वसूलना है तो \"रिमाइंडर टेम्पलेट\" इस्तेमाल करें; अटेंडेंस‑शीट तुरंत डाउनलोड कर के लगाएँ।\n- ट्रेनिंग और फॉर्म सुधार के लिए: शुरुआत में \"वर्कआउट प्लान\" और \"स्क्वैट फिक्स\" पढ़ें और टेम्पलेट्स के निर्देश फ़ॉलो करें।\n- खाने की प्लानिंग: रोज़ के भारतीय खाने की कैलोरी शीट से अपनी सर्विंग्स नोट करें ताकि डाइट और वर्कआउट एक साथ काम करें।\n- छोटे चेकलिस्ट बनाएँ: हर नया मेंबर के लिए 30‑दिन रिटेंशन प्लान और अटेंडेंस चेक्स लागू करें।\n- परखें और बेहतर करें: किसी भी गाइड को पढ़कर उसे तुरंत अपने जिम की प्रक्रिया में आज़माएँ, फिर रिज़ल्ट देखकर समायोजन करें।",
+      "rationale": "Adding a concise \"how to use\" section turns the page from a thin link list into a practical hub: it gives immediate, role‑based actions visitors can take without leaving the page, differentiating it from the individual guide pages and improving perceived value for indexing.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "The page is mostly a short list of links with little unique, actionable content — Google views it as thin and redundant compared to the linked guide pages."
+    },
+    {
+      "id": "2026-11-16-math-percent-change-calculator",
+      "host": "math.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://math.streamerosai.com/percent-change-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Insert this new section before the \"Frequently asked questions\" heading.",
+      "after": "### How to report percent change clearly\n\nWhen you present a percent change, small clarifications make it easier to interpret:\n\n- State the direction and the base: say \"from X to Y\" or \"an increase/decrease vs the old value\" so readers know what was measured.\n- Give the absolute change alongside the percent (for example, a change of +10 and +25%) so both scale and proportion are clear.\n- Name the timeframe or context (e.g. year-over-year, quarter) so the comparison is meaningful.\n- Use percent difference when neither number is the natural baseline.\n- Avoid giving a percentage when the old value is zero or very small; report the absolute change instead.\n- In spreadsheets, use =(B1-A1)/ABS(A1) and format as a percentage.\n\nThese details help readers use percentages correctly and avoid common misinterpretation.",
+      "rationale": "Adds a practical, standalone guidance section (using only material already on the page and general best practice) to increase the page's unique usefulness and address the \"thin/repeated\" reason Google gave for not indexing it.",
+      "evidence": [
+        "https://math.streamerosai.com/percentage-difference-calculator/",
+        "https://math.streamerosai.com/percentage-decrease-calculator/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely sees the page as thin or redundant—mostly a simple calculator and formula repeated elsewhere—so it needs one clear, useful standalone section to raise value."
+    },
+    {
+      "id": "2026-11-16-math-date-calculator",
+      "host": "math.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://math.streamerosai.com/date-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Skip to content StreamerOS Math Calculators\nAll calculators\nFree · instant · runs in your browser\n## Date Calculator\nAdd or subtract years, months and days from any date, and see the new date and the day of the week.\nStart date\nOperation Add Subtract\nYears\nMonths\nDays\nChoose a start date and enter whole numbers for years, months and days.\n## Examples\nStart Change Result\n4 November 2026 + 30 days 4 December 2026 (Friday)\n1 January 2026 + 90 days 1 April 2026\n31 January 2026 + 1 month 28 February 2026\n15 March 2026 - 6 months 15 September 2025\n## When people use it\nPayment terms: an invoice dated 1 December 2026 with net 45 terms is due on 15 January 2027, a Friday.\nDeadlines and notice periods: 90 days from 14 November 2026 is 12 February 2027.\nLooking back: 60 days before 1 March 2026 is 31 December 2025.\nLeap years: 31 January 2028 plus 1 month is 29 February 2028.\n## Why months need care\nA month is not a fixed number of days, so adding a month moves to the same day number in the next month. When that day does not exist, the result is the last day of the month. To measure the gap between two dates instead, use the days between dates calculator .\n## Weeks, days and chained months\nAdding weeks is adding 7 days each: 4 weeks after 4 November 2026 is 28 days later, 2 December 2026. Months are different because the end-of-month rule is applied once, to the final result. Adding 2 months to 31 January 2026 gives 31 March 2026, the same day number. Adding 1 month twice, one step at a time, gives 28 February and then 28 March, because the first step already lost the 31st. So when you need a date a number of months ahead, add all the months in one go from the original date.\nThe calculator works on calendar dates, not timestamps, so a daylight-saving change never moves the answer by a day. It does not know public holidays or weekends: if a deadline falls on one, check the rule in the contract or law that sets it, since some roll to the next working day and some do not. The guide to counting days between dates covers inclusive counting and working days.\n## Frequently asked questions\nHow do I add days to a date? Choose the start date, leave the operation on Add, enter the number of days, and read the result. 30 days after 4 November 2026 is 4 December 2026, a Friday.\nHow do I find the date 90 days from today? Leave the start date as today and enter 90 in Days. Starting from 1 January 2026, 90 days later is 1 April 2026.\nWhat happens when I add a month to the 31st? If the target month is shorter, the date moves to its last day. 31 January 2026 plus 1 month is 28 February 2026, and in a leap year it is 29 February.\nIn what order are years, months and days applied? Years and months are added first, as whole calendar months, and then the days. Doing the months first matters because month lengths vary.\nHow do I go back in time? Change the operation to Subtract. For example, subtracting 6 months from 15 March 2026 gives 15 September 2025.\nWhat is the date 90 days from 14 November 2026? 12 February 2027, a Friday. Add 90 days to the start date and the calculator also shows the weekday.\nWhat is 29 February plus one year? The result is 28 February of the next year when that year is not a leap year. 29 February 2028 plus 1 year is 28 February 2029.\nDoes this count working days? No, it adds calendar days. To count working days between two dates, use the days between dates calculator.\n## Related tools\nDays Between Dates Calculator Age Calculator Hours Calculator Percentage Calculator\nLast reviewed 2026-11-16 .",
+      "after": "### How this calculator computes a result\n- Step 1 — years and months: the tool first adds whole years and months as calendar months to the start date. That means the month number and year change, but the day number is preserved where possible.\n- Step 2 — end-of-month rule: if the target month does not have the same day number, the date moves to that month’s last day (for example, adding one month to 31 January gives the last day of February).\n- Step 3 — days and weeks: days are added last; weeks are treated as 7-day blocks. This is why adding all months at once can differ from adding one month repeatedly.\n- Notes and limits: the calculator uses calendar dates (not timestamps), so daylight-saving changes do not affect the result. It does not apply business-day or holiday rules — use the days between dates tool or check the relevant contract or law for those adjustments.",
+      "rationale": "The page is mostly UI labels and short examples; adding a concise, step-by-step “How this calculator computes a result” section gives clear, original explanatory content that answers common user confusion (order of operations, end-of-month rule, DST and business-day limits). That raises the page’s informational value without adding new facts, making it less likely to be treated as thin content.",
+      "evidence": [
+        "https://math.streamerosai.com/guides/counting-days-between-dates/",
+        "https://math.streamerosai.com/days-between-dates-calculator/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped the page because it is short, mostly UI labels/examples and repeats basic rules already found elsewhere, so it looks thin and low-value on its own."
+    },
+    {
+      "id": "2026-11-16-math-hours-calculator",
+      "host": "math.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://math.streamerosai.com/hours-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "No dedicated 'How to use' section exists; the page has examples and small notes scattered under headings like \"The method\", \"Worked examples\" and \"Common mistakes\".",
+      "after": "## How to use this calculator\n\n- Enter start and end times on a 24‑hour clock (for example 17:30, not 5:30).\n- Enter unpaid break length in minutes (one hour = 60). The calculator subtracts breaks from worked minutes.\n- If an end time is earlier than the start, the shift is treated as ending the next day (so night shifts work correctly).\n- Press “Add another day” for each shift to get a per‑day and total result in both hours:minutes and decimal hours.\n- To convert total hours to pay, multiply the decimal hours by your hourly rate. Keep extra decimal digits until the final pay figure to reduce rounding error.\n- If start and end are identical the row counts as zero minutes, not 24 hours.",
+      "rationale": "Adding a clear, single 'How to use' section organizes existing instructions and common pitfalls into a concise, scannable guide that increases user value and reduces the appearance of thin or repetitive content.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped the page because it reads as a short tool with sparse explanatory content and no single concise 'how to use' section that helps users quickly understand input rules and real‑world use."
+    },
+    {
+      "id": "2026-11-16-math-time-calculator",
+      "host": "math.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://math.streamerosai.com/time-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Add or subtract two lengths of time. Enter days, hours, minutes and seconds, and the result is shown in words and as total hours and minutes.",
+      "after": "### How to use this calculator (step‑by‑step)\n\n1. Enter the first length of time in the Days / Hours / Minutes / Seconds boxes. Any whole number is allowed (for example, enter 90 in Minutes and the calculator will carry it to hours).\n2. Enter the second length of time the same way.\n3. Choose Add (+) or Subtract (−). The calculator converts each time to seconds, performs the operation, then converts back so carrying is always correct.\n4. Read the result in words and as totals (total hours and total minutes). A negative result means the second time was longer.\n\nTips\n- To add more than two times, add two first and then use the result as the first time for the next addition.\n- If you need calendar-aware calculations (months, daylight saving, start/end times), use the date or hours calculators instead.",
+      "rationale": "Adding a concise, practical “How to use” section increases unique, explanatory content without inventing facts. It answers common user tasks (how to enter numbers, what the outputs mean, how to chain additions, and when not to use the tool), making the page a self-contained reference and reducing the appearance of being thin or low-value.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped the page because it’s short and mostly a tool with little explanatory content that would make it clearly useful as a standalone reference."
+    },
+    {
+      "id": "2026-11-16-esports-guides-cod-mobile-tournament-rules-templ",
+      "host": "esports.streamerosai.com",
+      "repo": "",
+      "page": "https://esports.streamerosai.com/guides/cod-mobile-tournament-rules-template/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "",
+      "after": "## Disputes and appeals\nTemplate: If a team disputes a match result, the captain must notify the organiser or onsite referee immediately and submit the match recording and any relevant proof (in‑game names, match ID or screenshot). The referee will review the submitted evidence and may request additional logs or recordings from either team. The referee’s decision on result changes, penalties or replays is final for the event; the organiser will notify both teams and publish any result changes.\nNote: As above, require players to keep match recordings and evidence for [7] days and remind teams that officials have discretion in unclear cases. Record the outcome of every dispute in your event log so future decisions are consistent and transparent.",
+      "rationale": "Adding a short, actionable disputes-and-appeals section fills a practical gap: the page lists rules but didn’t tell organisers how to run appeals. This makes the page more standalone and immediately useful to event organisers without adding new facts.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google marked the page as thin/low-value because it lists template clauses but lacks a short, practical section organisers can use verbatim to handle disputes and appeals, which would make the page more directly useful and unique."
+    },
+    {
+      "id": "2026-11-16-esports-guides-bgmi-team-names-ideas",
+      "host": "esports.streamerosai.com",
+      "repo": "",
+      "page": "https://esports.streamerosai.com/guides/bgmi-team-names-ideas/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "none",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## Check before you register",
+      "after": "## Team-name checklist you can use (copy and paste)\n\nUse this short checklist before you submit a name to an organiser or print jerseys:\n\n- Say the name out loud and confirm every player likes it.\n- Keep the display name short (12 characters or fewer is safest for scoreboards).\n- Prefer two short words that fit a scoreboard row and are easy to shout.\n- Avoid copying an existing esports team, brand or creator name.\n- Pick a 2–4 letter tag and agree the in-game format for all players.\n- Search the exact spelling in quotes on Google and on social sites to spot matches.\n- Check the tournament’s team list and the game/event limits for name length and symbols.\n- Avoid long strings of symbols that can break registration sheets or overlays.\n- Submit the exact spelling on the registration form and note the tag format for referees.\n\nThis turns the guide’s tips into a simple sign-up routine you can follow every event.",
+      "rationale": "Rejected by the numbers check: the proposal introduced 2, which the page does not have. The page provides useful ideas but reads like a short list; adding a compact, actionable checklist (copyable and step-by-step) gives unique, immediate value for teams and organisers and addresses Google's note about thin or low-value pages without introducing new facts.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped it because the page is short and mostly gives generic name lists without a concise, copyable action checklist that teams or organisers can use immediately."
+    },
+    {
+      "id": "2026-11-16-yk-products-tool-sites",
+      "host": "yk.streamerosai.com",
+      "repo": "Yaseenyk/portfolio",
+      "page": "https://yk.streamerosai.com/products/tool-sites/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://yk.streamerosai.com/products/",
+      "after": "Free tool sites case study",
+      "rationale": "Add a clear internal link from the main Products page so Googlebot can find and fetch this URL; an explicit, descriptive anchor provides context and helps indexing without changing page content.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because there are no important internal links pointing to the page."
+    },
+    {
+      "id": "2026-11-16-yk-blog-crawled-currently-not-indexed-blank",
+      "host": "yk.streamerosai.com",
+      "repo": "Yaseenyk/portfolio",
+      "page": "https://yk.streamerosai.com/blog/crawled-currently-not-indexed-blank-render-bug/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://yk.streamerosai.com/blog/",
+      "after": "Fix for Framer Motion opacity bug",
+      "rationale": "Search Console reports this URL as discovered but not fetched, which usually means Google needs a clear internal path from a meaningful page to notice and re-fetch it. Linking the blog index to this post with concise, descriptive anchor text both helps discoverability and signals relevance to crawlers. The blog index is the most topical site page to host that link, so adding it there is the simplest way to get Google to fetch the page.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google has only discovered the URL and not fetched it, likely because nothing important on the site links to it."
+    },
+    {
+      "id": "2026-11-16-streamerosai-vs-streamer-bot",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/vs/streamer-bot",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://streamerosai.com/vs",
+      "after": "Compare streamerOS with Streamer.bot",
+      "rationale": "Add a clear, contextual internal link from the site’s comparisons hub to this specific Streamer.bot comparison so Google can find and fetch the page; the /vs hub is the most relevant existing page to link from and signals importance without inventing new claims.",
+      "evidence": [
+        "https://streamerosai.com/vs/streamer-bot",
+        "https://streamerosai.com/vs"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn’t fetched it because there are no important internal links pointing to this comparison page."
+    },
+    {
+      "id": "2026-11-16-streamerosai-blog-ai-tools-for-streamers-the-setup-th",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/blog/ai-tools-for-streamers-the-setup-that-works",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://streamerosai.com/features/ai-sidekick",
+      "after": "AI tools for streamers guide",
+      "rationale": "Add a contextual link from the AI Sidekick feature guide to this blog so Google sees a relevant internal path to the article and users can jump from the feature to a practical setup walkthrough. Internal links are the simplest way to turn a 'Discovered - currently not indexed' URL into a fetched, indexable page.",
+      "evidence": [
+        "https://streamerosai.com/blog/ai-tools-for-streamers-the-setup-that-works",
+        "https://streamerosai.com/features/ai-sidekick"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because there are few or no meaningful internal links pointing to the page."
+    },
+    {
+      "id": "2026-11-16-spotai-guides-gym-attendance-register",
+      "host": "spotai.streamerosai.com",
+      "repo": "Yaseenyk/spotai-website",
+      "page": "https://spotai.streamerosai.com/guides/gym-attendance-register/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://spotai.streamerosai.com/features/check-in/",
+      "after": "Free gym attendance Excel sheet",
+      "rationale": "Adding a clear internal link from the site’s attendance/check‑in feature page to this guide gives Google a direct path to crawl and signals the guide’s relevance; the anchor text describes the page’s offering and helps both users and search engines find the free attendance sheet.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but did not fetch it because the page lacks prominent internal links from higher‑priority pages, so it appears low priority to the crawler."
+    },
+    {
+      "id": "2026-11-16-spotai-guides-gym-software-for-small-gyms",
+      "host": "spotai.streamerosai.com",
+      "repo": "Yaseenyk/spotai-website",
+      "page": "https://spotai.streamerosai.com/guides/gym-software-for-small-gyms/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://spotai.streamerosai.com/features/check-in/",
+      "after": "Gym software for small gyms",
+      "rationale": "Google's status message says the page was discovered but not fetched because nothing important links to it. Adding a clear internal link from the closely related 'Gym attendance app: QR check-in...' feature page gives Google a direct, contextually relevant path to crawl and signals the page's purpose. Place the anchor where the check-in page explains front-desk workflows or desk-first design so the link is natural and useful to readers.",
+      "evidence": [
+        "https://spotai.streamerosai.com/guides/gym-software-for-small-gyms/",
+        "https://spotai.streamerosai.com/features/check-in/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but has not fetched it because nothing important links to the page from the site."
+    },
+    {
+      "id": "2026-11-16-solar-mr-rooftop-solar-technical-specification",
+      "host": "solar.streamerosai.com",
+      "repo": "Yaseenyk/solar-site",
+      "page": "https://solar.streamerosai.com/mr/rooftop-solar-technical-specifications-india/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://solar.streamerosai.com/pm-surya-ghar-vendor-guide/",
+      "after": "Rooftop solar technical checklist",
+      "rationale": "Add a clear, contextual internal link from the Vendor Guide page to this technical-specifications checklist so Google can find and fetch the page; the Vendor Guide is closely related and likely to be crawled, and the proposed anchor text describes the page accurately in 3–8 words.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google hasn’t fetched the page because there are no important internal links pointing to it, so it remains discovered but not indexed."
+    },
+    {
+      "id": "2026-11-16-calc-hourly-to-salary-calculator",
+      "host": "calc.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://calc.streamerosai.com/hourly-to-salary-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://calc.streamerosai.com/salary-calculator/",
+      "after": "Hourly to Salary Calculator",
+      "rationale": "Because Google reported 'nothing important links to it', adding a contextual internal link from the closely related Salary Calculator page will give crawlers a direct, relevant path to discover and fetch this page. Use the anchor 'Hourly to Salary Calculator' in the related tools or introduction section on the Salary Calculator page so the link is topically natural and likely to be followed.",
+      "evidence": [
+        "https://calc.streamerosai.com/hourly-to-salary-calculator/",
+        "https://calc.streamerosai.com/salary-calculator/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but has not fetched it because nothing important on the site links to it, so there is no strong internal signal to prompt crawling."
+    },
+    {
+      "id": "2026-11-16-calc-salary-to-hourly-calculator",
+      "host": "calc.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://calc.streamerosai.com/salary-to-hourly-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://calc.streamerosai.com/salary-calculator/",
+      "after": "Salary to hourly calculator",
+      "rationale": "Add a clear internal link from the main Salary Calculator page to this tool using descriptive anchor text. That provides an on-site path for Google to follow, signals relevance, and is the simplest way to get the discovered URL crawled and indexed. Place it with the 'Related tools' or alongside other conversion calculators.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but did not fetch it because nothing important on the site links to it, so it lacks an on-site signal for crawling."
+    },
+    {
+      "id": "2026-11-16-calc-emi-calculator",
+      "host": "calc.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://calc.streamerosai.com/emi-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://calc.streamerosai.com/",
+      "after": "EMI calculator and amortization table",
+      "rationale": "Add a clear internal link from the site's main calculators index to give Google a crawl path. The Search Console note 'nothing important links to it' indicates discovery without fetch; a prominent link from the homepage or calculators hub is the most reliable, low-risk change to encourage Google to fetch and index the EMI calculator.",
+      "evidence": [
+        "https://calc.streamerosai.com/emi-calculator/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google says nothing important links to this page, so it knows the URL but has no crawl path to fetch and index it."
+    },
+    {
+      "id": "2026-11-16-calc-home-loan-emi-calculator",
+      "host": "calc.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://calc.streamerosai.com/home-loan-emi-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://calc.streamerosai.com/income-tax-calculator-india/",
+      "after": "Home Loan EMI Calculator",
+      "rationale": "Add a contextual internal link from the Income Tax Calculator page to the EMI calculator using the provided anchor text. The EMI page references tax deductions and already suggests the income tax calculator; adding a reciprocal link gives Google a clear crawl path and signals relevance, increasing the chance the discovered URL is fetched and indexed.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because there are no strong internal links from other important pages on the site pointing to it."
+    },
+    {
+      "id": "2026-11-16-calc-car-loan-emi-calculator",
+      "host": "calc.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://calc.streamerosai.com/car-loan-emi-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://calc.streamerosai.com/",
+      "after": "Car Loan EMI Calculator",
+      "rationale": "Add a clear internal link from the site homepage (or main calculators index) to this calculator using the suggested anchor text so Google can find and crawl the page; the 'Discovered - currently not indexed' status typically means the page exists but lacks important internal links that signal its relevance.",
+      "evidence": [
+        "https://calc.streamerosai.com/car-loan-emi-calculator/",
+        "https://calc.streamerosai.com/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but has not fetched it because there are no prominent internal links pointing to the calculator from the rest of the site."
+    },
+    {
+      "id": "2026-11-16-images-jpeg-compressor",
+      "host": "images.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://images.streamerosai.com/jpeg-compressor/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://images.streamerosai.com/image-compressor/",
+      "after": "JPEG compressor (no upload)",
+      "rationale": "Search engines often discover pages by following internal links. The Image Compressor overview is the most relevant existing page; adding a clear anchor such as “JPEG compressor (no upload)” gives Google an obvious path to crawl this tool page and matches the page's privacy-first message without changing content.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because there are no important internal links pointing to it."
+    },
+    {
+      "id": "2026-11-16-images-png-to-jpg",
+      "host": "images.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://images.streamerosai.com/png-to-jpg/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://images.streamerosai.com/jpg-to-png/",
+      "after": "PNG to JPG Converter",
+      "rationale": "The page is 'Discovered - currently not indexed' because nothing important on the site links to it. Adding a clear internal link from the closely related JPG-to-PNG tool page (or the main Image Tools page) with the anchor text 'PNG to JPG Converter' will help Google find and prioritise crawling this URL. Keep the anchor concise and place it in the related tools or conversion-tools section so the link is seen as relevant.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but has not fetched it because it has no important internal links pointing to it, so the crawler isn't prioritising the page."
+    },
+    {
+      "id": "2026-11-16-images-avif-to-jpg",
+      "host": "images.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://images.streamerosai.com/avif-to-jpg/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://images.streamerosai.com/",
+      "after": "AVIF to JPG Converter",
+      "rationale": "The page is marked \"Discovered - currently not indexed\" with Google noting \"nothing important links to it.\" Adding a concise internal link from the site's main Image Tools hub to this AVIF-to-JPG tool (using the provided anchor text) gives Google an easy path to crawl the URL, improves the tool's visibility within the site, and signals its relevance to crawlers without changing the page content.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google hasn't fetched the page because nothing important links to it; adding a clear internal link from a high-level site page will help discovery and indexing."
+    },
+    {
+      "id": "2026-11-16-images-image-to-jpg",
+      "host": "images.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://images.streamerosai.com/image-to-jpg/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://images.streamerosai.com/",
+      "after": "Image to JPG Converter",
+      "rationale": "Adding a clear, descriptive link from the main Image Tools page gives Google an internal path to crawl and signals the page is relevant; the concise anchor text matches the page's purpose and helps discovery without changing content.",
+      "evidence": [
+        "https://images.streamerosai.com/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't crawled it because nothing important on the site links to it, so it lacks an internal path for discovery."
+    },
+    {
+      "id": "2026-11-16-images-guides",
+      "host": "images.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://images.streamerosai.com/guides/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://images.streamerosai.com/guides/reduce-image-size/",
+      "after": "Guides for image size and formats",
+      "rationale": "Google's message says \"nothing important links to it.\" Adding a clear internal link from the closely related guide page (How to reduce image file size) to the Guides index will signal relevance and help Google fetch and index the page. Use the suggested anchor text so the link is descriptive and consistent with the page's heading.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but didn't fetch it because there are few or no internal links pointing to this Guides index, so it appears unimportant to crawlers."
+    },
+    {
+      "id": "2026-11-16-exams-jee-main-exam-pattern",
+      "host": "exams.streamerosai.com",
+      "repo": "Yaseenyk/exams",
+      "page": "https://exams.streamerosai.com/jee-main/exam-pattern/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://exams.streamerosai.com/jee-main/",
+      "after": "JEE Main exam pattern",
+      "rationale": "Google's message says 'nothing important links to it.' Adding a clear internal link from the site's main JEE Main page will create a direct crawl path and give the page contextual relevance via descriptive anchor text, increasing the chance Google will fetch and index it. Place the link in the overview or a related-resources list on the JEE Main page so users and crawlers can find the exam pattern quickly.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google has discovered the URL but not fetched it because there are no important internal links pointing to the page."
+    },
+    {
+      "id": "2026-11-16-exams-neet-ug-exam-pattern",
+      "host": "exams.streamerosai.com",
+      "repo": "Yaseenyk/exams",
+      "page": "https://exams.streamerosai.com/neet-ug/exam-pattern/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://exams.streamerosai.com/neet-ug/",
+      "after": "NEET exam pattern and marks",
+      "rationale": "Add a clear, contextual internal link from the NEET hub page to this exam-pattern page. Google explicitly said the URL is known but not fetched because \"nothing important links to it\" — adding a descriptive anchor on the main NEET page gives crawlers a direct path and improves the page's discoverability without changing facts or content. The anchor text matches user intent and keeps site structure consistent with other internal links.",
+      "evidence": [
+        "https://exams.streamerosai.com/neet-ug/",
+        "https://exams.streamerosai.com/neet-ug/exam-pattern/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google reports the URL as \"Discovered - currently not indexed\" because nothing important on the site links to it, so Google has no strong crawl path to fetch the page."
+    },
+    {
+      "id": "2026-11-16-esports-tools",
+      "host": "esports.streamerosai.com",
+      "repo": "",
+      "page": "https://esports.streamerosai.com/tools/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://esports.streamerosai.com/",
+      "after": "Free tournament tools hub",
+      "rationale": "Google's report explicitly says \"nothing important links to it.\" Adding a clear, descriptive internal link from the homepage (a high-priority page) with the anchor text 'Free tournament tools hub' gives crawlers a direct path to this tools index, signals its importance, and makes it far more likely to be fetched and indexed.",
+      "evidence": [
+        "https://esports.streamerosai.com/",
+        "https://esports.streamerosai.com/tools/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because nothing important links to this page from the site, so crawlers don't prioritise it."
+    },
+    {
+      "id": "2026-11-16-esports-tools-brackets",
+      "host": "esports.streamerosai.com",
+      "repo": "",
+      "page": "https://esports.streamerosai.com/tools/brackets/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://esports.streamerosai.com/",
+      "after": "Tournament bracket generator and TV",
+      "rationale": "The page is known to Google but not fetched because it lacks prominent internal links. Adding a clear, descriptive link from the site homepage (the most authoritative internal page listed) will raise its importance for crawling and indexing. The anchor text is concise, matches the tool’s function (generator + live/TV view) and fits the site’s plain voice.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn’t fetched it because nothing important links to it from the site, so it signals low importance to crawlers."
+    },
+    {
+      "id": "2026-11-16-esports-tools-display-screen",
+      "host": "esports.streamerosai.com",
+      "repo": "",
+      "page": "https://esports.streamerosai.com/tools/display-screen/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-16",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://esports.streamerosai.com/tools/points-table/",
+      "after": "Online scoreboard for TV and OBS",
+      "rationale": "The points-table tool is a natural source of traffic for the display-screen (users create standings there then want a big-screen view). Adding a clear internal link with descriptive anchor text on the points-table page creates an important, contextual connection so Google can find and fetch the display-screen URL and understand its purpose.",
+      "evidence": [
+        "https://esports.streamerosai.com/tools/display-screen/",
+        "https://esports.streamerosai.com/tools/points-table/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because it has no prominent internal links from related tool pages on the site."
     }
   ],
   "learnings": {}
