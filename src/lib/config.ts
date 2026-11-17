@@ -94,6 +94,7 @@ export interface Tab {
 export const TABS: Tab[] = [
   { id: "home", href: "/", title: "Home", short: "Home", icon: "overview", group: "home", filters: "all", what: "Your sites at a glance. Tap a box to see more." },
   { id: "watch", href: "/watch/", title: "Watch visitors", short: "Watch", icon: "live", group: "visitors", filters: "all", what: "Who really visits, what they do, and what needs fixing. From our own tracker, not Google." },
+  { id: "changes", href: "/changes/", title: "What worked", short: "What worked", icon: "rankings", group: "visitors", filters: "none", what: "Every change we made, and whether it helped, hurt or did nothing. Read from Search Console and the index checks." },
   { id: "visitors", href: "/visitors/", title: "All visitor numbers", short: "Overview", icon: "audience", group: "visitors", filters: "all", what: "Google Analytics, Search Console, Bing and Clarity in one place." },
   { id: "sources", href: "/sources/", title: "Where visitors come from", short: "Sources", icon: "sources", group: "visitors", filters: "all", what: "Which websites, apps and searches sent people to you." },
   { id: "pages", href: "/pages/", title: "Pages", short: "Top pages", icon: "pages", group: "visitors", filters: "all", what: "Which pages people open the most." },

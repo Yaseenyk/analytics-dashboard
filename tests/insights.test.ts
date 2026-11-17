@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 // @ts-expect-error plain JavaScript, no type declarations
-import { addAlerts, crawlStart, crawlTick, ranksRun, recordHealth, watchRuns } from "../worker/src/insights.js";
+import { addAlerts, buildQueue, crawlStart, crawlTick, queueSummary, ranksRun, recordHealth, watchRuns } from "../worker/src/insights.js";
 
 class KV {
   m = new Map<string, string>();
@@ -179,5 +179,45 @@ describe("failed workflow watch", () => {
   it("ignores old failures and repos it cannot read", async () => {
     vi.stubGlobal("fetch", async (u: RequestInfo | URL) => (String(u).includes("/o/gone/") ? new Response("no", { status: 404 }) : new Response(JSON.stringify({ workflow_runs: [run(9, ".github/workflows/a.yml", "failure", 50)] }))));
     expect(await watchRuns(env, ["o/gone", "o/r"])).toBe(0);
+  });
+});
+
+describe("buildQueue (the indexing ledger)", () => {
+  const idx = (indexed: string[], out: [string, string, string | null][]) => ({ "x.test": { indexedUrls: indexed, urls: out } });
+  const A = "https://x.test/a/", B = "https://x.test/b/", C = "https://x.test/c/", D = "https://x.test/d/";
+
+  it("puts every page that is not in Google on the list, and keeps noindex pages out of it", () => {
+    const q = buildQueue(null, idx([A], [[B, "URL is unknown to Google", null], [C, "Excluded by ‘noindex’ tag", null], [D, "Crawled - currently not indexed", "2026-11-10"]]), "2026-11-17T01:00:00Z");
+    expect(q[A]).toMatchObject({ state: "indexed" });
+    expect(q[B]).toMatchObject({ state: "needs", priority: 4 });
+    expect(q[C]).toMatchObject({ state: "ignored" });
+    expect(q[D]).toMatchObject({ state: "needs", priority: 2, crawl: "2026-11-10" });
+    expect(queueSummary(q)).toMatchObject({ needs: 2, indexed: 1, ignored: 1, dropped: 0 });
+  });
+
+  it("sends a page that left Google straight back to the top of the list", () => {
+    const first = buildQueue(null, idx([A], []), "2026-11-10T01:00:00Z");
+    const q = buildQueue(first, idx([], [[A, "Crawled - currently not indexed", null]]), "2026-11-17T01:00:00Z");
+    expect(q[A]).toMatchObject({ state: "needs", droppedAt: "2026-11-17", drops: 1, priority: 1, event: "dropped" });
+    expect(queueSummary(q).dropped).toBe(1);
+  });
+
+  it("moves a requested page back after 14 days, and to indexed when Google takes it", () => {
+    const first = buildQueue(null, idx([], [[B, "URL is unknown to Google", null]]), "2026-11-01T01:00:00Z");
+    const asked = { [B]: { ...first[B], state: "requested", requestedAt: "2026-11-02" } };
+    expect(buildQueue(asked, idx([], [[B, "URL is unknown to Google", null]]), "2026-11-10T01:00:00Z")[B].state).toBe("requested");
+    expect(buildQueue(asked, idx([], [[B, "URL is unknown to Google", null]]), "2026-11-17T01:00:00Z")[B]).toMatchObject({ state: "needs", event: "still-out", asked: 1 });
+    expect(buildQueue(asked, idx([B], []), "2026-11-12T01:00:00Z")[B]).toMatchObject({ state: "indexed", event: "got-in" });
+  });
+
+  it("ignores a failed inspection instead of calling the page dropped", () => {
+    const first = buildQueue(null, idx([A], []), "2026-11-10T01:00:00Z");
+    const q = buildQueue(first, idx([], [[A, "Could not inspect (429)", null]]), "2026-11-17T01:00:00Z");
+    expect(q[A].state).toBe("indexed");
+  });
+
+  it("forgets pages that left the sitemap", () => {
+    const first = buildQueue(null, idx([A, B], []), "2026-11-10T01:00:00Z");
+    expect(Object.keys(buildQueue(first, idx([A], []), "2026-11-17T01:00:00Z"))).toEqual([A]);
   });
 });

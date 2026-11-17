@@ -3,7 +3,7 @@
 // from Google when the dashboard opens and cached for a few minutes. The Google service account key is a
 // Worker secret (GA_SERVICE_ACCOUNT_JSON); it is never sent to the browser. Aggregate numbers only.
 
-import { addAlerts, crawlStart, crawlStatus, crawlTick, ranksRun, recordHealth, watchRuns } from './insights.js';
+import { addAlerts, crawlStart, crawlStatus, crawlTick, ranksRun, recordHealth, saveQueue, watchRuns } from './insights.js';
 
 const PROPERTY = '562159345';
 const RANGES = [
@@ -505,7 +505,7 @@ async function reconcileHealth(env, body) {
 
 const crawlHooks = { hosts: Object.keys(HEALTH_SITES), sitemapUrlsFor, pool };
 const CRAWL_COOLDOWN_MIN = 90;
-const KV_FILES = { 'history.json': 'history:index', 'alerts.json': 'alerts', 'ranks.json': 'ranks:file', 'crawl.json': 'crawl:file' };
+const KV_FILES = { 'history.json': 'history:index', 'queue.json': 'index:queue', 'alerts.json': 'alerts', 'ranks.json': 'ranks:file', 'crawl.json': 'crawl:file' };
 
 const inflight = new Map();
 // ---- the saved copy (database) of GA4 and Search Console ----
@@ -638,6 +638,10 @@ export default {
     if (url.pathname === '/optimizer/action' && req.method === 'POST') return optimizerAction(req, env, ch);
     if (url.pathname === '/status/crawl' && req.method === 'GET') {
       return new Response(JSON.stringify(await crawlStatus(env)), { headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    }
+    if (req.method === 'GET' && url.pathname === '/data/queue.json' && !(await env.DATA.get('index:queue'))) {
+      const file = await kvJson(env, 'health:file');
+      if (file?.index) await saveQueue(env, file.index, file.indexAt || new Date().toISOString()).catch(() => {});
     }
     const kvKey = req.method === 'GET' && url.pathname.startsWith('/data/') ? KV_FILES[url.pathname.slice(6)] : null;
     if (kvKey) {

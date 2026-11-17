@@ -1,4 +1,4 @@
-import type { HealthSite } from "./types";
+import type { HealthSite, QueueRec } from "./types";
 
 /** A sitemap page Google has not looked at yet. That is not a verdict, so it is not counted as "not indexed". */
 export const isWaiting = (state: string) => /new page|not checked yet/i.test(state);
@@ -67,3 +67,32 @@ export function priorityOf(url: string, state: string, impressions: number): Pri
   return { level: "low", reason: "Google does not know it yet and nobody searched for it" };
 }
 export const PRIORITY_ORDER: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
+
+/** How long a page you sent to Search Console may stay out of Google before it counts as needing another look. */
+export const WAIT_DAYS = 14;
+export interface LedgerFlags {
+  /** The Worker saw this page in Google and then not: it goes back to the top. */
+  dropped: boolean;
+  dropDate: string | null;
+  drops: number;
+  /** Days since you sent it, while that is still inside the waiting time. */
+  asked: number | null;
+  /** Days since you sent it, once the waiting time has passed and Google still has not taken it. */
+  stillOut: number | null;
+  /** True when the page dropped after you sent it, so the old "sent" mark no longer means anything. */
+  sentIsStale: boolean;
+}
+/** Joins the Worker's ledger entry for a page with when you sent it (kept in this browser). */
+export function ledgerFlags(rec: QueueRec | undefined, sentAt: string | undefined, now = Date.now()): LedgerFlags {
+  const dropDate = rec?.droppedAt ?? null;
+  const sentIsStale = !!(sentAt && dropDate && Date.parse(dropDate) > Date.parse(sentAt));
+  const days = sentAt && !sentIsStale ? Math.max(0, Math.floor((now - Date.parse(sentAt)) / 864e5)) : null;
+  return {
+    dropped: !!dropDate,
+    dropDate,
+    drops: rec?.drops ?? 0,
+    asked: days !== null && days < WAIT_DAYS ? days : null,
+    stillOut: days !== null && days >= WAIT_DAYS ? days : null,
+    sentIsStale,
+  };
+}

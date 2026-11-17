@@ -1,0 +1,84 @@
+{
+ "generatedAt": "2026-11-17T00:00:00Z",
+ "freezeUntil": "2026-12-01",
+ "freezeNote": "No page on any site is edited until 1 Dec 2026, so Google can index what is new and every change can be read cleanly. Only the scheduled blog posters publish.",
+ "changes": [
+  {
+   "id": "adsense-pass-2026-11-16",
+   "date": "2026-11-16",
+   "title": "AdSense readiness pass on every site",
+   "kind": "quality",
+   "hosts": [
+    "streamerosai.com",
+    "yk.streamerosai.com",
+    "fitrank.streamerosai.com",
+    "campus.streamerosai.com",
+    "spotai.streamerosai.com",
+    "tools.streamerosai.com",
+    "solar.streamerosai.com",
+    "calc.streamerosai.com",
+    "images.streamerosai.com",
+    "math.streamerosai.com",
+    "exams.streamerosai.com",
+    "esports.streamerosai.com"
+   ],
+   "detail": "About, Contact, Privacy and Terms pages on every site; the empty ad boxes on the tool sites removed; thin or near-identical pages merged or set to noindex; invented numbers taken off streamerosai.com.",
+   "expect": "Fewer thin pages kept in Google and better quality signals for the whole domain. Read it by pages in Google and impressions per day."
+  },
+  {
+   "id": "math-deepen-2026-11-16",
+   "date": "2026-11-16",
+   "title": "Math: deepened the date and average calculators",
+   "kind": "content",
+   "hosts": [
+    "math.streamerosai.com"
+   ],
+   "detail": "The two thinnest tool pages gained real explanation and worked examples. The percentage guides were lengthened.",
+   "expect": "Pages stay in Google and gain impressions."
+  },
+  {
+   "id": "calc-noindex-2026-11-16",
+   "date": "2026-11-16",
+   "title": "Calc: six near-identical pages set to noindex",
+   "kind": "technical",
+   "hosts": [
+    "calc.streamerosai.com"
+   ],
+   "detail": "Templated minor currency pairs and a duplicate of a math page were taken out of Google on purpose.",
+   "expect": "The pages that remain are indexed more easily."
+  },
+  {
+   "id": "root-merge-2026-11-16",
+   "date": "2026-11-16",
+   "title": "streamerosai.com: merged thin pages",
+   "kind": "quality",
+   "hosts": [
+    "streamerosai.com"
+   ],
+   "detail": "Three thin emote pages became one stronger page, one post was folded into a better one, and the glossary index was set to noindex, with redirects for the old addresses.",
+   "expect": "Fewer weak pages and clearer signals for the strong ones."
+  },
+  {
+   "id": "esports-live-now-2026-11-16",
+   "date": "2026-11-16",
+   "title": "Esports: ten guides published at once",
+   "kind": "new-content",
+   "hosts": [
+    "esports.streamerosai.com"
+   ],
+   "detail": "Ten tournament guides went live together, with Bing notified. Twenty more are queued from 18 Nov.",
+   "expect": "The ten guides get indexed within a few weeks and start to show for tournament searches."
+  },
+  {
+   "id": "scene-switcher-description-2026-11-17",
+   "date": "2026-11-17",
+   "title": "Scene switcher guide: new search-result description",
+   "kind": "content",
+   "hosts": [
+    "streamerosai.com"
+   ],
+   "detail": "The description now says it is a free OBS plugin for Windows, macOS and Linux. One optimizer experiment, judged on its own after 28 days.",
+   "expect": "More people click the result for the query advanced scene switcher (position 8.4, 20 impressions before)."
+  }
+ ]
+}

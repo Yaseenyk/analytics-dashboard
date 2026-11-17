@@ -158,7 +158,7 @@ function Header() {
 }
 
 const NAV_SECTIONS: [string, string[]][] = [
-  ["Reports", ["home", "watch", "visitors", "sources", "pages", "audience", "leads", "live"]],
+  ["Reports", ["home", "watch", "changes", "visitors", "sources", "pages", "audience", "leads", "live"]],
   ["Search and ads", ["search", "bing", "clarity", "rankings", "ads"]],
   ["Manage", ["fix", "jobs", "tools", "help"]],
 ];

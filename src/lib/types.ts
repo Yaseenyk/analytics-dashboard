@@ -217,3 +217,26 @@ export interface ClarityFile {
   generatedAt: string;
   runs: { at: string; window: string; sites: Record<string, ClaritySite>; errors: string[] }[];
 }
+
+/** The indexing ledger kept by the Worker: one record per page, rebuilt after every index check. */
+export interface QueueRec {
+  host: string;
+  state: "needs" | "requested" | "indexed" | "ignored";
+  firstSeen: string;
+  google?: string;
+  crawl?: string | null;
+  reason?: string;
+  advice?: string;
+  priority?: number;
+  droppedAt?: string;
+  drops?: number;
+  indexedAt?: string;
+  lastIndexed?: string;
+  event?: "dropped" | "got-in" | "still-out" | "noindex-removed" | null;
+  asked?: number;
+}
+export interface QueueFile {
+  generatedAt: string;
+  summary: { needs: number; dropped: number; requested: number; indexed: number; ignored: number };
+  items: Record<string, QueueRec>;
+}

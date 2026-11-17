@@ -8,7 +8,7 @@
       "q": "advanced scene switcher",
       "type": "description",
       "created": "2026-11-05",
-      "status": "report",
+      "status": "live",
       "baseline": {
         "pos": 8.4,
         "ctr": 0,
@@ -16,7 +16,7 @@
         "clicks": 0
       },
       "before": "OBS Advanced Scene Switcher setup: install it, build a first macro, copy five recipes, fix it not switching, and see the one trigger it lacks.",
-      "after": "Advanced Scene Switcher (free OBS plugin) — download and install on Windows, macOS or Linux. Setup, build macros, five recipes and troubleshooting.",
+      "after": "Advanced Scene Switcher is a free OBS plugin for Windows, macOS and Linux. Install it, build macros, copy five recipes and fix it not switching.",
       "rationale": "The query is the plugin name; results that show direct downloads, platform support and version information look more relevant. Our page already contains install steps and platform support, but the current description highlights recipes and a limitation rather than signalling that the page helps users get and run the plugin. Updating the meta description to mention download, install and platforms uses facts already on the page and should improve CTR for that query. Note: the overall ranking gap versus the official forum and GitHub likely reflects authority/backlinks; this change targets CTR rather than authority.",
       "evidence": [
         "https://obsproject.com/forum/resources/advanced-scene-switcher.395/",
@@ -38,7 +38,11 @@
         }
       ],
       "authorityGap": true,
-      "gap": "Searchers for \"advanced scene switcher\" expect the plugin download, platform support and quick install instructions. Our meta description doesn't call out download or platforms, so competitors (official forum, package listings, GitHub) look more relevant in results."
+      "gap": "Searchers for \"advanced scene switcher\" expect the plugin download, platform support and quick install instructions. Our meta description doesn't call out download or platforms, so competitors (official forum, package listings, GitHub) look more relevant in results.",
+      "liveSince": "2026-11-17",
+      "judgeAfter": "2026-12-15",
+      "kind": "rank",
+      "note": "Applied by hand on 17 Nov 2026 (commit eea5022 in streamer-os-website) with a shorter description than the proposal, using only facts on the page."
     },
     {
       "id": "2026-11-05-fitrank-blog-what-is-rostering",

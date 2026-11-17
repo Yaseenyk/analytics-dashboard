@@ -36,8 +36,8 @@ jobs:
           OPENAI_MODEL: gpt-5-mini
           OPTIMIZER_GITHUB_TOKEN: ${{ secrets.OPTIMIZER_GITHUB_TOKEN }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
-          # Indexed sites are frozen until this date (no pull requests before it; reports still run).
-          FREEZE_UNTIL: "2026-11-18"
+          # Freeze: no pull requests before this date (reports still run). Set 17 Nov 2026: nothing on the sites is edited until 1 Dec so Google can index what is new.
+          FREEZE_UNTIL: "2026-12-01"
           MAX_CHANGES: "40"
           MAX_PER_SITE: "5"
       - name: Save experiments, learnings and the report

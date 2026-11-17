@@ -67,10 +67,72 @@ export async function recordHealth(env, prior, index, nowIso) {
     // A page whose check failed last time is not in `before` even if it was already indexed; do not call it new.
     const failedBefore = new Set((prior?.index?.[h]?.urls ?? []).filter((u) => String(u[1]).startsWith('Could not inspect')).map((u) => u[0]));
     const gained = [...nowSet].filter((u) => !before.has(u) && !failedBefore.has(u));
-    if (lost.length) alerts.push({ kind: 'dropped', level: 'bad', title: `${lost.length} page${lost.length > 1 ? 's' : ''} dropped out of Google on ${h}`, detail: lost.slice(0, 3).map((u) => u.replace(/^https?:\/\/[^/]+/, '') || '/').join(', '), id: `dropped:${h}:${d}` });
+    if (lost.length) alerts.push({ kind: 'dropped', level: 'bad', title: `${lost.length} page${lost.length > 1 ? 's' : ''} dropped out of Google on ${h}`, detail: `${lost.slice(0, 3).map((u) => u.replace(/^https?:\/\/[^/]+/, '') || '/').join(', ')}. They are back on the indexing list.`, id: `dropped:${h}:${d}` });
     if (gained.length) alerts.push({ kind: 'indexed', level: 'good', title: `${gained.length} new page${gained.length > 1 ? 's' : ''} in Google on ${h}`, detail: gained.slice(0, 3).map((u) => u.replace(/^https?:\/\/[^/]+/, '') || '/').join(', '), id: `indexed:${h}:${d}` });
   }
   await addAlerts(env, alerts);
+  await saveQueue(env, index, nowIso).catch((e) => console.log('queue failed:', String((e && e.message) || e)));
+}
+
+// ---- indexing queue: every page's journey, kept for good ---------------------------------------------
+// One record per page: needs (not in Google, ask for it), requested, indexed, or ignored (we marked it noindex on purpose).
+// A page that was indexed and later is not goes straight back to "needs" with a drop count; a page marked requested that is
+// still out after 14 days comes back too. Rebuilt from the latest index check, so nobody has to remember to add pages.
+const REASON = [
+  [/unknown to Google/i, 4, 'Google has not found this page yet. Request indexing, and link to it from a page that is already in Google.'],
+  [/Discovered - currently not indexed/i, 3, 'Google knows the page but has not read it yet. Request indexing and give it a few weeks.'],
+  [/Crawled - currently not indexed/i, 2, 'Google read the page and chose not to keep it. Asking again rarely helps: the page needs to be more useful, or less like another page.'],
+  [/not checked it yet|New page/i, 5, 'Too new for Google to have looked. Wait a few days.'],
+];
+const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / DAY);
+/** prev: the saved queue (url -> record), index: the latest health index. Returns the new queue. Pure, so it is tested. */
+export function buildQueue(prev, index, nowIso) {
+  const d = nowIso.slice(0, 10);
+  const next = {};
+  for (const [host, s] of Object.entries(index || {})) {
+    for (const url of s.indexedUrls || []) {
+      const old = prev?.[url];
+      const rec = { ...(old || { host, firstSeen: d }), host };
+      if (!old || old.state !== 'indexed') { rec.indexedAt = d; rec.event = old ? 'got-in' : null; }
+      rec.state = 'indexed'; rec.reason = ''; rec.google = 'Submitted and indexed'; rec.lastIndexed = d;
+      next[url] = rec;
+    }
+    for (const [url, state, crawl] of s.urls || []) {
+      const old = prev?.[url];
+      if (String(state).startsWith('Could not inspect')) { if (old) next[url] = old; continue; }
+      const rec = { ...(old || { host, firstSeen: d, state: 'needs' }), host, google: state, crawl: crawl || null };
+      if (/noindex/i.test(state)) { rec.state = 'ignored'; rec.reason = 'Marked noindex on purpose.'; rec.priority = 9; next[url] = rec; continue; }
+      const hit = REASON.find((r) => r[0].test(state));
+      rec.priority = hit ? hit[1] : 4;
+      rec.advice = hit ? hit[2] : 'Request indexing.';
+      if (old?.state === 'indexed') {
+        rec.state = 'needs'; rec.droppedAt = d; rec.drops = (old.drops || 0) + 1; rec.priority = 1; rec.event = 'dropped';
+        rec.reason = `Dropped out of Google (now: ${state}).`; rec.advice = 'It was in Google and left. Check the page has not changed or broken, then request indexing again.';
+      } else if (old?.state === 'ignored') {
+        rec.state = 'needs'; rec.event = 'noindex-removed'; rec.reason = 'No longer marked noindex.';
+      } else if (old?.state === 'requested') {
+        const waited = old.requestedAt ? daysBetween(old.requestedAt, d) : 0;
+        if (waited >= 14) { rec.state = 'needs'; rec.asked = (old.asked || 0) + 1; rec.event = 'still-out'; rec.reason = `Still not in Google ${waited} days after it was requested.`; }
+      } else if (!old) {
+        rec.reason = state;
+      } else if (old.state === 'needs') {
+        rec.reason = old.droppedAt ? old.reason : state;
+      }
+      next[url] = rec;
+    }
+  }
+  return next;
+}
+export function queueSummary(q) {
+  const out = { needs: 0, dropped: 0, requested: 0, indexed: 0, ignored: 0 };
+  for (const r of Object.values(q || {})) { out[r.state] = (out[r.state] || 0) + 1; if (r.state === 'needs' && r.droppedAt) out.dropped++; }
+  return out;
+}
+export async function saveQueue(env, index, nowIso) {
+  const prev = await kvJson(env, 'index:queue');
+  const q = buildQueue(prev?.items || null, index, nowIso);
+  await env.DATA.put('index:queue', JSON.stringify({ generatedAt: nowIso, summary: queueSummary(q), items: q }));
+  return q;
 }
 
 // ---- site crawl: broken links, redirects, noindex, titles --------------------------------------------

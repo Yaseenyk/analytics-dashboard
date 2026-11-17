@@ -441,6 +441,8 @@ try { write('speed', JSON.parse(fs.readFileSync('data/speed.json', 'utf8'))); } 
 try { write('clarity', JSON.parse(fs.readFileSync('data/clarity.json', 'utf8'))); } catch { /* no Clarity export yet */ }
 // The weekly content optimizer (scripts/optimizer.mjs) commits data/optimizer.json; publish it for the Rankings tab.
 try { write('optimizer', JSON.parse(fs.readFileSync('data/optimizer.json', 'utf8'))); } catch { /* no optimizer run yet */ }
+// The log of what we changed on purpose (data/changes.json, edited by hand); the What worked tab reads it next to Search Console.
+try { write('changes', JSON.parse(fs.readFileSync('data/changes.json', 'utf8'))); } catch { /* no log yet */ }
 
 if (PULL) {
 const live = {
