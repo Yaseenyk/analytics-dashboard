@@ -95,6 +95,11 @@ describe("clean", () => {
     expect(clean(null)).toBeNull();
   });
 
+  it("keeps download clicks as their own kind", () => {
+    const c = clean(msg({ c: [{ n: 1, t: 9, k: "dl", l: "Get the guide", h: "guide.pdf", x: 10, y: 10, g: "main", z: 0 }] }))!.clicks[0];
+    expect(c).toMatchObject({ k: "dl", h: "guide.pdf" });
+  });
+
   it("limits click fields, unknown kinds fall back to other, and the list is capped at 30", () => {
     const many = Array.from({ length: 50 }, (_, n) => ({ n: n + 1, t: 5, k: "link", l: "x", h: "/p", x: 50, y: 10, g: "nav", z: 0 }));
     expect(clean(msg({ c: many }))!.clicks).toHaveLength(30);

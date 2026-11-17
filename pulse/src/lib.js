@@ -22,7 +22,7 @@ export const SITES = [
 ];
 export const RETENTION_DAYS = 90;
 const ID = /^[a-z0-9]{8,24}$/;
-const KINDS = new Set(['link', 'out', 'btn', 'tab', 'input', 'mail', 'tel', 'other']);
+const KINDS = new Set(['link', 'out', 'btn', 'tab', 'input', 'mail', 'tel', 'dl', 'other']);
 const DASH_ORIGIN = /^https:\/\/analytics\.streamerosai\.com$|^http:\/\/(localhost|127\.0\.0\.1):\d+$/;
 
 // ---- classification (pure, exported for tests) ----
@@ -168,7 +168,7 @@ export async function summary(env, q) {
   const base = `FROM hits WHERE ts>=?${site ? ' AND site=?' : ''}`;
   const a = site ? [since, site] : [since];
   const cbase = `FROM clicks c JOIN hits ON hits.id=c.hid WHERE c.ts>=?${site ? ' AND c.site=?' : ''}${who}`;
-  const [status, bySite, kinds, hosts, pages, countries, devices, daily, clicks, signals] = await Promise.all([
+  const [status, bySite, kinds, hosts, pages, countries, devices, daily, clicks, signals, actions] = await Promise.all([
     all(env, `SELECT ${STATUS} AS status, COUNT(*) AS hits, COUNT(DISTINCT sid) AS sessions, ROUND(AVG(active),1) AS active, ROUND(AVG(scroll)) AS scroll ${base} GROUP BY status`, a),
     all(env, `SELECT site, ${STATUS} AS status, COUNT(*) AS n ${base} GROUP BY site, status`, a),
     all(env, `SELECT ref_kind, COUNT(*) AS n ${base}${who} GROUP BY ref_kind ORDER BY n DESC`, a),
@@ -179,8 +179,9 @@ export async function summary(env, q) {
     all(env, `SELECT date(ts/1000,'unixepoch') AS day, ${STATUS} AS status, COUNT(*) AS n ${base} GROUP BY day, status ORDER BY day`, a),
     all(env, `SELECT c.site, c.kind, c.label, c.href, COUNT(*) AS n, SUM(c.z) AS rage ${cbase} AND c.kind!='other' GROUP BY c.site, c.kind, c.label, c.href ORDER BY n DESC LIMIT 25`, a),
     all(env, `SELECT SUM(CASE WHEN c.kind='other' THEN 1 ELSE 0 END) AS dead, SUM(c.z) AS rage, COUNT(*) AS total ${cbase}`, a),
+    all(env, `SELECT c.site, c.path, c.kind, c.label, c.href, COUNT(*) AS n, MAX(c.ts) AS last ${cbase} AND c.kind IN ('dl','out','mail','tel') GROUP BY c.site, c.path, c.kind, c.label, c.href ORDER BY last DESC LIMIT 40`, a),
   ]);
-  return { generatedAt: new Date().toISOString(), days, site: site || 'all', who: who ? 'real' : 'all', status, bySite, kinds, hosts, pages, countries, devices, daily, clicks, signals: signals[0] || {} };
+  return { generatedAt: new Date().toISOString(), days, site: site || 'all', who: who ? 'real' : 'all', status, bySite, kinds, hosts, pages, countries, devices, daily, clicks, signals: signals[0] || {}, actions };
 }
 
 export async function live(env, q) {
@@ -201,7 +202,7 @@ export async function feed(env, q) {
   const limit = num(q.get('limit'), 60, 1, 200);
   const who = q.get('who');
   const where = [site ? 'site=?' : '', ['real', 'bot', 'unclear'].includes(who) ? `${STATUS}='${who}'` : ''].filter(Boolean);
-  return all(env, `SELECT id, sid, site, path, ts, last, ref_host, ref_kind, country, device, browser, os, org, w, h, active, scroll, clicks AS nclicks, ${STATUS} AS status FROM hits ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY last DESC LIMIT ?`, [...(site ? [site] : []), limit]);
+  return all(env, `SELECT id, sid, site, path, ts, last, ref_host, ref_kind, country, device, browser, os, org, w, h, active, scroll, clicks AS nclicks, (SELECT COUNT(*) FROM clicks WHERE hid=hits.id AND kind='dl') AS ndl, (SELECT COUNT(*) FROM clicks WHERE hid=hits.id AND kind IN ('out','mail','tel')) AS nout, ${STATUS} AS status FROM hits ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY last DESC LIMIT ?`, [...(site ? [site] : []), limit]);
 }
 
 export async function journey(env, q) {

@@ -144,7 +144,11 @@ export const TRACKER = String.raw`(function () {
           else if (/^tel:/i.test(raw)) { k = 'tel'; hr = 'tel'; }
           else {
             var u = new URL(el.href, location.href);
-            if (u.origin === location.origin) { k = 'link'; hr = u.pathname.slice(0, 100); }
+            var file = u.pathname.split('/').pop();
+            if (el.hasAttribute('download') || /\.(pdf|zip|rar|7z|exe|msi|dmg|pkg|apk|ipa|deb|csv|xlsx?|docx?|pptx?|mp3|mp4|mov)$/i.test(file)) {
+              k = 'dl'; hr = file.slice(0, 80);
+              if (!lb || lb.length > 24) lb = file.slice(0, 40);
+            } else if (u.origin === location.origin) { k = 'link'; hr = u.pathname.slice(0, 100); }
             else {
               k = 'out';
               hr = /wa\.me|whatsapp/.test(u.host) ? u.host : (u.host + u.pathname.split('/').slice(0, 2).join('/')).slice(0, 60);
@@ -169,7 +173,7 @@ export const TRACKER = String.raw`(function () {
     }
     h.nc++; dirty = true;
     if (h.q.length < 30) h.q.push({ n: ++seq, t: now - h.t0, k: k, l: lb, h: hr, x: x, y: y, g: section(t), z: z });
-    if (k === 'out' || k === 'mail' || k === 'tel') send();
+    if (k === 'out' || k === 'mail' || k === 'tel' || k === 'dl') send();
   }
   d.addEventListener('click', onClick, true);
 

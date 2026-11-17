@@ -31,6 +31,7 @@ export interface Summary {
   daily: { day: string; status: Status; n: number }[];
   clicks: { site: string; kind: string; label: string; href: string; n: number; rage: number | null }[];
   signals: { dead: number | null; rage: number | null; total: number | null };
+  actions: { site: string; path: string; kind: string; label: string; href: string; n: number; last: number }[];
 }
 export interface Live {
   generatedAt: string;
@@ -42,7 +43,7 @@ export interface Live {
 export interface FeedRow {
   id: string; sid: string; site: string; path: string; ts: number; last: number; ref_host: string; ref_kind: string;
   country: string; device: string; browser: string; os: string; org: string; w: number; h: number;
-  active: number; scroll: number; nclicks: number; status: Status;
+  active: number; scroll: number; nclicks: number; ndl: number; nout: number; status: Status;
 }
 export interface Journey {
   hits: { id: string; site: string; path: string; ts: number; last: number; ref_host: string; ref_kind: string; country: string; device: string; browser: string; os: string; active: number; scroll: number; status: Status }[];

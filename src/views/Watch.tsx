@@ -13,7 +13,7 @@ import { Card, Sk } from "@/components/ui";
 const COLOR: Record<Status, string> = { real: "var(--good)", unclear: "var(--s3)", bot: "var(--bad)" };
 const ORDER: Status[] = ["real", "unclear", "bot"];
 const KIND_LABEL: Record<string, string> = { search: "Search engines", social: "Social and messaging", ai: "AI assistants", direct: "Direct or unknown", own: "Your other sites", internal: "Same site", email: "Email", paid: "Paid", other: "Other websites" };
-const CLICK_LABEL: Record<string, string> = { link: "Link", out: "Leaves the site", btn: "Button", tab: "Tab", input: "Form field", mail: "Email link", tel: "Phone link", other: "Not clickable" };
+const CLICK_LABEL: Record<string, string> = { link: "Link", out: "Leaves the site", btn: "Button", tab: "Tab", input: "Form field", mail: "Email link", tel: "Phone link", dl: "Download", other: "Not clickable" };
 const site = (h: string) => SITES[h] ?? h;
 const pct = (a: number, b: number) => (b ? Math.round((100 * a) / b) : 0);
 const secs = (s: number | null | undefined) => (s == null ? "–" : s >= 60 ? `${Math.floor(s / 60)}m ${Math.round(s % 60)}s` : `${Math.round(s)}s`);
@@ -21,6 +21,28 @@ const when = (ms: number) => {
   const d = new Date(ms);
   return new Date().toDateString() === d.toDateString() ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : d.toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 };
+
+const ago = (ms: number) => {
+  const m = Math.max(0, Math.round((Date.now() - ms) / 60000));
+  return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`;
+};
+const offset = (t: number, t0: number) => { const d = Math.max(0, Math.round((t - t0) / 1000)); return d < 60 ? `+${d}s` : `+${Math.floor(d / 60)}m ${d % 60}s`; };
+
+/** One click in plain words, with how much it matters: strong (a goal), normal, or weak (nothing happened). */
+function say(c: { kind: string; label: string; href: string }): { icon: string; text: string; tone: "strong" | "normal" | "weak" } {
+  const l = c.label ? `“${c.label}”` : "";
+  switch (c.kind) {
+    case "dl": return { icon: "⬇", text: `Downloaded ${c.href || c.label || "a file"}`, tone: "strong" };
+    case "out": return { icon: "↗", text: `Went to another website: ${c.href || c.label}`, tone: "strong" };
+    case "mail": return { icon: "✉", text: `Tapped an email link ${l}`.trim(), tone: "strong" };
+    case "tel": return { icon: "☎", text: `Tapped a phone link ${l}`.trim(), tone: "strong" };
+    case "link": return { icon: "→", text: `Opened ${c.href || "a page"}${l ? ` from the link ${l}` : ""}`, tone: "normal" };
+    case "btn": return { icon: "●", text: `Pressed the button ${l || "(no label)"}`, tone: "normal" };
+    case "tab": return { icon: "●", text: `Switched to the tab ${l}`, tone: "normal" };
+    case "input": return { icon: "✎", text: `Used the form field ${l || ""}`.trim(), tone: "normal" };
+    default: return { icon: "○", text: "Tapped something that is not clickable", tone: "weak" };
+  }
+}
 
 function Badge({ s }: { s: Status }) {
   return (
@@ -38,9 +60,9 @@ function Rows({ rows, empty = "Nothing yet." }: { rows: { name: string; v: numbe
     <ul className="m-0 mt-2 list-none p-0">
       {rows.map((r) => (
         <li key={r.name} className="py-1.5">
-          <div className="flex items-baseline justify-between gap-3 text-[14px]">
-            <span className="min-w-0 truncate">{r.name}</span>
-            <b className="font-mono text-[13px]">{n(r.v)}{r.note && <span className="ml-2 font-normal text-dim">{r.note}</span>}</b>
+          <div className="flex items-start justify-between gap-3 text-[14px]">
+            <span className="min-w-0 break-words">{r.name}{r.note && <span className="block text-[12px] font-normal text-dim sm:hidden">{r.note}</span>}</span>
+            <b className="shrink-0 font-mono text-[13px]">{n(r.v)}{r.note && <span className="ml-2 hidden font-normal text-dim sm:inline">{r.note}</span>}</b>
           </div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/5"><i className="block h-full rounded-full bg-brand" style={{ width: `${Math.max(4, (100 * r.v) / max)}%` }} /></div>
         </li>
@@ -111,65 +133,115 @@ function Journeys({ row, keyStr }: { row: FeedRow; keyStr: string }) {
   const { data } = usePulse<Journey>("/v/journey", params, { key: keyStr });
   if (!data) return <Sk w={200} h={14} className="m-3" />;
   return (
-    <ol className="m-0 list-none space-y-3 border-t border-line px-3 py-3 text-[13px]">
-      {data.hits.map((h) => (
-        <li key={h.id}>
-          <div className="flex flex-wrap items-baseline gap-x-2">
-            <span className="font-mono text-[11.5px] text-dim">{when(h.ts)}</span>
-            <b>{h.path}</b>
-            <span className="text-dim">from {KIND_LABEL[h.ref_kind] ?? h.ref_kind}{h.ref_host ? ` (${h.ref_host})` : ""}</span>
-            <span className="text-dim">· {secs(h.active)} active · {h.scroll}% scrolled</span>
-          </div>
-          <ul className="m-0 mt-1 list-none space-y-0.5 pl-4">
-            {data.clicks.filter((c) => c.hid === h.id).map((c) => (
-              <li key={c.n} className="text-mute">
-                {c.n}. <span className="text-ink">{CLICK_LABEL[c.kind] ?? c.kind}</span>{c.label ? `: ${c.label}` : ""}{c.href ? ` to ${c.href}` : ""}
-                {c.sec ? <span className="text-dim"> ({c.sec})</span> : null}
-                {c.z ? <span className="ml-1 font-semibold text-bad">rapid repeated clicks</span> : null}
-              </li>
-            ))}
-          </ul>
-        </li>
-      ))}
-    </ol>
+    <div className="border-t border-line px-3 py-3">
+      <p className="m-0 mb-3 text-[12.5px] text-dim">This visitor’s steps in this browser tab, in order. {data.hits.length} page{data.hits.length === 1 ? "" : "s"}.</p>
+      <ol className="m-0 list-none p-0">
+        {data.hits.map((h, i) => {
+          const cl = data.clicks.filter((c) => c.hid === h.id);
+          return (
+            <li key={h.id} className="relative pb-4 pl-6 last:pb-0">
+              {i < data.hits.length - 1 && <span aria-hidden="true" className="absolute bottom-0 left-[5px] top-3 w-px bg-line" />}
+              <i aria-hidden="true" className="absolute left-0 top-1.5 h-[11px] w-[11px] rounded-full" style={{ background: COLOR[h.status] }} />
+              <div className="text-[13.5px]">
+                <span className="font-mono text-[11.5px] text-dim">{when(h.ts)}</span>
+                <div><b>Opened</b> <span className="break-all">{site(h.site)}{h.path}</span></div>
+                <div className="text-[12.5px] text-dim">came from {KIND_LABEL[h.ref_kind] ?? h.ref_kind}{h.ref_host ? ` (${h.ref_host})` : ""} · stayed {secs(h.active)} · scrolled {h.scroll}%</div>
+              </div>
+              {cl.length > 0 ? (
+                <ul className="m-0 mt-2 list-none space-y-1.5 p-0">
+                  {cl.map((c) => {
+                    const t = say(c);
+                    return (
+                      <li key={c.n} className={`rounded-lg px-2.5 py-1.5 text-[13px] ${t.tone === "strong" ? "bg-brand/10 text-ink" : "bg-white/[.03] text-mute"}`}>
+                        <span aria-hidden="true" className="mr-1.5">{t.icon}</span>{t.text}
+                        <span className="ml-1.5 whitespace-nowrap text-[11.5px] text-dim">{offset(c.ts, h.ts)}{c.sec ? ` · ${c.sec}` : ""}</span>
+                        {c.z ? <span className="ml-1.5 text-[11.5px] font-semibold text-bad">clicked many times quickly</span> : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="m-0 mt-1 text-[12.5px] text-dim">No clicks on this page.</p>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
 
 function Feed({ keyStr, siteFilter }: { keyStr: string; siteFilter: string }) {
   const [who, setWho] = useState<Status | "all">("all");
+  const [onlyAct, setOnlyAct] = useState(false);
   const [open, setOpen] = useState("");
   const params = useMemo(() => ({ limit: 60, site: siteFilter === "all" ? undefined : siteFilter, who: who === "all" ? undefined : who }), [siteFilter, who]);
   const { data, err } = usePulse<FeedRow[]>("/v/feed", params, { key: keyStr, poll: 10000 });
+  const rows = data && onlyAct ? data.filter((r) => (r.ndl ?? 0) + (r.nout ?? 0) > 0) : data;
+  const chip = (on: boolean) => `min-h-10 shrink-0 rounded-full px-4 text-[13px] font-semibold ${on ? "bg-brand/15 text-brand" : "bg-white/[.05] text-mute"}`;
   return (
-    <Card title="Visits one by one" note="The newest first. Tap a visit to see its pages and clicks in order.">
-      <div className="mt-3 flex flex-wrap gap-1.5">
+    <Card title="Visits one by one" note="Newest first. Tap a visit to see what that person did, step by step.">
+      <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="Filter visits">
         {(["all", ...ORDER] as const).map((s) => (
-          <button key={s} type="button" onClick={() => setWho(s)} className={`min-h-9 rounded-full px-3.5 text-[13px] font-semibold ${who === s ? "bg-brand/15 text-brand" : "bg-white/[.05] text-mute"}`}>
+          <button key={s} type="button" aria-pressed={who === s} onClick={() => setWho(s)} className={chip(who === s)}>
             {s === "all" ? "Everyone" : STATUS_LABEL[s]}
           </button>
         ))}
+        <button type="button" aria-pressed={onlyAct} onClick={() => setOnlyAct(!onlyAct)} className={chip(onlyAct)}>Downloads and exits only</button>
       </div>
       {err === "key" && <p className="sub mt-3 text-bad">That key was not accepted.</p>}
       {!data && !err && <Sk w={300} h={14} className="mt-4" />}
-      {data && data.length === 0 && <p className="sub mt-3">No visits like this yet.</p>}
-      {data && data.length > 0 && (
-        <ul className="m-0 mt-3 list-none space-y-1.5 p-0">
-          {data.map((r) => (
+      {rows && rows.length === 0 && <p className="sub mt-3">No visits like this yet.</p>}
+      {rows && rows.length > 0 && (
+        <ul className="m-0 mt-3 list-none space-y-2 p-0">
+          {rows.map((r) => (
             <li key={r.id} className="overflow-hidden rounded-xl bg-white/[.03]">
-              <button type="button" onClick={() => setOpen(open === r.id ? "" : r.id)} aria-expanded={open === r.id} className="grid w-full gap-x-3 gap-y-0.5 px-3 py-2.5 text-left lg:grid-cols-[150px_1fr_auto]">
-                <span className="whitespace-nowrap font-mono text-[11.5px] text-dim">{when(r.last)}</span>
-                <span className="min-w-0">
-                  <b className="text-[13.5px]">{site(r.site)}</b> <span className="break-all text-[13.5px] text-mute">{r.path}</span>
-                  <span className="block text-[12px] text-dim">
-                    from {KIND_LABEL[r.ref_kind] ?? r.ref_kind}{r.ref_host ? ` (${r.ref_host})` : ""} · {regionName(r.country)} · {r.device}, {r.browser}, {r.os}
-                    {" · "}{secs(r.active)} active · {r.scroll}% scrolled · {r.nclicks} click{r.nclicks === 1 ? "" : "s"}
-                  </span>
+              <button type="button" onClick={() => setOpen(open === r.id ? "" : r.id)} aria-expanded={open === r.id} className="block w-full px-3 py-3 text-left">
+                <span className="flex items-center justify-between gap-2">
+                  <Badge s={r.status} />
+                  <span className="text-[12px] text-dim" title={when(r.last)}>{ago(r.last)}</span>
                 </span>
-                <span className="lg:justify-self-end"><Badge s={r.status} /></span>
+                <span className="mt-2 block text-[14px] leading-snug"><b>{site(r.site)}</b> <span className="break-all text-mute">{r.path}</span></span>
+                <span className="mt-1 block text-[12.5px] leading-relaxed text-dim">
+                  From {KIND_LABEL[r.ref_kind] ?? r.ref_kind}{r.ref_host ? ` (${r.ref_host})` : ""} · {regionName(r.country)} · {r.device}, {r.browser}
+                </span>
+                <span className="mt-2 flex flex-wrap gap-1.5 text-[12px]">
+                  <span className="rounded-md bg-white/[.05] px-2 py-0.5 text-mute">{secs(r.active)} active</span>
+                  <span className="rounded-md bg-white/[.05] px-2 py-0.5 text-mute">{r.scroll}% scrolled</span>
+                  <span className="rounded-md bg-white/[.05] px-2 py-0.5 text-mute">{r.nclicks} click{r.nclicks === 1 ? "" : "s"}</span>
+                  {r.ndl > 0 && <span className="rounded-md bg-brand/15 px-2 py-0.5 font-semibold text-brand">⬇ {r.ndl} download{r.ndl === 1 ? "" : "s"}</span>}
+                  {r.nout > 0 && <span className="rounded-md bg-brand/15 px-2 py-0.5 font-semibold text-brand">↗ {r.nout} exit{r.nout === 1 ? "" : "s"} or contact</span>}
+                </span>
+                <span className="mt-2 block text-[12px] font-semibold text-brand">{open === r.id ? "Hide steps ▲" : "Show steps ▼"}</span>
               </button>
               {open === r.id && <Journeys row={r} keyStr={keyStr} />}
             </li>
           ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function Actions({ rows, all }: { rows: Summary["actions"]; all: boolean }) {
+  return (
+    <Card title="Downloads, exits and contacts" note="The moments that matter: a file taken, a link to another website, an email or phone tap. Real people only, newest first.">
+      {rows.length === 0 ? (
+        <p className="sub mt-3">None yet in this period. Download tracking started on 17 Nov 2026, so earlier downloads were not recorded.</p>
+      ) : (
+        <ul className="m-0 mt-3 list-none space-y-2 p-0">
+          {rows.slice(0, 15).map((r) => {
+            const t = say(r);
+            return (
+              <li key={`${r.site}${r.path}${r.kind}${r.href}${r.label}`} className="rounded-xl bg-white/[.03] px-3 py-2.5 text-[13.5px]">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="min-w-0 break-words"><span aria-hidden="true" className="mr-1.5">{t.icon}</span>{t.text}</span>
+                  <b className="shrink-0 font-mono text-[13px]">{r.n}×</b>
+                </div>
+                <div className="mt-0.5 break-all text-[12px] text-dim">on {all ? `${site(r.site)} ` : ""}{r.path} · {ago(r.last)}</div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </Card>
@@ -290,6 +362,7 @@ export default function Watch() {
       {sum && total > 0 && (
         <>
           <Daily rows={sum.daily} />
+          <Actions rows={sum.actions ?? []} all={f.site === "all"} />
           <div className="grid gap-4 lg:grid-cols-2">
             <Card title="Where real people came from">
               <Rows rows={sum.kinds.map((k) => ({ name: KIND_LABEL[k.ref_kind] ?? k.ref_kind, v: k.n }))} />
