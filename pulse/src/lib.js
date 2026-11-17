@@ -277,8 +277,9 @@ export async function insights(env, q) {
   const realA = `(CASE WHEN a.bot=1 OR a.wd=1 THEN 'bot' WHEN a.human=1 THEN 'real' WHEN a.dc=1 THEN 'bot' ELSE 'unclear' END)='real'`;
   const win = (lo, hi) => all(env, `SELECT COUNT(*) AS people, SUM(${HAS_WIN}) AS wins FROM hits WHERE ts>=? AND ts<? AND ${real}${sq}`, [lo, hi, ...sa]);
   const bots = (lo, hi) => all(env, `SELECT COUNT(*) AS n FROM hits WHERE ts>=? AND ts<? AND ${STATUS}='bot'${sq}`, [lo, hi, ...sa]);
-  const [cur, prev, curBots, prevBots, sources, pages, flows, funnel, hours, broken, errors, speed, wins48, newSrc, botDay, botBase] = await Promise.all([
+  const [cur, prev, curBots, prevBots, actedDaily, sources, pages, flows, funnel, hours, broken, errors, speed, wins48, newSrc, botDay, botBase] = await Promise.all([
     win(since, now + 1), win(prevSince, since), bots(since, now + 1), bots(prevSince, since),
+    all(env, `SELECT date(ts/1000,'unixepoch') AS day, SUM(${HAS_WIN}) AS n FROM hits WHERE ts>=? AND ${real}${sq} GROUP BY day ORDER BY day`, [since, ...sa]),
     all(env, `SELECT ref_kind, ref_host, COUNT(*) AS visits, SUM(${HAS_WIN}) AS wins, ROUND(AVG(active),1) AS active FROM hits WHERE ts>=? AND ${real} AND ref_kind!='internal'${sq} GROUP BY ref_kind, ref_host ORDER BY visits DESC LIMIT 25`, [since, ...sa]),
     all(env, `SELECT site, path, COUNT(*) AS visits, SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM hits h2 WHERE h2.sid=hits.sid AND h2.ts<hits.ts) THEN 1 ELSE 0 END) AS entries, SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM hits h2 WHERE h2.sid=hits.sid AND h2.ts>hits.ts) THEN 1 ELSE 0 END) AS exits, SUM(${HAS_WIN}) AS wins, ROUND(AVG(scroll)) AS scroll, ROUND(AVG(active),1) AS active, ROUND(AVG(CASE WHEN lcp>0 THEN lcp END)) AS lcp FROM hits WHERE ts>=? AND ${real}${sq} GROUP BY site, path ORDER BY visits DESC LIMIT 40`, [since, ...sa]),
     all(env, `SELECT a.site, a.path AS from_path, b.path AS to_path, COUNT(*) AS n FROM hits a JOIN hits b ON b.sid=a.sid AND b.ts>a.ts AND b.site=a.site AND b.path!=a.path WHERE a.ts>=? AND ${realA}${site ? ' AND a.site=?' : ''} AND NOT EXISTS (SELECT 1 FROM hits m WHERE m.sid=a.sid AND m.ts>a.ts AND m.ts<b.ts) GROUP BY a.site, a.path, b.path ORDER BY n DESC LIMIT 15`, [since, ...sa]),
@@ -306,6 +307,6 @@ export async function insights(env, q) {
   return {
     generatedAt: new Date().toISOString(), days, site: site || 'all',
     compare: { real: (cur[0] || {}).people || 0, wins: (cur[0] || {}).wins || 0, bots: (curBots[0] || {}).n || 0, prevReal: (prev[0] || {}).people || 0, prevWins: (prev[0] || {}).wins || 0, prevBots: (prevBots[0] || {}).n || 0 },
-    sources, pages, flows, funnel: funnel[0] || { sessions: 0, multi: 0, won: 0 }, hours, broken, errors, speed, alerts: alerts.slice(0, 20),
+    actedDaily, sources, pages, flows, funnel: funnel[0] || { sessions: 0, multi: 0, won: 0 }, hours, broken, errors, speed, alerts: alerts.slice(0, 20),
   };
 }

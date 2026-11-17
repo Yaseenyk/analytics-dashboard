@@ -9,8 +9,10 @@ import { useFilters } from "@/lib/filters";
 import { metricByHost } from "@/lib/today";
 import { GLOSSARY } from "@/lib/glossary";
 import type { GAFile, GSCFile } from "@/lib/types";
+import { daysFor, usePulse, type Insights, type Live, type Summary } from "@/lib/pulse";
 import { PopBox } from "@/components/Pop";
 import { Delta, Sk, Spark } from "@/components/ui";
+import { ORDER } from "./watchkit";
 
 type Key = "people" | "visits" | "leads" | "clicks";
 const META: Record<Key, { title: string; help: string; color: string; link: [string, string]; met?: string }> = {
@@ -69,7 +71,7 @@ function Sheet({ k, c, days }: { k: Key; c: Calc; days: number }) {
 }
 
 /** The four big numbers on Home. Tap one to see which site it came from and what is behind it. */
-export default function HomeKpis() {
+function GoogleKpis() {
   const f = useFilters();
   const ga = useGA(f.range).data;
   const gsc = useGSC(f.range).data;
@@ -91,6 +93,63 @@ export default function HomeKpis() {
           </PopBox>
         );
       })}
+    </div>
+  );
+}
+
+/** The same big numbers, but from our own tracker: real people only, bots left out. Tap to open Watch. */
+function WatchKpis() {
+  const f = useFilters();
+  const days = daysFor(f.range);
+  const params = useMemo(() => ({ days, site: f.site === "all" ? undefined : f.site }), [days, f.site]);
+  const liveParams = useMemo(() => ({ site: f.site === "all" ? undefined : f.site }), [f.site]);
+  const { data: sum } = usePulse<Summary>("/v/summary", params, { poll: 60000 });
+  const { data: ins } = usePulse<Insights>("/v/insights", params, { poll: 60000 });
+  const { data: live } = usePulse<Live>("/v/live", liveParams, { poll: 15000 });
+  const tiles = useMemo(() => {
+    if (!sum) return null;
+    const per = (st: (typeof ORDER)[number]) => {
+      const m = new Map<string, number>();
+      sum.daily.filter((d) => d.status === st).forEach((d) => m.set(d.day, d.n));
+      return [...new Set(sum.daily.map((d) => d.day))].sort().map((d) => m.get(d) ?? 0);
+    };
+    const c = ins?.compare;
+    const real = sum.status.find((x) => x.status === "real")?.hits ?? 0;
+    const bot = sum.status.find((x) => x.status === "bot")?.hits ?? 0;
+    return [
+      { k: "real", title: "Real people", value: real, prev: c?.prevReal ?? 0, spark: per("real"), color: "var(--good)" },
+      { k: "act", title: "Took action", value: c?.wins ?? 0, prev: c?.prevWins ?? 0, spark: (ins?.actedDaily ?? []).map((d) => d.n ?? 0), color: "var(--brand)" },
+      { k: "now", title: "Online now", value: live?.status.find((x) => x.status === "real")?.n ?? 0, prev: 0, spark: [] as number[], color: "var(--good)" },
+      { k: "bot", title: "Bots", value: bot, prev: c?.prevBots ?? 0, spark: per("bot"), color: "var(--bad)" },
+    ];
+  }, [sum, ins, live]);
+  return (
+    <section aria-label="From our own tracker">
+      <h2 className="m-0 mb-2 mt-1 px-1 text-[12.5px] font-semibold uppercase tracking-wider text-dim">Watch: real people</h2>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {!tiles
+          ? [0, 1, 2, 3].map((i) => <div key={i} className="card !p-3.5"><Sk w={60} h={12} /><Sk w={50} h={26} className="mt-2" /></div>)
+          : tiles.map((t) => (
+              <Link key={t.k} href="/watch/" className="card block !border-transparent !p-3.5" aria-label={`${t.title}: ${n(t.value)}. Open Watch`}>
+                <div className="text-[12.5px] text-mute">{t.title}</div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="text-[24px] font-semibold leading-none tracking-tight sm:text-[26px]">{n(t.value)}</span>
+                  {t.k !== "now" && <Delta show={f.cmp} cur={t.value} prev={t.prev} invert={t.k === "bot"} />}
+                </div>
+                {t.spark.length > 1 ? <Spark vals={t.spark} color={t.color} id={`wk-${t.k}`} /> : <div className="mt-2.5 h-[30px]" aria-hidden="true" />}
+              </Link>
+            ))}
+      </div>
+    </section>
+  );
+}
+
+/** The four big numbers on Home, then the same idea from our own tracker. */
+export default function HomeKpis() {
+  return (
+    <div className="space-y-4">
+      <GoogleKpis />
+      <WatchKpis />
     </div>
   );
 }

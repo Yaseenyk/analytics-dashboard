@@ -115,6 +115,7 @@ export interface Insights {
   days: number;
   site: string;
   compare: { real: number; wins: number; bots: number; prevReal: number; prevWins: number; prevBots: number };
+  actedDaily: { day: string; n: number | null }[];
   sources: { ref_kind: string; ref_host: string; visits: number; wins: number | null; active: number | null }[];
   pages: { site: string; path: string; visits: number; entries: number | null; exits: number | null; wins: number | null; scroll: number | null; active: number | null; lcp: number | null }[];
   flows: { site: string; from_path: string; to_path: string; n: number }[];

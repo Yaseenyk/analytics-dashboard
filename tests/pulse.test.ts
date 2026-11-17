@@ -267,6 +267,7 @@ describe("insights", () => {
     expect(r.pages.find((x: { path: string }) => x.path === "/emi-calculator/")).toMatchObject({ visits: 1, wins: 1, exits: 1 });
     expect(r.flows[0]).toMatchObject({ from_path: "/", to_path: "/emi-calculator/", n: 1 });
     expect(r.funnel).toMatchObject({ sessions: 3 + 0, multi: 1, won: 1 });
+    expect(r.actedDaily.reduce((a: number, d: { n: number }) => a + d.n, 0)).toBe(1);
   });
 
   it("lists broken pages, script errors and speed, and turns them into alerts", async () => {
