@@ -258,8 +258,10 @@ export const json = (body, ch, status = 200, cache = 'no-store') =>
 
 // ---- insights: what people did, which sources and pages lead to it, what is broken ----
 
-/** A "win": a download, an email or phone tap, a WhatsApp tap, or a goal the site named itself (data-pulse-goal / pulse('name')). */
-export const WIN = `(c.kind IN ('dl','mail','tel','goal') OR (c.kind='out' AND (c.href LIKE 'wa.me%' OR c.href LIKE '%whatsapp%')))`;
+/** Every action counts: any tap on a link, button, tab, form field, download, email, phone or goal. Taps on nothing do not. */
+export const WIN = `(c.kind!='other')`;
+/** The moments worth an alert on their own: a file, a contact, WhatsApp, or a goal a page named. */
+export const KEY_WIN = `(c.kind IN ('dl','mail','tel','goal') OR (c.kind='out' AND (c.href LIKE 'wa.me%' OR c.href LIKE '%whatsapp%')))`;
 const HAS_WIN = `EXISTS (SELECT 1 FROM clicks c WHERE c.hid=hits.id AND ${WIN})`;
 
 export async function insights(env, q) {
@@ -285,7 +287,7 @@ export async function insights(env, q) {
     all(env, `SELECT site, path, ref_host, COUNT(*) AS n, MAX(ts) AS last FROM hits WHERE ts>=? AND st>=400 AND ${notBot}${sq} GROUP BY site, path, ref_host ORDER BY n DESC LIMIT 20`, [since, ...sa]),
     all(env, `SELECT site, path, SUM(err) AS errors, COUNT(*) AS visits, MAX(ts) AS last FROM hits WHERE ts>=? AND err>0 AND ${notBot}${sq} GROUP BY site, path ORDER BY errors DESC LIMIT 15`, [since, ...sa]),
     all(env, `SELECT site, path, COUNT(*) AS n, ROUND(AVG(lcp)) AS lcp FROM hits WHERE ts>=? AND lcp>0 AND ${notBot}${sq} GROUP BY site, path HAVING n>=1 ORDER BY lcp DESC LIMIT 15`, [since, ...sa]),
-    all(env, `SELECT hits.site, hits.path, c.kind, c.label, c.href, c.ts FROM clicks c JOIN hits ON hits.id=c.hid WHERE c.ts>=? AND ${real} AND ${WIN}${sq.replace('site', 'hits.site')} ORDER BY c.ts DESC LIMIT 8`, [now - 48 * 36e5, ...sa]),
+    all(env, `SELECT hits.site, hits.path, c.kind, c.label, c.href, c.ts FROM clicks c JOIN hits ON hits.id=c.hid WHERE c.ts>=? AND ${real} AND ${KEY_WIN}${sq.replace('site', 'hits.site')} ORDER BY c.ts DESC LIMIT 8`, [now - 48 * 36e5, ...sa]),
     all(env, `SELECT ref_kind, ref_host, MIN(ts) AS first, COUNT(*) AS n FROM hits WHERE ${real} AND ref_host!='' AND ref_kind NOT IN ('internal','own')${sq} AND (SELECT MIN(ts) FROM hits)<? GROUP BY ref_kind, ref_host HAVING MIN(ts)>=? ORDER BY first DESC LIMIT 8`, [...sa, now - 48 * 36e5, now - 48 * 36e5]),
     all(env, `SELECT COUNT(*) AS n FROM hits WHERE ts>=? AND ${STATUS}='bot'${sq}`, [now - 864e5, ...sa]),
     all(env, `SELECT COUNT(*) AS n FROM hits WHERE ts>=? AND ts<? AND ${STATUS}='bot'${sq}`, [now - 8 * 864e5, now - 864e5, ...sa]),

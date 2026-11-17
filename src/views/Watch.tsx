@@ -280,7 +280,7 @@ export default function Watch() {
         {sum ? (
           <>
             {tile("Real people", n(counts.real), c ? vs(c.real, c.prevReal, days) : total ? `${pct(counts.real, total)}% of ${n(total)} visits` : "No visits yet", COLOR.real, c && c.real > c.prevReal ? "text-good" : "")}
-            {tile("Wins", n(c?.wins ?? 0), c ? `${vs(c.wins, c.prevWins, days)}. A download, email, phone, WhatsApp or goal.` : "A download, email, phone, WhatsApp or goal", "var(--brand)", c && c.wins > c.prevWins ? "text-good" : "")}
+            {tile("Took action", n(c?.wins ?? 0), c ? `${vs(c.wins, c.prevWins, days)}. Real visits where the person tapped something.` : "Real visits where the person tapped something", "var(--brand)", c && c.wins > c.prevWins ? "text-good" : "")}
             {tile("Online now", n(liveReal), "real people on a page this minute", COLOR.real)}
             {tile("Bots", n(counts.bot), `${pct(counts.bot, total)}% of visits are robots. ${n(counts.unclear)} more did nothing.`, COLOR.bot)}
           </>
@@ -300,8 +300,8 @@ export default function Watch() {
         <>
           <Daily rows={sum.daily} />
           <DataTable
-            title="Wins: downloads, exits, contacts and goals"
-            note="A file downloaded, a link to another website, an email or phone tap, or a goal a page reported. Real people only."
+            title="Key moments: downloads, exits, contacts and goals"
+            note="The biggest actions: a file downloaded, a link to another website, an email or phone tap, or a goal a page reported. Every other tap is in the list further down. Real people only."
             cols={["What happened", "Times", "Where", "When"]}
             fmt={[0, "n", 0, 0]}
             bar={1}

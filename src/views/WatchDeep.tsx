@@ -19,7 +19,7 @@ const hourName = (h: number) => `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? "am" : 
 export function AlertsCard({ ins }: { ins: Insights | null }) {
   const list = ins?.alerts ?? [];
   return (
-    <Card title="What is new" note="The last 2 days: a download, a contact, a new source, a broken page, a script error.">
+    <Card title="What is new" note="The last 2 days: a download or contact, a new source, a broken page, a script error.">
       {!ins ? null : list.length === 0 ? (
         <p className="sub mt-3">Nothing new in the last 2 days.</p>
       ) : (
@@ -43,8 +43,8 @@ export function SourceQuality({ ins }: { ins: Insights }) {
   return (
     <DataTable
       title="Which sources bring people who act"
-      note="Real people only. A win is a download, an email, phone or WhatsApp tap, or a goal."
-      cols={["Source", "Visits", "Wins", "Win rate", "Time on site"]}
+      note="Real people only. Acted = the visit included at least one tap on a link, button, tab, form field or download."
+      cols={["Source", "Visits", "Acted", "Acted %", "Time on site"]}
       fmt={[0, "n", "n", "p", "dur"]}
       bar={1}
       max={10}
@@ -77,8 +77,8 @@ export function Landing({ ins }: { ins: Insights }) {
   return (
     <DataTable
       title="From Google to a real visit"
-      note="For each page: how often Google showed it, how many clicked, and what real visitors then did on it."
-      cols={["Page", "Shown in Google", "Google clicks", "Real visits", "Wins"]}
+      note="For each page: how often Google showed it, how many clicked, and how many real visitors then tapped something."
+      cols={["Page", "Shown in Google", "Google clicks", "Real visits", "Acted"]}
       fmt={[0, "n", "n", "n", "n"]}
       bar={1}
       max={10}
@@ -91,9 +91,9 @@ export function Landing({ ins }: { ins: Insights }) {
 export function PagesDeep({ ins, all }: { ins: Insights; all: boolean }) {
   return (
     <DataTable
-      title="Pages: where people enter, leave and win"
+      title="Pages: where people enter, leave and act"
       note="Entered here = the first page of a visit. Left here = the last page. Load = seconds until the main content showed (under 2.5 is good)."
-      cols={["Page", "Visits", "Entered here", "Left here", "Wins", "Read", "Time", "Load (s)"]}
+      cols={["Page", "Visits", "Entered here", "Left here", "Acted", "Read", "Time", "Load (s)"]}
       fmt={[0, "n", "n", "n", "n", "p", "dur", "pos"]}
       bar={1}
       max={10}
@@ -107,7 +107,7 @@ export function Flow({ ins, all }: { ins: Insights; all: boolean }) {
   const rows = [
     { name: "Opened a page", v: f.sessions },
     { name: "Opened a second page", v: f.multi ?? 0, note: `${pct(f.multi ?? 0, f.sessions)}%` },
-    { name: "Did something that counts (a win)", v: f.won ?? 0, note: `${pct(f.won ?? 0, f.sessions)}%` },
+    { name: "Tapped something", v: f.won ?? 0, note: `${pct(f.won ?? 0, f.sessions)}%` },
   ];
   return (
     <>
