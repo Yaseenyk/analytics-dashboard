@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SITES, SITE_HOSTS } from "@/lib/config";
 import { n } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
@@ -9,6 +9,7 @@ import {
   type ClickMap, type FeedRow, type Journey, type Live, type Status, type Summary,
 } from "@/lib/pulse";
 import { Card, Sk } from "@/components/ui";
+import { DataTable } from "@/components/DataTable";
 
 const COLOR: Record<Status, string> = { real: "var(--good)", unclear: "var(--s3)", bot: "var(--bad)" };
 const ORDER: Status[] = ["real", "unclear", "bot"];
@@ -68,37 +69,6 @@ function Rows({ rows, empty = "Nothing yet." }: { rows: { name: string; v: numbe
         </li>
       ))}
     </ul>
-  );
-}
-
-function RightNow({ siteFilter }: { siteFilter: string }) {
-  const params = useMemo(() => ({ site: siteFilter === "all" ? undefined : siteFilter }), [siteFilter]);
-  const { data, err } = usePulse<Live>("/v/live", params, { poll: 10000 });
-  const by = (s: Status) => data?.status.find((x) => x.status === s)?.n ?? 0;
-  return (
-    <Card title="On the sites right now" note="Updates by itself every 10 seconds. A visit counts as online until it has been quiet for 40 seconds.">
-      {!data ? (
-        err ? <p className="sub">Cannot reach the tracker right now.</p> : <Sk w={240} h={40} className="mt-3" />
-      ) : (
-        <>
-          <div className="mt-3 grid grid-cols-3 gap-3">
-            {ORDER.map((s) => (
-              <div key={s} title={STATUS_HELP[s]} className="rounded-2xl bg-white/[.04] p-3.5">
-                <div className="flex items-center gap-1.5 text-[12.5px] text-mute"><i className="h-2 w-2 rounded-full" style={{ background: COLOR[s] }} />{STATUS_LABEL[s]}</div>
-                <div className="mt-1 text-[28px] font-semibold leading-none tracking-tight">{by(s)}</div>
-              </div>
-            ))}
-          </div>
-          {data.pages.length > 0 && (
-            <>
-              <h3 className="m-0 mb-1 mt-5 text-[12.5px] font-semibold uppercase tracking-wider text-dim">Pages real people are on</h3>
-              <Rows rows={data.pages.map((p) => ({ name: `${site(p.site)}  ${p.path}`, v: p.n }))} />
-            </>
-          )}
-          {data.pages.length === 0 && <p className="sub mt-3">No real person is on a page this second.</p>}
-        </>
-      )}
-    </Card>
   );
 }
 
@@ -223,31 +193,6 @@ function Feed({ keyStr, siteFilter }: { keyStr: string; siteFilter: string }) {
   );
 }
 
-function Actions({ rows, all }: { rows: Summary["actions"]; all: boolean }) {
-  return (
-    <Card title="Downloads, exits and contacts" note="The moments that matter: a file taken, a link to another website, an email or phone tap. Real people only, newest first.">
-      {rows.length === 0 ? (
-        <p className="sub mt-3">None yet in this period. Download tracking started on 17 Nov 2026, so earlier downloads were not recorded.</p>
-      ) : (
-        <ul className="m-0 mt-3 list-none space-y-2 p-0">
-          {rows.slice(0, 15).map((r) => {
-            const t = say(r);
-            return (
-              <li key={`${r.site}${r.path}${r.kind}${r.href}${r.label}`} className="rounded-xl bg-white/[.03] px-3 py-2.5 text-[13.5px]">
-                <div className="flex items-start justify-between gap-3">
-                  <span className="min-w-0 break-words"><span aria-hidden="true" className="mr-1.5">{t.icon}</span>{t.text}</span>
-                  <b className="shrink-0 font-mono text-[13px]">{r.n}×</b>
-                </div>
-                <div className="mt-0.5 break-all text-[12px] text-dim">on {all ? `${site(r.site)} ` : ""}{r.path} · {ago(r.last)}</div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </Card>
-  );
-}
-
 function ClickMapCard({ keyStr, pages, days }: { keyStr: string; pages: Summary["pages"]; days: number }) {
   const [pick, setPick] = useState("");
   const [s, p] = pick.split("|");
@@ -289,20 +234,28 @@ function Unlock({ keyStr, setKey }: { keyStr: string; setKey: (k: string) => voi
   if (keyStr) {
     return (
       <p className="sub flex flex-wrap items-center gap-2">
-        Unlocked on this device.
+        Private views are unlocked on this phone.
         <button type="button" onClick={() => setKey("")} className="min-h-9 rounded-full bg-white/[.05] px-3 text-[13px] font-semibold text-mute">Lock again</button>
       </p>
     );
   }
   return (
-    <Card title="Unlock the one-by-one views" note="The numbers above are totals and public. Individual visits, their journeys and click maps need your key. It is kept only in this browser.">
+    <Card title="See each visitor, one by one" note="The totals above are open. To see one person at a time (which page, what they tapped, what they downloaded) enter your Watch key. It is a 32-character code, and it stays only in this browser.">
       <form className="mt-3 flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); if (v.trim()) setKey(v.trim()); }}>
-        <input type="password" autoComplete="off" aria-label="Key" value={v} onChange={(e) => setV(e.target.value)} placeholder="Key" className="min-h-11 min-w-0 flex-1 rounded-xl bg-white/[.05] px-3 text-[14px]" />
+        <input type="password" autoComplete="off" aria-label="Watch key" value={v} onChange={(e) => setV(e.target.value)} placeholder="Paste your Watch key" className="min-h-11 min-w-0 flex-1 rounded-xl bg-white/[.05] px-3 text-[14px]" />
         <button type="submit" className="min-h-11 rounded-xl bg-brand/15 px-5 text-[14px] font-semibold text-brand">Unlock</button>
       </form>
     </Card>
   );
 }
+
+const tile = (label: string, value: string, sub: string, color: string) => (
+  <div key={label} className="card !p-3.5">
+    <div className="flex items-center gap-1.5 text-[12.5px] text-mute"><i className="h-2 w-2 rounded-full" style={{ background: color }} />{label}</div>
+    <div className="mt-1.5 text-[24px] font-semibold leading-none tracking-tight">{value}</div>
+    <div className="mt-1.5 text-[11.5px] leading-snug text-dim">{sub}</div>
+  </div>
+);
 
 export default function Watch() {
   const f = useFilters();
@@ -310,6 +263,17 @@ export default function Watch() {
   const [keyStr, setKey] = useKey();
   const params = useMemo(() => ({ days, site: f.site === "all" ? undefined : f.site }), [days, f.site]);
   const { data: sum, err } = usePulse<Summary>("/v/summary", params, { poll: 60000 });
+  const liveParams = useMemo(() => ({ site: f.site === "all" ? undefined : f.site }), [f.site]);
+  const { data: live } = usePulse<Live>("/v/live", liveParams, { poll: 10000 });
+
+  // a link like /watch/?key=... unlocks this phone once, then the key is removed from the address bar
+  useEffect(() => {
+    try {
+      const u = new URL(location.href);
+      const k = u.searchParams.get("key");
+      if (k) { setKey(k); u.searchParams.delete("key"); history.replaceState(null, "", u.pathname + u.search); }
+    } catch { /* ignore */ }
+  }, [setKey]);
 
   const counts = useMemo(() => {
     const o: Record<Status, number> = { real: 0, unclear: 0, bot: 0 };
@@ -329,76 +293,79 @@ export default function Watch() {
     return [...m.entries()].sort((a, b) => b[1].real + b[1].unclear + b[1].bot - (a[1].real + a[1].unclear + a[1].bot));
   }, [sum]);
   const silent = f.site === "all" ? SITE_HOSTS.filter((h) => !reporting.has(h)) : [];
+  const liveReal = live?.status.find((x) => x.status === "real")?.n ?? 0;
+  const all = f.site === "all";
 
   return (
     <div className="space-y-4">
-      <RightNow siteFilter={f.site} />
-
-      <Card title={`The last ${days} days`} note="Our own tracker, not Google. A visit is one page view. Counting began on the day each site got the script.">
-        {!sum ? (
-          err ? <p className="sub">Cannot reach the tracker right now.</p> : <Sk w={260} h={44} className="mt-3" />
-        ) : total === 0 ? (
-          <p className="sub mt-3">No visits recorded yet for this choice. The tracker was just switched on, so numbers appear as visitors arrive.</p>
-        ) : (
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
+        {sum ? (
           <>
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              {ORDER.map((s) => (
-                <div key={s} title={STATUS_HELP[s]} className="rounded-2xl bg-white/[.04] p-3.5">
-                  <div className="flex items-center gap-1.5 text-[12.5px] text-mute"><i className="h-2 w-2 rounded-full" style={{ background: COLOR[s] }} />{STATUS_LABEL[s]}</div>
-                  <div className="mt-1 text-[28px] font-semibold leading-none tracking-tight">{n(counts[s])}</div>
-                  <div className="mt-1 text-[12.5px] text-dim">{pct(counts[s], total)}% of {n(total)} visits</div>
-                </div>
-              ))}
-            </div>
-            <p className="sub mt-3">{STATUS_LABEL.real}: {STATUS_HELP.real} They stayed {secs(real?.active)} on average and scrolled {real?.scroll ?? 0}% of the page.</p>
-            {sum.signals.total ? (
-              <p className="sub">Clicks by real people: {n(sum.signals.total)}. Rapid repeated clicks (a sign something did not work): {n(sum.signals.rage ?? 0)}. Clicks on something that is not clickable: {n(sum.signals.dead ?? 0)}.</p>
-            ) : null}
-            {silent.length > 0 && <p className="sub">Not reporting yet: {silent.map(site).join(", ")}.</p>}
+            {tile("Real people", n(counts.real), total ? `${pct(counts.real, total)}% of ${n(total)} visits` : "No visits yet", COLOR.real)}
+            {tile("Did nothing", n(counts.unclear), total ? `${pct(counts.unclear, total)}% opened and left` : "", COLOR.unclear)}
+            {tile("Bots", n(counts.bot), total ? `${pct(counts.bot, total)}% robots, not people` : "", COLOR.bot)}
+            {tile("Online now", n(liveReal), "real people on a page this minute", COLOR.real)}
           </>
+        ) : err ? (
+          <p className="sub col-span-2">Cannot reach the tracker right now.</p>
+        ) : (
+          <><Sk w="100%" h={84} /><Sk w="100%" h={84} /><Sk w="100%" h={84} /><Sk w="100%" h={84} /></>
         )}
-      </Card>
+      </div>
+      <p className="sub !mt-0 px-1">Our own tracker, not Google. One visit is one page opened. “Real” means the person touched, scrolled or typed on the page. Last {days} days.{sum && real ? ` A real visitor stays ${secs(real.active)} and reads ${real.scroll ?? 0}% of the page.` : ""}</p>
+
+      {sum && total === 0 && <Card title="No visits yet"><p className="sub mt-2">The tracker was just switched on, so numbers appear as visitors arrive.</p></Card>}
 
       {sum && total > 0 && (
         <>
           <Daily rows={sum.daily} />
-          <Actions rows={sum.actions ?? []} all={f.site === "all"} />
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card title="Where real people came from">
-              <Rows rows={sum.kinds.map((k) => ({ name: KIND_LABEL[k.ref_kind] ?? k.ref_kind, v: k.n }))} />
-              {sum.hosts.length > 0 && (
-                <>
-                  <h3 className="m-0 mb-1 mt-4 text-[12.5px] font-semibold uppercase tracking-wider text-dim">The exact sites and campaigns</h3>
-                  <Rows rows={sum.hosts.map((h) => ({ name: h.ref_host, v: h.n, note: KIND_LABEL[h.ref_kind] ?? h.ref_kind }))} />
-                </>
-              )}
-            </Card>
-            <Card title="Pages real people opened">
-              <Rows rows={sum.pages.slice(0, 12).map((p) => ({ name: `${f.site === "all" ? site(p.site) + "  " : ""}${p.path}`, v: p.n, note: `${secs(p.active)} · ${p.scroll ?? 0}%` }))} empty="No real visits yet." />
-            </Card>
-            <Card title="What real people clicked" note="Buttons and links, most clicked first.">
-              <Rows rows={sum.clicks.slice(0, 14).map((c) => ({ name: `${CLICK_LABEL[c.kind] ?? c.kind}: ${c.label || c.href || "(no label)"}`, v: c.n, note: c.rage ? `${c.rage} rapid` : undefined }))} empty="No clicks recorded yet." />
-            </Card>
-            <Card title="Sites">
-              <div className="mt-2 space-y-2.5">
-                {perSite.map(([h, o]) => {
-                  const t = o.real + o.unclear + o.bot;
-                  return (
-                    <div key={h}>
-                      <div className="flex items-baseline justify-between gap-3 text-[14px]"><span>{site(h)}</span><b className="font-mono text-[13px]">{n(o.real)} <span className="font-normal text-dim">real of {n(t)}</span></b></div>
-                      <div className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-white/5" aria-hidden="true">{ORDER.map((s) => <i key={s} style={{ width: `${pct(o[s], t)}%`, background: COLOR[s] }} />)}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-            <Card title="Countries of real people">
-              <Rows rows={sum.countries.map((c) => ({ name: regionName(c.country), v: c.n }))} empty="No real visits yet." />
-            </Card>
-            <Card title="Devices of real people">
-              <Rows rows={sum.devices.map((d) => ({ name: `${d.device}, ${d.browser}`, v: d.n }))} empty="No real visits yet." />
-            </Card>
-          </div>
+          <DataTable
+            title="Downloads, exits and contacts"
+            note="A file downloaded, a link to another website, an email or phone tap. Real people only."
+            cols={["What happened", "Times", "Where", "When"]}
+            fmt={[0, "n", 0, 0]}
+            bar={1}
+            max={10}
+            empty="None yet. Download tracking started on 17 Nov 2026, so earlier ones were not recorded."
+            rows={(sum.actions ?? []).map((a) => [say(a).text, a.n, `${all ? site(a.site) + " " : ""}${a.path}`, ago(a.last)])}
+          />
+          <DataTable
+            title="Pages real people opened"
+            cols={["Page", "Visits", "Time on page", "Read"]}
+            fmt={[0, "n", "dur", "p"]}
+            bar={1}
+            max={10}
+            rows={sum.pages.map((p) => [`${all ? site(p.site) + " " : ""}${p.path}`, p.n, p.active ?? 0, p.scroll ?? 0])}
+          />
+          <DataTable
+            title="What real people tapped"
+            note="Buttons and links, most tapped first."
+            cols={["What", "Taps", "Quick repeats"]}
+            fmt={[0, "n", "n"]}
+            bar={1}
+            max={10}
+            empty="No taps on buttons or links yet."
+            rows={sum.clicks.map((c) => [`${CLICK_LABEL[c.kind] ?? c.kind}: ${c.label || c.href || "(no label)"}`, c.n, c.rage ?? 0])}
+          />
+          <DataTable
+            title="Where real people came from"
+            cols={["Source", "Visits"]}
+            fmt={[0, "n"]}
+            bar={1}
+            max={10}
+            rows={[...sum.hosts.map((h) => [`${h.ref_host} (${KIND_LABEL[h.ref_kind] ?? h.ref_kind})`, h.n] as [string, number]), ...sum.kinds.filter((k) => !sum.hosts.some((h) => h.ref_kind === k.ref_kind)).map((k) => [KIND_LABEL[k.ref_kind] ?? k.ref_kind, k.n] as [string, number])]}
+          />
+          <DataTable title="Countries" cols={["Country", "Visits"]} fmt={[0, "n"]} bar={1} max={10} rows={sum.countries.map((c) => [regionName(c.country), c.n])} />
+          <DataTable title="Devices" cols={["Device", "Visits"]} fmt={[0, "n"]} bar={1} max={10} rows={sum.devices.map((d) => [`${d.device}, ${d.browser}`, d.n])} />
+          <DataTable
+            title="Your sites"
+            note={silent.length ? `Not reporting yet: ${silent.map(site).join(", ")}.` : undefined}
+            cols={["Site", "Real", "Did nothing", "Bots"]}
+            fmt={[0, "n", "n", "n"]}
+            bar={1}
+            max={12}
+            rows={perSite.map(([h, o]) => [site(h), o.real, o.unclear, o.bot])}
+          />
         </>
       )}
 
