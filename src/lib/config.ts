@@ -93,13 +93,13 @@ export interface Tab {
 }
 export const TABS: Tab[] = [
   { id: "home", href: "/", title: "Home", short: "Home", icon: "overview", group: "home", filters: "all", what: "Your sites at a glance. Tap a box to see more." },
+  { id: "watch", href: "/watch/", title: "Watch visitors", short: "Watch", icon: "live", group: "visitors", filters: "all", what: "Who really visits, what they do, and what needs fixing. From our own tracker, not Google." },
   { id: "visitors", href: "/visitors/", title: "All visitor numbers", short: "Overview", icon: "audience", group: "visitors", filters: "all", what: "Google Analytics, Search Console, Bing and Clarity in one place." },
   { id: "sources", href: "/sources/", title: "Where visitors come from", short: "Sources", icon: "sources", group: "visitors", filters: "all", what: "Which websites, apps and searches sent people to you." },
   { id: "pages", href: "/pages/", title: "Pages", short: "Top pages", icon: "pages", group: "visitors", filters: "all", what: "Which pages people open the most." },
   { id: "audience", href: "/audience/", title: "Audience", short: "Countries", icon: "audience", group: "visitors", filters: "all", what: "Which countries your visitors are in, and how they behave on the page." },
   { id: "leads", href: "/leads/", title: "Leads and clicks", short: "Leads", icon: "leads", group: "visitors", filters: "all", what: "People who took an action: WhatsApp, email, phone call, or a form." },
   { id: "live", href: "/live/", title: "Live now", short: "Live", icon: "live", group: "visitors", filters: "site", what: "Who is on your sites right now (the last 30 minutes)." },
-  { id: "watch", href: "/watch/", title: "Watch visitors", short: "Watch", icon: "live", group: "visitors", filters: "all", what: "Real people or bots, where they came from and what they click. From our own tracker, not Google." },
   { id: "search", href: "/search/", title: "Search Console", short: "Search Console", icon: "search", group: "visitors", filters: "all", what: "What people typed into Google before they found you." },
   { id: "bing", href: "/bing/", title: "Bing", short: "Bing", icon: "search", group: "visitors", filters: "all", what: "The same numbers for Bing search." },
   { id: "clarity", href: "/clarity/", title: "Clarity", short: "Clarity", icon: "live", group: "visitors", filters: "site", what: "How people behave on your pages: scrolling, clicking, getting stuck." },
@@ -121,7 +121,7 @@ export interface Group {
 /** The bottom bar on a phone: four big places instead of seventeen tool names. */
 export const GROUPS: Group[] = [
   { id: "home", label: "Home", icon: "overview", home: "/" },
-  { id: "visitors", label: "Visitors", icon: "audience", home: "/visitors/" },
+  { id: "visitors", label: "Visitors", icon: "audience", home: "/watch/" },
   { id: "todo", label: "To do", icon: "todo", home: "/fix/" },
   { id: "more", label: "More", icon: "more", home: "/jobs/" },
 ];

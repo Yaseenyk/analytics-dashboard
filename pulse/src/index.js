@@ -2,7 +2,7 @@
  * pulse Worker entry. A Worker module may export only its handler, so every helper lives in lib.js (and is tested there).
  * Routes are listed at the top of lib.js.
  */
-import { RETENTION_DAYS, authorised, clickmap, cors, feed, ingest, journey, json, live, summary } from './lib.js';
+import { RETENTION_DAYS, authorised, clickmap, cors, feed, ingest, insights, journey, json, live, summary } from './lib.js';
 import { TRACKER } from './tracker.js';
 
 export default {
@@ -30,6 +30,7 @@ export default {
       const q = url.searchParams;
       try {
         if (url.pathname === '/v/summary') return json(await summary(env, q), ch, 200, 'public, max-age=30');
+        if (url.pathname === '/v/insights') return json(await insights(env, q), ch, 200, 'public, max-age=30');
         if (url.pathname === '/v/live') return json(await live(env, q), ch);
         if (['/v/feed', '/v/journey', '/v/clickmap'].includes(url.pathname)) {
           if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);

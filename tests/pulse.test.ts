@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 // @ts-expect-error plain JavaScript Worker, no type declarations
 import worker from "../pulse/src/index.js";
 // @ts-expect-error plain JavaScript, no type declarations
-import { classifyRef, clean, ingest, isDatacenter, uaInfo } from "../pulse/src/lib.js";
+import { classifyRef, clean, ingest, insights, isDatacenter, uaInfo } from "../pulse/src/lib.js";
 // @ts-expect-error plain JavaScript, no type declarations
 import { TRACKER } from "../pulse/src/tracker.js";
 
@@ -232,12 +232,58 @@ describe("reads", () => {
 describe("the browser script", () => {
   it("is valid JavaScript and small", () => {
     expect(() => new Function(TRACKER)).not.toThrow();
-    expect(TRACKER.length).toBeLessThan(9000);
+    expect(TRACKER.length).toBeLessThan(10000);
   });
 
   it("holds the privacy rules in code: no cookies, no stored id, no typed text", () => {
     expect(TRACKER).not.toMatch(/document\.cookie|localStorage|\.value\b/);
     expect(TRACKER).toMatch(/globalPrivacyControl/);
     expect(TRACKER).toMatch(/doNotTrack/);
+  });
+});
+
+describe("insights", () => {
+  const qs = (o: Record<string, string> = {}) => new URLSearchParams({ days: "28", ...o });
+  async function seed() {
+    const env = { DB: fakeD1() };
+    // a real visitor from search opens two pages and downloads a file; a second real visitor only reads; one bot
+    await ingest(post(msg({ i: "hit0000001a", u: "sessaaaaaaa", p: "/", r: "https://www.google.com/", hu: 1, a: 20, sc: 80, lc: 1800, st: 200 })), env);
+    await ingest(post(msg({ i: "hit0000001b", u: "sessaaaaaaa", p: "/emi-calculator/", r: "https://calc.streamerosai.com/", hu: 1, a: 30, sc: 60, c: [{ n: 1, t: 900, k: "dl", l: "Guide", h: "guide.pdf", x: 10, y: 10, g: "main", z: 0 }, { n: 2, t: 1200, k: "goal", l: "calc_done", h: "", x: 0, y: 0, g: "", z: 0 }] })), env);
+    await ingest(post(msg({ i: "hit0000002a", u: "sessbbbbbbb", p: "/", r: "https://dev.to/x", hu: 1, a: 9, sc: 30, er: 2 })), env);
+    await ingest(post(msg({ i: "hit0000003a", u: "sessccccccc", p: "/gone/", r: "https://www.bing.com/", hu: 1, a: 4, st: 404 })), env);
+    await ingest(post(msg({ i: "hit0000004a", u: "sessddddddd", p: "/", hu: 0 }), { ua: "python-requests/2.31" }), env);
+    return env;
+  }
+
+  it("counts people, wins, sources, entries and exits, and the second page people go to", async () => {
+    const env = await seed();
+    // visits are stamped with now(), so the two pages of one session would tie: space them like real life
+    env.DB.db.exec("UPDATE hits SET ts = ts - 5000 WHERE id='hit0000001a'");
+    const r = await insights(env, qs());
+    expect(r.compare).toMatchObject({ real: 4, wins: 1, bots: 1 });
+    expect(r.sources.find((x: { ref_kind: string }) => x.ref_kind === "search")).toMatchObject({ visits: 1, wins: 0 });
+    const home = r.pages.find((x: { path: string }) => x.path === "/");
+    expect(home).toMatchObject({ visits: 2, entries: 2, exits: 1 });
+    expect(r.pages.find((x: { path: string }) => x.path === "/emi-calculator/")).toMatchObject({ visits: 1, wins: 1, exits: 1 });
+    expect(r.flows[0]).toMatchObject({ from_path: "/", to_path: "/emi-calculator/", n: 1 });
+    expect(r.funnel).toMatchObject({ sessions: 3 + 0, multi: 1, won: 1 });
+  });
+
+  it("lists broken pages, script errors and speed, and turns them into alerts", async () => {
+    const env = await seed();
+    const r = await insights(env, qs());
+    expect(r.broken[0]).toMatchObject({ path: "/gone/", ref_host: "bing.com", n: 1 });
+    expect(r.errors[0]).toMatchObject({ path: "/", errors: 2 });
+    expect(r.speed[0]).toMatchObject({ path: "/", lcp: 1800 });
+    const titles = r.alerts.map((a: { title: string }) => a.title).join(" | ");
+    expect(titles).toMatch(/downloaded guide\.pdf/);
+    expect(titles).toMatch(/Goal reached: calc_done/);
+    expect(titles).toMatch(/broken page \(\/gone\/\)/);
+  });
+
+  it("filters by site and never throws on an empty database", async () => {
+    const r = await insights({ DB: fakeD1() }, qs({ site: "calc.streamerosai.com" }));
+    expect(r.compare).toMatchObject({ real: 0, wins: 0 });
+    expect(r.alerts).toEqual([]);
   });
 });

@@ -109,3 +109,19 @@ export function regionName(code: string): string {
   if (!code) return "Unknown";
   try { return new Intl.DisplayNames(["en"], { type: "region" }).of(code) || code; } catch { return code; }
 }
+
+export interface Insights {
+  generatedAt: string;
+  days: number;
+  site: string;
+  compare: { real: number; wins: number; bots: number; prevReal: number; prevWins: number; prevBots: number };
+  sources: { ref_kind: string; ref_host: string; visits: number; wins: number | null; active: number | null }[];
+  pages: { site: string; path: string; visits: number; entries: number | null; exits: number | null; wins: number | null; scroll: number | null; active: number | null; lcp: number | null }[];
+  flows: { site: string; from_path: string; to_path: string; n: number }[];
+  funnel: { sessions: number; multi: number | null; won: number | null };
+  hours: { hour: number; dow: number; n: number }[];
+  broken: { site: string; path: string; ref_host: string; n: number; last: number }[];
+  errors: { site: string; path: string; errors: number; visits: number; last: number }[];
+  speed: { site: string; path: string; n: number; lcp: number }[];
+  alerts: { id: string; level: "good" | "warn" | "bad"; ts: number; site: string; title: string; detail: string }[];
+}

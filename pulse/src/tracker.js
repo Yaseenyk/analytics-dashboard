@@ -35,7 +35,11 @@ export const TRACKER = String.raw`(function () {
   var sid;
   try { sid = sessionStorage.getItem('_ps'); if (!sid) { sid = rid(); sessionStorage.setItem('_ps', sid); } } catch (e) { sid = rid(); }
 
-  var h = null, dirty = false, lastAct = 0, moves = 0, lastClicks = [], seq = 0;
+  var firstId = '', h = null, dirty = false, lastAct = 0, moves = 0, lastClicks = [], seq = 0, first = true, lcpMs = 0, nav = 0;
+  try { var nv = performance.getEntriesByType('navigation')[0]; nav = (nv && nv.responseStatus) || 0; } catch (e) {}
+  try {
+    new PerformanceObserver(function (l) { var e = l.getEntries(); if (e.length) lcpMs = Math.round(e[e.length - 1].startTime); }).observe({ type: 'largest-contentful-paint', buffered: true });
+  } catch (e) {}
   function tabHuman() { try { return !n.webdriver && sessionStorage.getItem('_ph') === '1'; } catch (e) { return false; } }
 
   function utm() {
@@ -47,17 +51,19 @@ export const TRACKER = String.raw`(function () {
   function start(path, ref) {
     h = null;
     for (var i = 0; i < exclude.length; i++) if (path.indexOf(exclude[i]) === 0) return;
-    h = { i: rid(), p: path.slice(0, 120), t0: Date.now(), r: (ref || '').slice(0, 200), m: utm(), hu: tabHuman() ? 1 : 0, a: 0, sc: 0, nc: 0, q: [] };
+    h = { i: rid(), p: path.slice(0, 120), t0: Date.now(), r: (ref || '').slice(0, 200), m: utm(), hu: tabHuman() ? 1 : 0, a: 0, sc: 0, nc: 0, er: 0, st: first ? nav : 0, q: [] };
+    first = false;
     moves = 0; lastClicks = []; seq = 0; dirty = true;
     setTimeout(function () { if (h && h.i === cur) send(); }, 2000);
     var cur = h.i;
+    if (!firstId) firstId = h.i;
   }
 
   function payload() {
     var o = {
       v: 1, s: site, i: h.i, u: sid, p: h.p, r: h.r, m: h.m,
       w: w.innerWidth || 0, h: w.innerHeight || 0, l: (n.language || '').slice(0, 12),
-      hu: h.hu, a: h.a, sc: h.sc, nc: h.nc, c: h.q.splice(0, 30)
+      hu: h.hu, a: h.a, sc: h.sc, nc: h.nc, er: h.er, st: h.st, lc: h.i === firstId ? lcpMs : 0, c: h.q.splice(0, 30)
     };
     if (n.webdriver) o.wd = 1;
     return JSON.stringify(o);
@@ -175,6 +181,19 @@ export const TRACKER = String.raw`(function () {
     if (h.q.length < 30) h.q.push({ n: ++seq, t: now - h.t0, k: k, l: lb, h: hr, x: x, y: y, g: section(t), z: z });
     if (k === 'out' || k === 'mail' || k === 'tel' || k === 'dl') send();
   }
+  function goal(name) {
+    if (!h || !name) return;
+    h.q.length < 30 && h.q.push({ n: ++seq, t: Date.now() - h.t0, k: 'goal', l: String(name).slice(0, 40), h: '', x: 0, y: 0, g: '', z: 0 });
+    dirty = true; send();
+  }
+  w.pulse = function (name) { goal(name); };
+  d.addEventListener('click', function (e) {
+    if (!e.isTrusted || !e.target || !e.target.closest) return;
+    var g = e.target.closest('[data-pulse-goal]');
+    if (g) goal(g.getAttribute('data-pulse-goal'));
+  }, true);
+  w.addEventListener('error', function () { if (h && h.er < 20) { h.er++; dirty = true; } });
+  w.addEventListener('unhandledrejection', function () { if (h && h.er < 20) { h.er++; dirty = true; } });
   d.addEventListener('click', onClick, true);
 
   function flush() { if (h && (dirty || h.q.length)) send(); }
