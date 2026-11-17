@@ -62,10 +62,7 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
       {(showFilter || rows.length > 1) && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {showFilter && <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter" aria-label={`Filter ${title}`} className="min-w-0 basis-full md:flex-1 md:basis-32" />}
-          <select aria-label="Sort by" value={col ?? 0} onChange={(e) => { setCol(+e.target.value); setDir(-1); }} className="min-w-0 flex-1 md:hidden">
-            {cols.map((c, i) => <option key={i} value={i}>Sort: {c}</option>)}
-          </select>
-          {showRows && (
+                    {showRows && (
             <select aria-label="Rows" value={limit} onChange={(e) => setLim(+e.target.value)}>
               {[...new Set([limit, max, 25, 100, 100000])].sort((a, b) => a - b).map((v) => <option key={v} value={v}>{v === 100000 ? "All" : `${v} rows`}</option>)}
             </select>
@@ -73,13 +70,13 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
         </div>
       )}
 
-      {/* desktop: the first column takes the free space, numbers sit tight on the right */}
-      <div className="mt-3 hidden overflow-x-auto md:block">
-        <table className="w-full border-collapse text-[13px]">
+      {/* one line per row; on a phone the table scrolls sideways and the first column stays in view */}
+      <div className="mt-3 overflow-x-auto overscroll-x-contain">
+        <table className="w-full min-w-max border-collapse text-[13px]">
           <thead>
             <tr>
               {cols.map((c, i) => (
-                <th key={c + i} aria-sort={th(i)} scope="col" className={`whitespace-nowrap border-b border-line py-2 text-[11.5px] font-medium ${i ? "w-px min-w-[5rem] px-3" : "pr-3"} ${numeric(i) ? "text-right" : "text-left"}`}>
+                <th key={c + i} aria-sort={th(i)} scope="col" className={`whitespace-nowrap border-b border-line py-2 text-[11.5px] font-medium ${i ? "w-px min-w-[5rem] px-3" : "sticky left-0 z-10 bg-card pr-3"} ${numeric(i) ? "text-right" : "text-left"}`}>
                   <button type="button" aria-describedby={id} onClick={() => { if (col === i) setDir(-dir); else { setCol(i); setDir(-1); } }} className={`inline-flex items-center gap-1 hover:text-ink ${col === i ? "text-brand" : "text-dim"}`}>
                     {c}
                     <span aria-hidden="true" className="text-[9px]">{col === i ? (dir > 0 ? "▲" : "▼") : ""}</span>
@@ -93,7 +90,7 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
               <tr key={ri} style={{ "--r": ri } as React.CSSProperties} className="row-in border-b border-line transition-colors last:border-0 hover:bg-white/[.04]">
                 {r.map((c, j) =>
                   j === 0 ? (
-                    <td key={j} className="max-w-0 py-2.5 pr-3" title={String(c)}>
+                    <td key={j} className="sticky left-0 z-10 max-w-[170px] bg-card py-2.5 pr-3 md:max-w-0" title={String(c)}>
                       <div className="truncate">{fmtCell(c, fmt[0])}</div>
                       {bar != null && (
                         <div aria-hidden="true" className="mt-1.5 h-[3px] overflow-hidden rounded-full bg-white/[.06]">
@@ -113,26 +110,6 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
         </table>
       </div>
       <span id={id} className="sr-only">Click a heading to sort</span>
-
-      {/* phone: each row becomes a card */}
-      <ul className="mt-3 space-y-2 md:hidden">
-        {vis.map((r, ri) => (
-          <li key={ri} style={{ "--r": ri } as React.CSSProperties} className="row-in overflow-hidden rounded-xl border border-line bg-card2/60">
-            <div className="p-3">
-              <div className="break-words text-[13.5px] font-medium">{fmtCell(r[0], fmt[0])}</div>
-              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2">
-                {r.slice(1).map((c, j) => (
-                  <div key={j} className="min-w-0">
-                    <dt className="text-[11px] text-dim">{cols[j + 1]}</dt>
-                    <dd className={`break-words text-[12.5px] ${numeric(j + 1) ? "text-ink/90" : "text-mute"}`}>{fmtCell(c, fmt[j + 1])}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-            {bar != null && <div aria-hidden="true" className="h-[3px] bg-white/[.05]"><div className="bar-grow h-full bg-brand/70" style={{ width: `${pctOf(r)}%` }} /></div>}
-          </li>
-        ))}
-      </ul>
 
       {(shown.length > vis.length || q) && (
         <p className="mt-2 text-[11.5px] text-dim">Showing {Math.min(shown.length, vis.length)} of {shown.length}{q ? " matching" : ""} rows</p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { SITES, SITE_HOSTS } from "@/lib/config";
 import { n } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
@@ -88,7 +88,7 @@ function Daily({ rows }: { rows: Summary["daily"] }) {
     <Card title="Visits per day" note="Green is a real person, amber did nothing, red is a known bot.">
       <div className="mt-3 flex h-36 items-end gap-[3px]" role="img" aria-label="Visits per day, split into real people, no interaction and bots">
         {days.map(([d, o]) => (
-          <div key={d} title={`${d}: ${o.real} real, ${o.unclear} no interaction, ${o.bot} bots`} className="flex h-full min-w-[3px] flex-1 flex-col-reverse overflow-hidden rounded-t">
+          <div key={d} title={`${d}: ${o.real} real, ${o.unclear} no interaction, ${o.bot} bots`} className="flex h-full min-w-[3px] max-w-10 flex-1 flex-col-reverse overflow-hidden rounded-t">
             {ORDER.map((s) => <i key={s} style={{ height: `${(100 * o[s]) / max}%`, background: COLOR[s] }} className="block w-full" />)}
           </div>
         ))}
@@ -149,8 +149,11 @@ function Feed({ keyStr, siteFilter }: { keyStr: string; siteFilter: string }) {
   const { data, err } = usePulse<FeedRow[]>("/v/feed", params, { key: keyStr, poll: 10000 });
   const rows = data && onlyAct ? data.filter((r) => (r.ndl ?? 0) + (r.nout ?? 0) > 0) : data;
   const chip = (on: boolean) => `min-h-10 shrink-0 rounded-full px-4 text-[13px] font-semibold ${on ? "bg-brand/15 text-brand" : "bg-white/[.05] text-mute"}`;
+  const th = "whitespace-nowrap border-b border-line px-3 py-2 text-left text-[11.5px] font-medium text-dim";
+  const td = "whitespace-nowrap px-3 py-2.5 text-[12.5px] text-mute";
+  const heads = ["Who", "Site", "Page", "Came from", "Country", "Device", "Time on page", "Read", "Taps", "Downloads", "Exits"];
   return (
-    <Card title="Visits one by one" note="Newest first. Tap a visit to see what that person did, step by step.">
+    <Card title="Visits one by one" note="One line per visit, newest first. Slide the table sideways for more. Tap a line to see that person’s steps.">
       <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="Filter visits">
         {(["all", ...ORDER] as const).map((s) => (
           <button key={s} type="button" aria-pressed={who === s} onClick={() => setWho(s)} className={chip(who === s)}>
@@ -163,31 +166,43 @@ function Feed({ keyStr, siteFilter }: { keyStr: string; siteFilter: string }) {
       {!data && !err && <Sk w={300} h={14} className="mt-4" />}
       {rows && rows.length === 0 && <p className="sub mt-3">No visits like this yet.</p>}
       {rows && rows.length > 0 && (
-        <ul className="m-0 mt-3 list-none space-y-2 p-0">
-          {rows.map((r) => (
-            <li key={r.id} className="overflow-hidden rounded-xl bg-white/[.03]">
-              <button type="button" onClick={() => setOpen(open === r.id ? "" : r.id)} aria-expanded={open === r.id} className="block w-full px-3 py-3 text-left">
-                <span className="flex items-center justify-between gap-2">
-                  <Badge s={r.status} />
-                  <span className="text-[12px] text-dim" title={when(r.last)}>{ago(r.last)}</span>
-                </span>
-                <span className="mt-2 block text-[14px] leading-snug"><b>{site(r.site)}</b> <span className="break-all text-mute">{r.path}</span></span>
-                <span className="mt-1 block text-[12.5px] leading-relaxed text-dim">
-                  From {KIND_LABEL[r.ref_kind] ?? r.ref_kind}{r.ref_host ? ` (${r.ref_host})` : ""} · {regionName(r.country)} · {r.device}, {r.browser}
-                </span>
-                <span className="mt-2 flex flex-wrap gap-1.5 text-[12px]">
-                  <span className="rounded-md bg-white/[.05] px-2 py-0.5 text-mute">{secs(r.active)} active</span>
-                  <span className="rounded-md bg-white/[.05] px-2 py-0.5 text-mute">{r.scroll}% scrolled</span>
-                  <span className="rounded-md bg-white/[.05] px-2 py-0.5 text-mute">{r.nclicks} click{r.nclicks === 1 ? "" : "s"}</span>
-                  {r.ndl > 0 && <span className="rounded-md bg-brand/15 px-2 py-0.5 font-semibold text-brand">⬇ {r.ndl} download{r.ndl === 1 ? "" : "s"}</span>}
-                  {r.nout > 0 && <span className="rounded-md bg-brand/15 px-2 py-0.5 font-semibold text-brand">↗ {r.nout} exit{r.nout === 1 ? "" : "s"} or contact</span>}
-                </span>
-                <span className="mt-2 block text-[12px] font-semibold text-brand">{open === r.id ? "Hide steps ▲" : "Show steps ▼"}</span>
-              </button>
-              {open === r.id && <Journeys row={r} keyStr={keyStr} />}
-            </li>
-          ))}
-        </ul>
+        <div className="mt-3 overflow-x-auto overscroll-x-contain">
+          <table className="w-full min-w-max border-collapse">
+            <thead>
+              <tr>
+                <th className={`${th} sticky left-0 z-10 bg-card pl-0`} scope="col">When</th>
+                {heads.map((h) => <th key={h} className={th} scope="col">{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <Fragment key={r.id}>
+                  <tr onClick={() => setOpen(open === r.id ? "" : r.id)} className="cursor-pointer border-b border-line hover:bg-white/[.04]" aria-expanded={open === r.id}>
+                    <td className="sticky left-0 z-10 whitespace-nowrap bg-card py-2.5 pr-3 text-[12.5px]" title={when(r.last)}>
+                      <span aria-hidden="true" className="mr-1.5 text-[10px] text-brand">{open === r.id ? "▼" : "▶"}</span>{ago(r.last)}
+                    </td>
+                    <td className="px-3 py-2.5"><Badge s={r.status} /></td>
+                    <td className={td}>{site(r.site)}</td>
+                    <td className={`${td} text-ink`}>{r.path}</td>
+                    <td className={td}>{KIND_LABEL[r.ref_kind] ?? r.ref_kind}{r.ref_host ? ` (${r.ref_host})` : ""}</td>
+                    <td className={td}>{regionName(r.country)}</td>
+                    <td className={td}>{r.device}, {r.browser}</td>
+                    <td className={td}>{secs(r.active)}</td>
+                    <td className={td}>{r.scroll}%</td>
+                    <td className={td}>{r.nclicks}</td>
+                    <td className={`${td} ${r.ndl ? "font-semibold text-brand" : ""}`}>{r.ndl ?? 0}</td>
+                    <td className={`${td} ${r.nout ? "font-semibold text-brand" : ""}`}>{r.nout ?? 0}</td>
+                  </tr>
+                  {open === r.id && (
+                    <tr className="border-b border-line">
+                      <td colSpan={heads.length + 1} className="p-0"><div className="sticky left-0 w-[min(100vw-56px,680px)] max-w-full"><Journeys row={r} keyStr={keyStr} /></div></td>
+                    </tr>
+                  )}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </Card>
   );
