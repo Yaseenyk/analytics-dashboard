@@ -220,18 +220,19 @@ function Unlock({ keyStr, setKey }: { keyStr: string; setKey: (k: string) => voi
   );
 }
 
-const vs = (cur: number, prev: number, days: number) => {
-  if (!prev && !cur) return `no change in ${days} days`;
+/** "▲ 13 vs before": one short line, so every tile reads the same. */
+const vs = (cur: number, prev: number) => {
   const d = cur - prev;
-  return `${d > 0 ? "▲ +" : d < 0 ? "▼ " : "= "}${d} vs the ${days} days before`;
+  return d === 0 ? "same as before" : `${d > 0 ? "▲" : "▼"} ${Math.abs(d)} vs before`;
 };
-const tile = (label: string, value: string, sub: string, color: string, subColor = "") => (
-  <div key={label} className="card !p-3.5">
-    <div className="flex items-center gap-1.5 text-[12.5px] text-mute"><i className="h-2 w-2 rounded-full" style={{ background: color }} />{label}</div>
-    <div className="mt-1.5 text-[24px] font-semibold leading-none tracking-tight">{value}</div>
-    <div className={`mt-1.5 text-[11.5px] leading-snug ${subColor || "text-dim"}`}>{sub}</div>
+const tile = (label: string, value: string, sub: string, color: string, tone: "up" | "down" | "" = "") => (
+  <div key={label} className="card flex flex-col !p-3.5">
+    <div className="flex items-center gap-1.5 text-[12.5px] text-mute"><i className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} /><span className="truncate">{label}</span></div>
+    <div className="mt-2 text-[28px] font-semibold leading-none tracking-tight">{value}</div>
+    <div className={`mt-2 truncate text-[12px] leading-4 ${tone === "up" ? "text-good" : tone === "down" ? "text-bad" : "text-dim"}`}>{sub}</div>
   </div>
 );
+const tone = (cur: number, prev: number) => (cur > prev ? "up" : cur < prev ? "down" : "");
 
 export default function Watch() {
   const f = useFilters();
@@ -279,10 +280,10 @@ export default function Watch() {
       <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
         {sum ? (
           <>
-            {tile("Real people", n(counts.real), c ? vs(c.real, c.prevReal, days) : total ? `${pct(counts.real, total)}% of ${n(total)} visits` : "No visits yet", COLOR.real, c && c.real > c.prevReal ? "text-good" : "")}
-            {tile("Took action", n(c?.wins ?? 0), c ? `${vs(c.wins, c.prevWins, days)}. Real visits where the person tapped something.` : "Real visits where the person tapped something", "var(--brand)", c && c.wins > c.prevWins ? "text-good" : "")}
-            {tile("Online now", n(liveReal), "real people on a page this minute", COLOR.real)}
-            {tile("Bots", n(counts.bot), `${pct(counts.bot, total)}% of visits are robots. ${n(counts.unclear)} more did nothing.`, COLOR.bot)}
+            {tile("Real people", n(counts.real), c ? vs(c.real, c.prevReal) : "no earlier data", COLOR.real, c ? tone(c.real, c.prevReal) : "")}
+            {tile("Took action", n(c?.wins ?? 0), c ? vs(c.wins, c.prevWins) : "no earlier data", "var(--brand)", c ? tone(c.wins, c.prevWins) : "")}
+            {tile("Online now", n(liveReal), "this minute", COLOR.real)}
+            {tile("Bots", n(counts.bot), `${pct(counts.bot, total)}% of all visits`, COLOR.bot)}
           </>
         ) : err ? (
           <p className="sub col-span-2">Cannot reach the tracker right now.</p>
@@ -290,7 +291,7 @@ export default function Watch() {
           <><Sk w="100%" h={84} /><Sk w="100%" h={84} /><Sk w="100%" h={84} /><Sk w="100%" h={84} /></>
         )}
       </div>
-      <p className="sub !mt-0 px-1">Our own tracker, not Google. One visit is one page opened. “Real” means the person touched, scrolled or typed on the page. Last {days} days.{sum && real ? ` A real visitor stays ${secs(real.active)} and reads ${real.scroll ?? 0}% of the page.` : ""}</p>
+      <p className="sub !mt-0 px-1">Our own tracker, not Google, for the last {days} days. <b className="font-medium text-mute">Real people</b> touched, scrolled or typed. <b className="font-medium text-mute">Took action</b> means a real visit that tapped something. <b className="font-medium text-mute">Bots</b> are robots{sum ? `, and ${n(counts.unclear)} more visits did nothing` : ""}. Arrows compare with the {days} days before.{sum && real ? ` A real visitor stays ${secs(real.active)} and reads ${real.scroll ?? 0}% of the page.` : ""}</p>
 
       <AlertsCard ins={ins} />
 

@@ -55,9 +55,9 @@ export function Rows({ rows, empty = "Nothing yet." }: { rows: { name: string; v
     <ul className="m-0 mt-2 list-none p-0">
       {rows.map((r) => (
         <li key={r.name} className="py-1.5">
-          <div className="flex items-start justify-between gap-3 text-[14px]">
-            <span className="min-w-0 break-words">{r.name}{r.note && <span className="block text-[12px] font-normal text-dim sm:hidden">{r.note}</span>}</span>
-            <b className="shrink-0 font-mono text-[13px]">{n(r.v)}{r.note && <span className="ml-2 hidden font-normal text-dim sm:inline">{r.note}</span>}</b>
+          <div className="flex items-baseline justify-between gap-3 text-[14px]">
+            <span className="min-w-0 truncate" title={r.name}>{r.name}</span>
+            <span className="shrink-0 whitespace-nowrap font-mono text-[13px]"><b>{n(r.v)}</b>{r.note && <span className="ml-2 inline-block min-w-[2.5rem] text-right text-dim">{r.note}</span>}</span>
           </div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/5"><i className="block h-full rounded-full bg-brand" style={{ width: `${Math.max(4, (100 * r.v) / max)}%` }} /></div>
         </li>

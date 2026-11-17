@@ -105,7 +105,7 @@ export function PagesDeep({ ins, all }: { ins: Insights; all: boolean }) {
 export function Flow({ ins, all }: { ins: Insights; all: boolean }) {
   const f = ins.funnel;
   const rows = [
-    { name: "Opened a page", v: f.sessions },
+    { name: "Opened a page", v: f.sessions, note: "100%" },
     { name: "Opened a second page", v: f.multi ?? 0, note: `${pct(f.multi ?? 0, f.sessions)}%` },
     { name: "Tapped something", v: f.won ?? 0, note: `${pct(f.won ?? 0, f.sessions)}%` },
   ];
