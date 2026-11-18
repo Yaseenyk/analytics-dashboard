@@ -249,7 +249,7 @@ describe("reads", () => {
     const old = Date.now() - 2 * 864e5;
     env.DB.db.exec(`UPDATE hits SET ts=${old}, last=${old}`);
     await worker.scheduled({}, env);
-    const left = env.DB.db.prepare("SELECT sid FROM hits ORDER BY sid").all().map((r: { sid: string }) => r.sid);
+    const left = env.DB.db.prepare("SELECT sid FROM hits ORDER BY sid").all().map((r) => String(r.sid));
     expect(left).toEqual(["sessreal001", "sessunclr01"]);
     const clicks = env.DB.db.prepare("SELECT COUNT(*) AS n FROM clicks").get() as { n: number };
     expect(clicks.n).toBe(1);
