@@ -27,6 +27,7 @@ const GSC_SITES = [
   'https://images.streamerosai.com/',
   'https://math.streamerosai.com/',
   'https://esports.streamerosai.com/',
+  'https://sable.streamerosai.com/',
   'https://streamerosai.com/',
 ];
 const KEY_EVENTS = ['whatsapp_click', 'email_click', 'phone_click', 'generate_lead', 'app_download', 'template_download', 'agreement_signed', 'calculator_use'];
@@ -278,6 +279,7 @@ const HEALTH_SITES = {
   'math.streamerosai.com': 'https://math.streamerosai.com/',
   'exams.streamerosai.com': 'https://exams.streamerosai.com/',
   'esports.streamerosai.com': 'https://esports.streamerosai.com/',
+  'sable.streamerosai.com': 'https://sable.streamerosai.com/',
 };
 const HEALTH_BATCH = 25;
 const HEALTH_COOLDOWN_MIN = 90;

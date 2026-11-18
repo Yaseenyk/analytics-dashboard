@@ -29,6 +29,7 @@ export const SITES = [
   'streamerosai.com', 'yk.streamerosai.com', 'fitrank.streamerosai.com', 'campus.streamerosai.com',
   'spotai.streamerosai.com', 'tools.streamerosai.com', 'solar.streamerosai.com', 'calc.streamerosai.com',
   'images.streamerosai.com', 'math.streamerosai.com', 'exams.streamerosai.com', 'esports.streamerosai.com',
+  'sable.streamerosai.com',
 ];
 export const RETENTION_DAYS = 90;
 const ID = /^[a-z0-9]{8,24}$/;

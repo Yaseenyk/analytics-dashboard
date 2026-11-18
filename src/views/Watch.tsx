@@ -252,7 +252,7 @@ const ME_STORE = "pulse-me-device";
 function MyDevices({ mine, onMark, onUnmark, onHide }: { mine: Summary["mine"]; onMark: () => void; onUnmark: () => void; onHide: () => void }) {
   const link = "inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-[14px] font-semibold";
   return (
-    <Card title="Leave out my own visits" note="Do this once on each phone and computer you use. The page runs through your 12 sites, which takes about 20 seconds, and comes back here. From then on, visits from that device are left out of every number. This box hides itself once you tap Mark; the My devices button brings it back.">
+    <Card title="Leave out my own visits" note="Do this once on each phone and computer you use. The page runs through your 13 sites, which takes about 20 seconds, and comes back here. From then on, visits from that device are left out of every number. This box hides itself once you tap Mark; the My devices button brings it back.">
       <div className="mt-3 flex flex-wrap gap-2">
         <a href={`${PULSE_API}/me?v=on&step=0`} onClick={onMark} className={`${link} bg-brand/15 text-brand`}>Mark this device as mine</a>
         <a href={`${PULSE_API}/me?v=off&step=0`} onClick={onUnmark} className={`${link} bg-white/[.05] text-mute`}>Unmark this device</a>
@@ -361,7 +361,7 @@ export default function Watch() {
         {sum?.mine?.visits ? ` Your own ${n(sum.mine.visits)} visit${sum.mine.visits === 1 ? " is" : "s are"} left out.` : ""} Days are in Indian time.
       </p>
 
-      {meFlash && <p role="status" className="m-0 rounded-xl bg-brand/10 px-4 py-3 text-[13.5px] text-ink">{meFlash === "on" ? "Done. This device is now left out on all 12 sites." : "Done. This device counts as a normal visitor again."}</p>}
+      {meFlash && <p role="status" className="m-0 rounded-xl bg-brand/10 px-4 py-3 text-[13.5px] text-ink">{meFlash === "on" ? "Done. This device is now left out on all 13 sites." : "Done. This device counts as a normal visitor again."}</p>}
       {keyStr && <Feed keyStr={keyStr} siteFilter={f.site} bots={counts.bot} />}
 
       <AlertsCard ins={ins} />

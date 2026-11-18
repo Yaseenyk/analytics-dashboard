@@ -380,7 +380,8 @@ describe("counting people, not page views", () => {
   it("walks the owner's browser through every site and back to the dashboard", async () => {
     expect(meStep(new URLSearchParams("v=on"))).toBe("https://streamerosai.com/#pulse-me=on-0");
     expect(meStep(new URLSearchParams("v=off&step=3"))).toBe("https://campus.streamerosai.com/#pulse-me=off-3");
-    expect(meStep(new URLSearchParams("v=on&step=12"))).toBe("https://analytics.streamerosai.com/watch/?me=on");
+    expect(meStep(new URLSearchParams("v=on&step=12"))).toBe("https://sable.streamerosai.com/#pulse-me=on-12");
+    expect(meStep(new URLSearchParams("v=on&step=13"))).toBe("https://analytics.streamerosai.com/watch/?me=on");
     expect(meStep(new URLSearchParams("v=https://evil.example&step=999"))).toBe("https://analytics.streamerosai.com/watch/?me=on");
     const r = await get({ DB: fakeD1() }, "/me?v=on&step=11");
     expect(r.status).toBe(302);

@@ -24,6 +24,7 @@ export const RANK_PROPERTY = 'sc-domain:streamerosai.com';
 export const WATCH_REPOS = [
   'Yaseenyk/portfolio', 'Yaseenyk/streamer-os-website', 'Yaseenyk/fitrank-website', 'Yaseenyk/campus-site', 'Yaseenyk/spotai-website',
   'Yaseenyk/solar-site', 'Yaseenyk/exams', 'Yaseenyk/analytics-dashboard', 'Yaseenyk/linkedin-bot', 'Yaseenyk/sites-lab-yk',
+  'Yaseenyk/sable-website',
 ];
 
 // ---- alerts ----------------------------------------------------------------------------------------
