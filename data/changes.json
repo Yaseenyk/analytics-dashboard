@@ -90,6 +90,17 @@
       ],
       "detail": "A new site for the Sable app: home, features, your data, a page on expense tracking without SMS permission, a page on udhar and loan tracking, and about, contact, privacy and terms. Nine indexable pages, real app screenshots, keywords chosen from research (docs/seo-research-2026-11-19.md in the site repo). It is a new site, not an edit to an existing page, so it sits outside the freeze.",
       "expect": "Pages get indexed over two to four weeks. First impressions for personal expense tracker app india, expense tracker without sms permission and udhar or loan tracker searches."
+    },
+    {
+      "id": "2026-11-19-portfolio-sable-link",
+      "date": "2026-11-19",
+      "title": "Portfolio: Sable linked to its live site",
+      "kind": "content",
+      "hosts": [
+        "yk.streamerosai.com"
+      ],
+      "detail": "Made during the freeze at the owner's request. The Sable product page, the projects list, the footer and the home page data now link sable.streamerosai.com and show real screenshots. Facts corrected: Android only, no SMS access. The deep-dive page keeps its first-design write-up with a dated note.",
+      "expect": "No ranking change expected on the portfolio. The link helps Google find the new Sable site."
     }
   ]
 }
