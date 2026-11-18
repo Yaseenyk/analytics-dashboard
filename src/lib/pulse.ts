@@ -12,7 +12,17 @@ export const STATUS_ONE: Record<Status, string> = { real: "Real", unclear: "No i
 export const STATUS_HELP: Record<Status, string> = {
   real: "A person scrolled, clicked, tapped or typed on the page.",
   unclear: "The page loaded and nothing human happened: a very quick bounce, or a robot that does not move.",
-  bot: "A known robot, an automated browser, or a visit from a hosting network with no human action.",
+  bot: "A browser driven by software, or a robot name or server network with no human action on the page.",
+};
+
+/** Why a visit got its label. */
+export type Why = "auto" | "acted" | "ua" | "host" | "idle";
+export const WHY_LABEL: Record<Why, string> = {
+  acted: "Touched, scrolled or typed",
+  idle: "Opened the page, did nothing",
+  ua: "Its browser name says it is a robot",
+  auto: "A browser driven by software",
+  host: "From a server network, did nothing",
 };
 
 export interface StatusRow { status: Status; hits: number; sessions: number; active: number | null; scroll: number | null }
@@ -32,6 +42,8 @@ export interface Summary {
   clicks: { site: string; kind: string; label: string; href: string; n: number; rage: number | null }[];
   signals: { dead: number | null; rage: number | null; total: number | null };
   actions: { site: string; path: string; kind: string; label: string; href: string; n: number; last: number }[];
+  /** Who the bots are: one row per network and reason. */
+  bots?: { org: string; why: Why; n: number; active: number | null; clicks: number | null }[];
 }
 export interface Live {
   generatedAt: string;
@@ -43,7 +55,7 @@ export interface Live {
 export interface FeedRow {
   id: string; sid: string; site: string; path: string; ts: number; last: number; ref_host: string; ref_kind: string;
   country: string; device: string; browser: string; os: string; org: string; w: number; h: number;
-  active: number; scroll: number; nclicks: number; ndl: number; nout: number; status: Status;
+  active: number; scroll: number; nclicks: number; ndl: number; nout: number; status: Status; why?: Why;
 }
 export interface Journey {
   hits: { id: string; site: string; path: string; ts: number; last: number; ref_host: string; ref_kind: string; country: string; device: string; browser: string; os: string; active: number; scroll: number; status: Status }[];

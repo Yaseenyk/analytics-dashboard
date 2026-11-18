@@ -56,6 +56,16 @@ describe("classification", () => {
     expect(uaInfo("").bot).toBe(true);
   });
 
+  it("does not call a real phone or an in-app browser a robot", () => {
+    // a phone brand with "bot" in its name, and the browsers inside the Facebook, Instagram and LinkedIn apps
+    expect(uaInfo("Mozilla/5.0 (Linux; Android 13; CUBOT NOTE 21) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36").bot).toBe(false);
+    expect(uaInfo("Mozilla/5.0 (Linux; Android 13; SM-G991B Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.6099.144 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/446.0.0.34.118;]").bot).toBe(false);
+    expect(uaInfo("Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 312.0.0.19.113 (iPhone14,5; iOS 17_2; en_IN; en-IN; scale=3.00; 1170x2532; 548339486)").bot).toBe(false);
+    expect(uaInfo("Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/UQ1A.240205.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/121.0.6167.178 Mobile Safari/537.36 [LinkedInApp]/4.1.901").bot).toBe(false);
+    expect(uaInfo("facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)").bot).toBe(true);
+    expect(uaInfo("meta-externalagent/1.1 (+https://developers.facebook.com/docs/sharing/webmasters/crawler)").bot).toBe(true);
+  });
+
   it("recognises hosting networks but not home or phone networks", () => {
     expect(isDatacenter("Amazon.com, Inc.", 16509)).toBe(true);
     expect(isDatacenter("Hetzner Online GmbH", 24940)).toBe(true);
@@ -178,6 +188,27 @@ describe("reads", () => {
     const j = await (await get(env, "/v/summary?days=7&who=all")).json();
     const by = Object.fromEntries(j.status.map((s: { status: string; hits: number }) => [s.status, s.hits]));
     expect(by).toEqual({ real: 1, unclear: 1, bot: 3 });
+  });
+
+  it("lets a human action beat a robot-looking name or a hosting network, but not an automated browser", async () => {
+    const env = { DB: fakeD1(), PULSE_KEY: "open-sesame" };
+    await ingest(post(msg({ i: "uahuman0001", u: "sessuah0001", hu: 1, a: 12, nc: 2 }), { ua: CHROME + " SomeMonitorApp/2" }), env);
+    await ingest(post(msg({ i: "dchuman0001", u: "sessdch0001", hu: 1, a: 9 }), { cf: { country: "US", asOrganization: "M247 Europe SRL", asn: 9009 } }), env);
+    await ingest(post(msg({ i: "wdhuman0001", u: "sesswdh0001", hu: 1, wd: 1, a: 9 })), env);
+    await ingest(post(msg({ i: "uaidle00001", u: "sessuai0001" }), { ua: CHROME + " SomeMonitorApp/2" }), env);
+    await ingest(post(msg({ i: "dcidle00001", u: "sessdci0001" }), { cf: { country: "US", asOrganization: "M247 Europe SRL", asn: 9009 } }), env);
+    await ingest(post(msg({ i: "idle0000001", u: "sessidle001" })), env);
+    const feed = await (await get(env, "/v/feed", "open-sesame")).json();
+    const by = Object.fromEntries(feed.map((r: { id: string; status: string; why: string }) => [r.id, `${r.status}/${r.why}`]));
+    expect(by).toEqual({ uahuman0001: "real/acted", dchuman0001: "real/acted", wdhuman0001: "bot/auto", uaidle00001: "bot/ua", dcidle00001: "bot/host", idle0000001: "unclear/idle" });
+    const people = await (await get(env, "/v/feed?who=people", "open-sesame")).json();
+    expect(people.map((r: { id: string }) => r.id).sort()).toEqual(["dchuman0001", "idle0000001", "uahuman0001"]);
+    const sum = await (await get(env, "/v/summary?days=7")).json();
+    expect(sum.bots).toEqual(expect.arrayContaining([
+      { org: "M247 Europe SRL", why: "host", n: 1, active: 0, clicks: 0 },
+      { org: "Reliance Jio", why: "ua", n: 1, active: 0, clicks: 0 },
+      { org: "Reliance Jio", why: "auto", n: 1, active: 9, clicks: 0 },
+    ]));
   });
 
   it("lists referrers, pages and clicks for real visitors only by default", async () => {

@@ -5,7 +5,7 @@ import { SITE_HOSTS } from "@/lib/config";
 import { n } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
 import {
-  STATUS_LABEL, daysFor, regionName, useKey, usePulse,
+  WHY_LABEL, daysFor, regionName, useKey, usePulse,
   type ClickMap, type FeedRow, type Insights, type Journey, type Live, type Status, type Summary,
 } from "@/lib/pulse";
 import { Card, Sk } from "@/components/ui";
@@ -82,8 +82,17 @@ function Journeys({ row, keyStr }: { row: FeedRow; keyStr: string }) {
   );
 }
 
-function Feed({ keyStr, siteFilter }: { keyStr: string; siteFilter: string }) {
-  const [who, setWho] = useState<Status | "all">("all");
+type Who = Status | "people" | "all";
+const WHO: { id: Who; label: string }[] = [
+  { id: "people", label: "People" },
+  { id: "real", label: "Real people" },
+  { id: "unclear", label: "No interaction" },
+  { id: "bot", label: "Bots" },
+  { id: "all", label: "Everyone" },
+];
+
+function Feed({ keyStr, siteFilter, bots }: { keyStr: string; siteFilter: string; bots: number }) {
+  const [who, setWho] = useState<Who>("people");
   const [onlyAct, setOnlyAct] = useState(false);
   const [open, setOpen] = useState("");
   const params = useMemo(() => ({ limit: 60, site: siteFilter === "all" ? undefined : siteFilter, who: who === "all" ? undefined : who }), [siteFilter, who]);
@@ -92,17 +101,16 @@ function Feed({ keyStr, siteFilter }: { keyStr: string; siteFilter: string }) {
   const chip = (on: boolean) => `min-h-10 shrink-0 rounded-full px-4 text-[13px] font-semibold ${on ? "bg-brand/15 text-brand" : "bg-white/[.05] text-mute"}`;
   const th = "whitespace-nowrap border-b border-line px-3 py-2 text-left text-[11.5px] font-medium text-dim";
   const td = "whitespace-nowrap px-3 py-2.5 text-[12.5px] text-mute";
-  const heads = ["Who", "Site", "Page", "Came from", "Country", "Device", "Time on page", "Read", "Taps", "Downloads", "Exits"];
+  const heads = ["Who", "Why", "Site", "Page", "Came from", "Country", "Network", "Device", "Time on page", "Read", "Taps", "Downloads", "Exits"];
   return (
     <Card title="Visits one by one" note="One line per visit, newest first. Slide the table sideways for more. Tap a line to see that person’s steps.">
       <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="Filter visits">
-        {(["all", ...ORDER] as const).map((s) => (
-          <button key={s} type="button" aria-pressed={who === s} onClick={() => setWho(s)} className={chip(who === s)}>
-            {s === "all" ? "Everyone" : STATUS_LABEL[s]}
-          </button>
+        {WHO.map((s) => (
+          <button key={s.id} type="button" aria-pressed={who === s.id} onClick={() => setWho(s.id)} className={chip(who === s.id)}>{s.label}</button>
         ))}
         <button type="button" aria-pressed={onlyAct} onClick={() => setOnlyAct(!onlyAct)} className={chip(onlyAct)}>Downloads and exits only</button>
       </div>
+      {who === "people" && <p className="m-0 mt-2 text-[12.5px] text-dim">Bots are left out of this list{bots ? ` (${n(bots)} in this period)` : ""}. Tap Bots to see them, and the Why column says how each visit got its label.</p>}
       {err === "key" && <p className="sub mt-3 text-bad">That key was not accepted.</p>}
       {!data && !err && <Sk w={300} h={14} className="mt-4" />}
       {rows && rows.length === 0 && <p className="sub mt-3">No visits like this yet.</p>}
@@ -123,11 +131,13 @@ function Feed({ keyStr, siteFilter }: { keyStr: string; siteFilter: string }) {
                       <span aria-hidden="true" className="mr-1.5 text-[10px] text-brand">{open === r.id ? "▼" : "▶"}</span>{ago(r.last)}
                     </td>
                     <td className="px-3 py-2.5"><Badge s={r.status} /></td>
+                    <td className={td}>{r.why ? WHY_LABEL[r.why] : "–"}</td>
                     <td className={td}>{site(r.site)}</td>
                     <td className={`${td} text-ink`}>{r.path}</td>
                     <td className={td}>{KIND_LABEL[r.ref_kind] ?? r.ref_kind}{r.ref_host ? ` (${r.ref_host})` : ""}</td>
                     <td className={td}>{regionName(r.country)}</td>
-                    <td className={td}>{r.device}, {r.browser}</td>
+                    <td className={td}>{r.org || "–"}</td>
+                    <td className={td}>{r.device}, {r.browser}, {r.os}</td>
                     <td className={td}>{secs(r.active)}</td>
                     <td className={td}>{r.scroll}%</td>
                     <td className={td}>{r.nclicks}</td>
@@ -291,7 +301,7 @@ export default function Watch() {
           <><Sk w="100%" h={84} /><Sk w="100%" h={84} /><Sk w="100%" h={84} /><Sk w="100%" h={84} /></>
         )}
       </div>
-      <p className="sub !mt-0 px-1">Our own tracker, not Google, for the last {days} days. <b className="font-medium text-mute">Real people</b> touched, scrolled or typed. <b className="font-medium text-mute">Took action</b> means a real visit that tapped something. <b className="font-medium text-mute">Bots</b> are robots{sum ? `, and ${n(counts.unclear)} more visits did nothing` : ""}. Arrows compare with the {days} days before.{sum && real ? ` A real visitor stays ${secs(real.active)} and reads ${real.scroll ?? 0}% of the page.` : ""}</p>
+      <p className="sub !mt-0 px-1">Our own tracker, not Google, for the last {days} days. <b className="font-medium text-mute">Real people</b> touched, scrolled or typed. <b className="font-medium text-mute">Took action</b> means a real visit that tapped something. <b className="font-medium text-mute">Bots</b> are robots that never touched the page{sum ? `, and ${n(counts.unclear)} more visits did nothing` : ""}. Arrows compare with the {days} days before.{sum && real ? ` A real visitor stays ${secs(real.active)} and reads ${real.scroll ?? 0}% of the page.` : ""}</p>
 
       <AlertsCard ins={ins} />
 
@@ -336,6 +346,16 @@ export default function Watch() {
             max={12}
             rows={perSite.map(([h, o]) => [site(h), o.real, o.unclear, o.bot])}
           />
+          <DataTable
+            title="Who the bots are"
+            note="Every visit counted as a bot, by the network it came from and the reason. A visit with a real touch, key press or scroll is never in this list unless the browser itself says software is driving it."
+            cols={["Network", "Visits", "Why it is a bot", "Longest time active", "Taps"]}
+            fmt={[0, "n", 0, 0, "n"]}
+            bar={1}
+            max={8}
+            empty="No bots in this period."
+            rows={(sum.bots ?? []).map((b) => [b.org || "Unknown network", b.n, WHY_LABEL[b.why] ?? b.why, secs(b.active ?? 0), b.clicks ?? 0])}
+          />
           {ins && <Broken ins={ins} all={all} />}
         </>
       )}
@@ -343,7 +363,7 @@ export default function Watch() {
       <Unlock keyStr={keyStr} setKey={setKey} />
       {keyStr && (
         <>
-          <Feed keyStr={keyStr} siteFilter={f.site} />
+          <Feed keyStr={keyStr} siteFilter={f.site} bots={counts.bot} />
           {sum && sum.pages.length > 0 && <ClickMapCard keyStr={keyStr} pages={sum.pages} days={days} />}
         </>
       )}

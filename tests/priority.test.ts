@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ledgerFlags, priorityOf } from "../src/lib/indexing";
+import { ledgerFlags, priorityOf, siteTrend } from "../src/lib/indexing";
 
 describe("priorityOf", () => {
   it("is high when people already search for the page", () => {
@@ -38,5 +38,23 @@ describe("ledgerFlags", () => {
   });
   it("copes with a page the ledger does not know yet", () => {
     expect(ledgerFlags(undefined, undefined, NOW)).toMatchObject({ dropped: false, drops: 0 });
+  });
+});
+
+describe("siteTrend", () => {
+  const hist: { d: string; sites: Record<string, [number, number]> }[] = [
+    { d: "2026-11-08", sites: { "a.com": [5, 20] } },
+    { d: "2026-11-12", sites: { "a.com": [17, 40], "b.com": [20, 21] } },
+    { d: "2026-11-15", sites: { "a.com": [30, 40], "b.com": [14, 23] } },
+    { d: "2026-11-17", sites: { "a.com": [40, 44], "b.com": [10, 23] } },
+  ];
+  it("compares pages in Google now with the oldest check inside the last 7 days", () => {
+    expect(siteTrend(hist, "a.com")).toEqual({ now: 40, then: 17, delta: 23, days: 5 });
+    expect(siteTrend(hist, "b.com")).toEqual({ now: 10, then: 20, delta: -10, days: 5 });
+  });
+  it("says nothing with fewer than two checks", () => {
+    expect(siteTrend(hist.slice(0, 1), "a.com")).toBeNull();
+    expect(siteTrend(hist, "c.com")).toBeNull();
+    expect(siteTrend(null, "a.com")).toBeNull();
   });
 });

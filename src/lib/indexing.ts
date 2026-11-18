@@ -68,6 +68,20 @@ export function priorityOf(url: string, state: string, impressions: number): Pri
 }
 export const PRIORITY_ORDER: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
 
+export interface SiteTrend { now: number; then: number; delta: number; days: number }
+/** How a site's count of pages in Google moved over the last `span` days of the daily index check (or since the first check, when the history is shorter). */
+export function siteTrend(hist: { d: string; sites: Record<string, [number, number]> }[] | null | undefined, host: string, span = 7): SiteTrend | null {
+  const rows = (hist ?? []).filter((r) => r.sites[host]).sort((a, b) => a.d.localeCompare(b.d));
+  if (rows.length < 2) return null;
+  const last = rows[rows.length - 1]!;
+  const end = Date.parse(`${last.d}T00:00:00Z`);
+  const first = rows.find((r) => end - Date.parse(`${r.d}T00:00:00Z`) <= span * 864e5)!;
+  const days = Math.round((end - Date.parse(`${first.d}T00:00:00Z`)) / 864e5);
+  if (days < 1) return null;
+  const now = last.sites[host]![0], then = first.sites[host]![0];
+  return { now, then, delta: now - then, days };
+}
+
 /** How long a page you sent to Search Console may stay out of Google before it counts as needing another look. */
 export const WAIT_DAYS = 14;
 export interface LedgerFlags {

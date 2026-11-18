@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { SITES, SITE_HOSTS } from "@/lib/config";
-import { useGSC, useHealth, useQueue } from "@/lib/data";
+import { useGSC, useHealth, useHistory, useQueue } from "@/lib/data";
 import { gscMerge } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
-import { WAIT_DAYS, isReal, ledgerFlags, priorityOf, PRIORITY_ORDER, splitAll, type LedgerFlags, type Priority, type PriorityInfo } from "@/lib/indexing";
+import { WAIT_DAYS, isReal, ledgerFlags, priorityOf, PRIORITY_ORDER, siteTrend, splitAll, splitIndex, type LedgerFlags, type Priority, type PriorityInfo } from "@/lib/indexing";
 import { inspectLink, plainState } from "@/lib/issues";
 import { copyText, markSent, unmarkSent, useReview } from "@/lib/reviewStore";
 import { PopBox } from "@/components/Pop";
@@ -56,12 +56,30 @@ function Sheet({ site }: { site: string }) {
   const [q, setQ] = useState("");
   const [pri, setPri] = useState<Priority | "all">("all");
   const [flash, setFlash] = useState("");
+  const [host, setHost] = useState("all");
+  const h = useHealth().data;
+  const hist = useHistory().data;
 
+  // one line per site: how many are out, how many are in, and how that moved in the last week of daily checks
+  const sites = useMemo(() => {
+    const m = new Map<string, Row[]>();
+    (rows ?? []).forEach((r) => m.set(r.host, [...(m.get(r.host) ?? []), r]));
+    return (site === "all" ? SITE_HOSTS : [site])
+      .map((x) => {
+        const list = m.get(x) ?? [];
+        return { host: x, out: list.length, high: list.filter((r) => r.pri.level === "high").length, dropped: list.filter((r) => r.flags.dropped).length, inGoogle: splitIndex(h?.index?.[x]).indexed, trend: siteTrend(hist, x) };
+      })
+      .filter((s) => s.out > 0 || s.inGoogle > 0)
+      .sort((a, b) => b.out - a.out || b.inGoogle - a.inGoogle);
+  }, [rows, h, hist, site]);
+  const trendDays = Math.max(0, ...sites.map((s) => s.trend?.days ?? 0));
+
+  const scoped = useMemo(() => (rows ?? []).filter((r) => host === "all" || r.host === host), [rows, host]);
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase();
-    return (rows ?? []).filter((r) => (pri === "all" || r.pri.level === pri) && (!t || r.url.toLowerCase().includes(t) || r.state.toLowerCase().includes(t)));
-  }, [rows, q, pri]);
-  const count = (l: Priority) => (rows ?? []).filter((r) => r.pri.level === l).length;
+    return scoped.filter((r) => (pri === "all" || r.pri.level === pri) && (!t || r.url.toLowerCase().includes(t) || r.state.toLowerCase().includes(t)));
+  }, [scoped, q, pri]);
+  const count = (l: Priority) => scoped.filter((r) => r.pri.level === l).length;
   const dropped = (rows ?? []).filter((r) => r.flags.dropped).length;
   const again = (rows ?? []).filter((r) => r.flags.stillOut !== null).length;
 
@@ -83,6 +101,37 @@ function Sheet({ site }: { site: string }) {
     <div>
       <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[28px] text-ink">{rows.length.toLocaleString("en-US")}</b> {rows.length === 1 ? "page is" : "pages are"} not in Google yet. These are sitemap pages Google has looked at, or knows about, and has not added. New pages Google has not checked yet, and pages that say noindex on purpose, are left out.</p>
       <p className="m-0 mt-2 text-[12.5px] leading-relaxed text-dim">This list rebuilds itself after every daily Google check. A page that falls out of Google comes back to the top ({dropped} now), and so does a page you sent more than {WAIT_DAYS} days ago that is still out ({again} now). Google gives no way for a dashboard to press Request indexing, so each one still goes through Search Console.</p>
+      {sites.length > 1 && (
+        <>
+          <h3 className="m-0 mb-1 mt-5 text-[12.5px] font-semibold uppercase tracking-wider text-dim">Site by site</h3>
+          <div className="overflow-x-auto overscroll-x-contain">
+            <table className="w-full min-w-max border-collapse">
+              <thead>
+                <tr>
+                  {["Site", "Not indexed", "High", "Dropped", "In Google", trendDays ? `Change in ${trendDays} day${trendDays === 1 ? "" : "s"}` : "Change"].map((x, i) => <th key={x} scope="col" className={`${th} ${i === 0 ? "sticky left-0 z-10 bg-card pl-0" : "text-right"}`}>{x}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {sites.map((s) => {
+                  const on = host === s.host;
+                  const d = s.trend?.delta ?? null;
+                  return (
+                    <tr key={s.host} onClick={() => setHost(on ? "all" : s.host)} aria-selected={on} className={`cursor-pointer border-b border-line ${on ? "bg-brand/10" : "hover:bg-white/[.04]"}`}>
+                      <td className={`sticky left-0 z-10 whitespace-nowrap py-2.5 pr-3 text-[12.5px] font-semibold ${on ? "text-brand" : "text-ink"} bg-card`}><span aria-hidden="true" className="mr-1.5 text-[10px] text-brand">{on ? "▼" : "▶"}</span>{SITES[s.host] ?? s.host}</td>
+                      <td className={`${td} text-right font-mono text-ink`}>{s.out}</td>
+                      <td className={`${td} text-right font-mono`}>{s.high}</td>
+                      <td className={`${td} text-right font-mono ${s.dropped ? "font-semibold text-bad" : ""}`}>{s.dropped}</td>
+                      <td className={`${td} text-right font-mono`}>{s.inGoogle}</td>
+                      <td className={`${td} text-right font-mono ${d === null || d === 0 ? "" : d > 0 ? "text-good" : "text-bad"}`}>{d === null ? "–" : d === 0 ? "0" : `${d > 0 ? "+" : "−"}${Math.abs(d)}`}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="m-0 mt-2 text-[12px] leading-snug text-dim">Tap a site to show only its pages below{host !== "all" ? `. Showing ${SITES[host] ?? host}; tap it again for all sites` : ""}. Change is pages in Google now against {trendDays ? `${trendDays} day${trendDays === 1 ? "" : "s"} ago` : "the earlier check"}, from the daily check.</p>
+        </>
+      )}
       <div className="mt-4 flex gap-2">
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search these pages" aria-label="Search these pages" className="field min-h-11 min-w-0 flex-1 !rounded-xl" inputMode="search" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
         <button type="button" className={btn} onClick={copyAll}>Copy all</button>
@@ -90,7 +139,7 @@ function Sheet({ site }: { site: string }) {
       <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Priority">
         {(["all", "high", "medium", "low"] as const).map((l) => (
           <button key={l} type="button" aria-pressed={pri === l} onClick={() => setPri(l)} className={`min-h-9 shrink-0 rounded-lg px-3 text-[13px] font-semibold ${pri === l ? "bg-brand/15 text-brand" : "bg-white/[.07] text-mute"}`}>
-            {l === "all" ? `All ${rows.length}` : `${l[0].toUpperCase()}${l.slice(1)} ${count(l)}`}
+            {l === "all" ? `All ${scoped.length}` : `${l[0].toUpperCase()}${l.slice(1)} ${count(l)}`}
           </button>
         ))}
       </div>

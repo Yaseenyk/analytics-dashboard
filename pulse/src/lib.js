@@ -29,7 +29,7 @@ const DASH_ORIGIN = /^https:\/\/analytics\.streamerosai\.com$|^http:\/\/(localho
 
 // ---- classification (pure, exported for tests) ----
 
-const BOT_UA = /bot|crawl|spider|slurp|headless|phantom|lighthouse|pagespeed|gtmetrix|pingdom|uptime|monitor|facebookexternalhit|embedly|preview|scrape|fetch|curl|wget|python|requests|axios|go-http|java\/|okhttp|libwww|httpclient|node|undici|postman|insomnia|ahrefs|semrush|mj12|bytespider|ccbot|whatsapp\/|slackbot|discordbot|twitterbot|linkedinbot|telegrambot|vkshare/i;
+const BOT_UA = /(?<!cu)bot|crawl|spider|slurp|headless|phantom|lighthouse|pagespeed|gtmetrix|pingdom|uptime|monitor|facebookexternalhit|embedly|preview|scrape|fetch|curl|wget|python|requests|axios|go-http|java\/|okhttp|libwww|httpclient|node|undici|postman|insomnia|ahrefs|semrush|mj12|bytespider|ccbot|whatsapp\/|slackbot|discordbot|twitterbot|linkedinbot|telegrambot|vkshare/i;
 const DC_ORG = /amazon|aws|google (cloud|llc)|microsoft|azure|digitalocean|digital ocean|hetzner|ovh|linode|vultr|choopa|oracle|alibaba|tencent|contabo|leaseweb|scaleway|m247|datacamp|hosting|datacenter|data center|colocation|\bcloud\b|server|vps|dedicated|zenlayer|psychz|quadranet|frantech|buyvm|serverius|clouvider|netcup|hostinger|ionos|godaddy|rackspace|softlayer|ibm cloud|huawei cloud|equinix|gcore|selectel|timeweb|aeza|stark industries|datapacket|cdn77/i;
 const DC_ASN = new Set([16509, 14618, 15169, 396982, 8075, 14061, 24940, 16276, 63949, 20473, 31898, 45102, 132203, 51167, 12876, 60781, 28753, 9009, 212238]);
 
@@ -156,8 +156,12 @@ export async function ingest(req, env) {
 
 // ---- reads ----
 
-/** A visit's verdict. "real" means a person acted on the page; "bot" a known robot or an automated browser; the rest is unclear. */
-export const STATUS = `(CASE WHEN bot=1 OR wd=1 THEN 'bot' WHEN human=1 THEN 'real' WHEN dc=1 THEN 'bot' ELSE 'unclear' END)`;
+/** A visit's verdict, strongest evidence first. An automated browser is a bot. After that a real touch, key or scroll wins,
+    so a person is never called a bot only because of a word in the browser name or the network they are on.
+    With no human action, a robot browser name or a hosting network is a bot; the rest is unclear. */
+export const STATUS = `(CASE WHEN wd=1 THEN 'bot' WHEN human=1 THEN 'real' WHEN bot=1 OR dc=1 THEN 'bot' ELSE 'unclear' END)`;
+/** Why a visit got its verdict: auto (automated browser), acted (human action), ua (says it is a robot), host (hosting network, no action), idle (nothing happened). */
+export const WHY = `(CASE WHEN wd=1 THEN 'auto' WHEN human=1 THEN 'acted' WHEN bot=1 THEN 'ua' WHEN dc=1 THEN 'host' ELSE 'idle' END)`;
 
 const all = async (env, sql, args = []) => (await env.DB.prepare(sql).bind(...args).all()).results || [];
 const num = (v, d, lo, hi) => { const x = parseInt(v, 10); return Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : d; };
@@ -171,7 +175,7 @@ export async function summary(env, q) {
   const base = `FROM hits WHERE ts>=?${site ? ' AND site=?' : ''}`;
   const a = site ? [since, site] : [since];
   const cbase = `FROM clicks c JOIN hits ON hits.id=c.hid WHERE c.ts>=?${site ? ' AND c.site=?' : ''}${who}`;
-  const [status, bySite, kinds, hosts, pages, countries, devices, daily, clicks, signals, actions] = await Promise.all([
+  const [status, bySite, kinds, hosts, pages, countries, devices, daily, clicks, signals, actions, bots] = await Promise.all([
     all(env, `SELECT ${STATUS} AS status, COUNT(*) AS hits, COUNT(DISTINCT sid) AS sessions, ROUND(AVG(active),1) AS active, ROUND(AVG(scroll)) AS scroll ${base} GROUP BY status`, a),
     all(env, `SELECT site, ${STATUS} AS status, COUNT(*) AS n ${base} GROUP BY site, status`, a),
     all(env, `SELECT ref_kind, COUNT(*) AS n ${base}${who} GROUP BY ref_kind ORDER BY n DESC`, a),
@@ -183,8 +187,9 @@ export async function summary(env, q) {
     all(env, `SELECT c.site, c.kind, c.label, c.href, COUNT(*) AS n, SUM(c.z) AS rage ${cbase} AND c.kind!='other' GROUP BY c.site, c.kind, c.label, c.href ORDER BY n DESC LIMIT 25`, a),
     all(env, `SELECT SUM(CASE WHEN c.kind='other' THEN 1 ELSE 0 END) AS dead, SUM(c.z) AS rage, COUNT(*) AS total ${cbase}`, a),
     all(env, `SELECT c.site, c.path, c.kind, c.label, c.href, COUNT(*) AS n, MAX(c.ts) AS last ${cbase} AND c.kind IN ('dl','out','mail','tel','goal') GROUP BY c.site, c.path, c.kind, c.label, c.href ORDER BY last DESC LIMIT 40`, a),
+    all(env, `SELECT org, ${WHY} AS why, COUNT(*) AS n, MAX(active) AS active, SUM(clicks) AS clicks ${base} AND ${STATUS}='bot' GROUP BY org, why ORDER BY n DESC LIMIT 12`, a),
   ]);
-  return { generatedAt: new Date().toISOString(), days, site: site || 'all', who: who ? 'real' : 'all', status, bySite, kinds, hosts, pages, countries, devices, daily, clicks, signals: signals[0] || {}, actions };
+  return { generatedAt: new Date().toISOString(), days, site: site || 'all', who: who ? 'real' : 'all', status, bySite, kinds, hosts, pages, countries, devices, daily, clicks, signals: signals[0] || {}, actions, bots };
 }
 
 export async function live(env, q) {
@@ -204,8 +209,8 @@ export async function feed(env, q) {
   const site = siteOf(q.get('site'));
   const limit = num(q.get('limit'), 60, 1, 200);
   const who = q.get('who');
-  const where = [site ? 'site=?' : '', ['real', 'bot', 'unclear'].includes(who) ? `${STATUS}='${who}'` : ''].filter(Boolean);
-  return all(env, `SELECT id, sid, site, path, ts, last, ref_host, ref_kind, country, device, browser, os, org, w, h, active, scroll, clicks AS nclicks, (SELECT COUNT(*) FROM clicks WHERE hid=hits.id AND kind='dl') AS ndl, (SELECT COUNT(*) FROM clicks WHERE hid=hits.id AND kind IN ('out','mail','tel')) AS nout, ${STATUS} AS status FROM hits ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY last DESC LIMIT ?`, [...(site ? [site] : []), limit]);
+  const where = [site ? 'site=?' : '', ['real', 'bot', 'unclear'].includes(who) ? `${STATUS}='${who}'` : who === 'people' ? `${STATUS}!='bot'` : ''].filter(Boolean);
+  return all(env, `SELECT id, sid, site, path, ts, last, ref_host, ref_kind, country, device, browser, os, org, w, h, active, scroll, clicks AS nclicks, (SELECT COUNT(*) FROM clicks WHERE hid=hits.id AND kind='dl') AS ndl, (SELECT COUNT(*) FROM clicks WHERE hid=hits.id AND kind IN ('out','mail','tel')) AS nout, ${STATUS} AS status, ${WHY} AS why FROM hits ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY last DESC LIMIT ?`, [...(site ? [site] : []), limit]);
 }
 
 export async function journey(env, q) {
@@ -274,7 +279,7 @@ export async function insights(env, q) {
   const sa = site ? [site] : [];
   const real = `${STATUS}='real'`;
   const notBot = `${STATUS}!='bot'`;
-  const realA = `(CASE WHEN a.bot=1 OR a.wd=1 THEN 'bot' WHEN a.human=1 THEN 'real' WHEN a.dc=1 THEN 'bot' ELSE 'unclear' END)='real'`;
+  const realA = `(CASE WHEN a.wd=1 THEN 'bot' WHEN a.human=1 THEN 'real' WHEN a.bot=1 OR a.dc=1 THEN 'bot' ELSE 'unclear' END)='real'`;
   const win = (lo, hi) => all(env, `SELECT COUNT(*) AS people, SUM(${HAS_WIN}) AS wins FROM hits WHERE ts>=? AND ts<? AND ${real}${sq}`, [lo, hi, ...sa]);
   const bots = (lo, hi) => all(env, `SELECT COUNT(*) AS n FROM hits WHERE ts>=? AND ts<? AND ${STATUS}='bot'${sq}`, [lo, hi, ...sa]);
   const [cur, prev, curBots, prevBots, actedDaily, sources, pages, flows, funnel, hours, broken, errors, speed, wins48, newSrc, botDay, botBase] = await Promise.all([
