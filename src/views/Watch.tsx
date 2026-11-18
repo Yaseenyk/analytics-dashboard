@@ -260,7 +260,7 @@ function MyDevices({ mine, onMark, onUnmark, onHide }: { mine: Summary["mine"]; 
       </div>
       <p className="sub">
         {mine?.visits ? `${n(mine.visits)} of your own visits (${n(mine.hits)} pages) are left out in this period.` : "No visits from a marked device in this period yet."}{" "}
-        If the page stops on one of your sites and does not come back, that browser still holds an older copy of the tracker script: try again in an hour. For a visit that already happened, open it in the list below and tap “This was me”.
+        If the page stops on one of your sites and does not come back, that browser still holds an older copy of the tracker script: try again in an hour. For a visit that already happened, open it in “Visits one by one” at the top and tap “This was me”.
       </p>
     </Card>
   );
