@@ -5,6 +5,22 @@
 import { RETENTION_DAYS, authorised, clickmap, cors, feed, ingest, insights, istDay, journey, json, live, markMine, meStep, summary } from './lib.js';
 import { TRACKER } from './tracker.js';
 
+// The free D1 plan allows 5M rows read a day and every dashboard poll scans a whole period, so answers are
+// remembered briefly inside the Worker: one tab or ten, the database is asked once per window.
+// (Cache API is a no-op on workers.dev, so this is a plain per-isolate Map, one per database binding.)
+const MEMOS = new WeakMap();
+async function memo(env, key, ttlMs, fn) {
+  let m = MEMOS.get(env.DB);
+  if (!m) MEMOS.set(env.DB, (m = new Map()));
+  const now = Date.now();
+  const hit = m.get(key);
+  if (hit && hit.exp > now) return hit.val;
+  const val = await fn();
+  if (m.size > 300) m.clear();
+  m.set(key, { exp: now + ttlMs, val });
+  return val;
+}
+
 export default {
   async scheduled(event, env) {
     const cut = Date.now() - RETENTION_DAYS * 864e5;
@@ -36,6 +52,7 @@ export default {
       if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
       if (!authorised(req, env)) return json({ error: 'wrong key' }, ch, 401);
       try {
+        MEMOS.delete(env.DB);
         return json(await markMine(env, await req.json()), ch);
       } catch (e) {
         console.error('mark failed:', String((e && e.message) || e));
@@ -46,15 +63,15 @@ export default {
     if (req.method === 'GET' && url.pathname.startsWith('/v/')) {
       const q = url.searchParams;
       try {
-        if (url.pathname === '/v/summary') return json(await summary(env, q), ch, 200, 'public, max-age=30');
-        if (url.pathname === '/v/insights') return json(await insights(env, q), ch, 200, 'public, max-age=30');
-        if (url.pathname === '/v/live') return json(await live(env, q), ch);
+        if (url.pathname === '/v/summary') return json(await memo(env, url.search + '|summary', 60000, () => summary(env, q)), ch, 200, 'public, max-age=30');
+        if (url.pathname === '/v/insights') return json(await memo(env, url.search + '|insights', 60000, () => insights(env, q)), ch, 200, 'public, max-age=30');
+        if (url.pathname === '/v/live') return json(await memo(env, url.search + '|live', 8000, () => live(env, q)), ch);
         if (['/v/feed', '/v/journey', '/v/clickmap'].includes(url.pathname)) {
           if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
           if (!authorised(req, env)) return json({ error: 'wrong key' }, ch, 401);
-          if (url.pathname === '/v/feed') return json(await feed(env, q), ch);
-          if (url.pathname === '/v/journey') return json(await journey(env, q), ch);
-          return json(await clickmap(env, q), ch);
+          if (url.pathname === '/v/feed') return json(await memo(env, url.search + '|feed', 10000, () => feed(env, q)), ch);
+          if (url.pathname === '/v/journey') return json(await memo(env, url.search + '|journey', 30000, () => journey(env, q)), ch);
+          return json(await memo(env, url.search + '|clickmap', 30000, () => clickmap(env, q)), ch);
         }
       } catch (e) {
         console.error('read failed:', String((e && e.message) || e));

@@ -231,8 +231,17 @@ describe("reads", () => {
     const j = await (await get(env, "/v/live")).json();
     expect(j.status.length).toBeGreaterThan(0);
     env.DB.db.exec("UPDATE hits SET last = last - 120000");
-    const j2 = await (await get(env, "/v/live")).json();
+    // /v/live is remembered for 8 seconds, so ask with a different query to see the changed data
+    const j2 = await (await get(env, "/v/live?again=1")).json();
     expect(j2.status).toEqual([]);
+  });
+
+  it("asks the database once for repeated polls", async () => {
+    const env = await seeded();
+    const a = await (await get(env, "/v/summary?days=7")).text();
+    env.DB.db.exec("DELETE FROM hits");
+    const b = await (await get(env, "/v/summary?days=7")).text();
+    expect(b).toBe(a);
   });
 
   it("keeps one-by-one views behind the key", async () => {
