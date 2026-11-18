@@ -1,4 +1,4 @@
--- pulse: first-party visit tracking. One row per page view, one row per click. No IP addresses, no user agents.
+-- pulse: first-party visit tracking. One row per page view, one row per click. No IP addresses, no user agents (vid is a one-way daily code, see salts).
 CREATE TABLE IF NOT EXISTS hits (
   id          TEXT PRIMARY KEY,
   sid         TEXT NOT NULL,
@@ -30,12 +30,23 @@ CREATE TABLE IF NOT EXISTS hits (
   clicks      INTEGER NOT NULL DEFAULT 0,
   st          INTEGER NOT NULL DEFAULT 0,
   lcp         INTEGER NOT NULL DEFAULT 0,
-  err         INTEGER NOT NULL DEFAULT 0
+  err         INTEGER NOT NULL DEFAULT 0,
+  vid         TEXT NOT NULL DEFAULT '',
+  me          INTEGER NOT NULL DEFAULT 0,
+  seen        INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS hits_ts ON hits (ts);
 CREATE INDEX IF NOT EXISTS hits_last ON hits (last);
 CREATE INDEX IF NOT EXISTS hits_site_ts ON hits (site, ts);
 CREATE INDEX IF NOT EXISTS hits_sid ON hits (sid);
+CREATE INDEX IF NOT EXISTS hits_vid ON hits (vid);
+
+-- One random salt per day (Indian time). It turns address + browser name into a visitor code for that day only,
+-- and it is deleted the next morning, so the code cannot be traced back or linked across days.
+CREATE TABLE IF NOT EXISTS salts (
+  day  TEXT PRIMARY KEY,
+  salt TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS clicks (
   hid   TEXT NOT NULL,

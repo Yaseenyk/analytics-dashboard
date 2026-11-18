@@ -6,7 +6,7 @@ import { useMemo } from "react";
 import { useGA, useGSC } from "@/lib/data";
 import { n, quickWins } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
-import { STATUS_HELP, STATUS_LABEL, daysFor, usePulse, type Status, type Summary } from "@/lib/pulse";
+import { STATUS_HELP, STATUS_LABEL, daysFor, peopleOf, usePulse, type Status, type Summary } from "@/lib/pulse";
 import { CHANGES, botCheck, effects } from "@/lib/insights";
 import { PopBox } from "@/components/Pop";
 import { Icon } from "@/components/ui";
@@ -37,7 +37,7 @@ function usePulseVerdict() {
   const days = daysFor(f.range);
   const params = useMemo(() => ({ days, site: f.site === "all" ? undefined : f.site, who: "all" }), [days, f.site]);
   const sum = usePulse<Summary>("/v/summary", params, { poll: 60000 }).data;
-  const by = (s: Status) => sum?.status.find((r) => r.status === s)?.hits ?? 0;
+  const by = (s: Status) => peopleOf(sum?.status, s);
   const total = by("real") + by("unclear") + by("bot");
   return { sum, total, real: by("real"), unclear: by("unclear"), bot: by("bot"), days };
 }
@@ -54,7 +54,7 @@ function PulseVerdict() {
   const list = [...sites.entries()].sort((a, b) => b[1].real + b[1].unclear + b[1].bot - (a[1].real + a[1].unclear + a[1].bot));
   return (
     <div className="mb-6">
-      <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[28px] text-ink">{Math.round((100 * v.real) / v.total)}%</b> of {n(v.total)} visits in the last {v.days} days were a real person, counted by our own tracker. {n(v.unclear)} did nothing a person would do and {n(v.bot)} were known bots.</p>
+      <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[28px] text-ink">{Math.round((100 * v.real) / v.total)}%</b> of {n(v.total)} visitors in the last {v.days} days were a real person, counted by our own tracker. {n(v.unclear)} did nothing a person would do and {n(v.bot)} were known bots.</p>
       <p className="m-0 mt-2 text-[12.5px] leading-relaxed text-dim">{STATUS_LABEL.real}: {STATUS_HELP.real} Counting began on the day each site got the tracker, so this fills in over the next days.</p>
       <ul className="m-0 mt-3 list-none p-0">
         {list.map(([h, o]) => {
@@ -109,7 +109,7 @@ export function RealVisitorsLink() {
   if (v.total > 0) {
     return (
       <PopBox id="real-visitors" title="Real visitors" radius={20} className={rowCls} label="Real visitors and funnel" render={() => <VisitorsSheet />}>
-        <Row icon="live" title="Real visitors" sub={`${n(v.real)} of ${n(v.total)} visits were a real person. Tap to see by site.`} value={`${Math.round((100 * v.real) / v.total)}%`} />
+        <Row icon="live" title="Real visitors" sub={`${n(v.real)} of ${n(v.total)} visitors were a real person. Tap to see by site.`} value={`${Math.round((100 * v.real) / v.total)}%`} />
       </PopBox>
     );
   }

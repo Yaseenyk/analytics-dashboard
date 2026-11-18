@@ -7,10 +7,12 @@
  *
  * What it sends, and what it never sends:
  *  - Sends: the page path (no query string), where the visitor came from, three utm values, screen size, language,
- *    scroll depth, seconds of real activity, whether a real person acted (human), and for each click the kind of
- *    thing clicked, its label, its position and the page section.
+ *    scroll depth, seconds on screen, seconds of real activity, whether a real person acted (human), and for each
+ *    click the kind of thing clicked, its label, its position and the page section.
  *  - Never: input or textarea values, anything typed, cookies, a stored id (the tab id lives in sessionStorage and
  *    dies with the tab), IP addresses (the Worker never writes them).
+ *  - The owner's devices only: opening a site with #pulse-me=on keeps a yes/no flag (not an id) in localStorage, so
+ *    the owner's own visits can be left out. Ordinary visitors never get it.
  *  - Does nothing when Do Not Track or Global Privacy Control is on, or on localhost.
  */
 export const TRACKER = String.raw`(function () {
@@ -19,6 +21,14 @@ export const TRACKER = String.raw`(function () {
   var s = d.currentScript;
   if (!s || w.__pulse) return;
   w.__pulse = 1;
+  // The owner's own devices: /#pulse-me=on marks this browser (off unmarks it), so its visits are left out of the numbers.
+  // With a step number the Worker walks the browser through every site once and back to the dashboard.
+  var mm = /#pulse-me=(on|off)(?:-(\d+))?/.exec(location.hash), mine = 0;
+  if (mm) {
+    try { if (mm[1] === 'on') localStorage.setItem('_pme', '1'); else localStorage.removeItem('_pme'); } catch (e) {}
+    if (mm[2]) { location.replace(new URL(s.src).origin + '/me?v=' + mm[1] + '&step=' + (+mm[2] + 1)); return; }
+  }
+  try { mine = localStorage.getItem('_pme') === '1' ? 1 : 0; } catch (e) {}
   if (n.doNotTrack === '1' || w.doNotTrack === '1' || n.globalPrivacyControl) return;
   if (/^(localhost|127\.|\[::1\])/.test(location.hostname)) return;
 
@@ -51,7 +61,7 @@ export const TRACKER = String.raw`(function () {
   function start(path, ref) {
     h = null;
     for (var i = 0; i < exclude.length; i++) if (path.indexOf(exclude[i]) === 0) return;
-    h = { i: rid(), p: path.slice(0, 120), t0: Date.now(), r: (ref || '').slice(0, 200), m: utm(), hu: tabHuman() ? 1 : 0, a: 0, sc: 0, nc: 0, er: 0, st: first ? nav : 0, q: [] };
+    h = { i: rid(), p: path.slice(0, 120), t0: Date.now(), r: (ref || '').slice(0, 200), m: utm(), hu: tabHuman() ? 1 : 0, a: 0, v: 0, sc: 0, nc: 0, er: 0, st: first ? nav : 0, q: [] };
     first = false;
     moves = 0; lastClicks = []; seq = 0; dirty = true;
     setTimeout(function () { if (h && h.i === cur) send(); }, 2000);
@@ -63,9 +73,10 @@ export const TRACKER = String.raw`(function () {
     var o = {
       v: 1, s: site, i: h.i, u: sid, p: h.p, r: h.r, m: h.m,
       w: w.innerWidth || 0, h: w.innerHeight || 0, l: (n.language || '').slice(0, 12),
-      hu: h.hu, a: h.a, sc: h.sc, nc: h.nc, er: h.er, st: h.st, lc: h.i === firstId ? lcpMs : 0, c: h.q.splice(0, 30)
+      hu: h.hu, a: h.a, vs: h.v, sc: h.sc, nc: h.nc, er: h.er, st: h.st, lc: h.i === firstId ? lcpMs : 0, c: h.q.splice(0, 30)
     };
     if (n.webdriver) o.wd = 1;
+    if (mine) o.me = 1;
     return JSON.stringify(o);
   }
 
@@ -109,7 +120,8 @@ export const TRACKER = String.raw`(function () {
 
   setInterval(function () {
     if (!h || d.hidden) return;
-    if (Date.now() - lastAct < 10000) { h.a++; dirty = true; }
+    h.v++; dirty = true;
+    if (Date.now() - lastAct < 10000) h.a++;
   }, 1000);
   setInterval(function () { if (h && !d.hidden) send(); }, 15000);
 

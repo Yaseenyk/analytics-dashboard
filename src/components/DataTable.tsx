@@ -16,10 +16,12 @@ export interface TableProps {
   max?: number;
   note?: ReactNode;
   empty?: string;
+  /** Rows built on too few visits to trust: shown greyed with a FEW tag. */
+  weak?: (row: Cell[]) => boolean;
 }
 
 /** Sortable, filterable table on desktop; the same rows become stacked cards on a phone. */
-export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, note, empty = "Nothing here yet." }: TableProps) {
+export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, note, empty = "Nothing here yet.", weak }: TableProps) {
   const id = useId();
   const small = useMedia("(max-width:767px)");
   const [col, setCol] = useState<number | null>(sort ?? bar ?? null);
@@ -86,12 +88,12 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
             </tr>
           </thead>
           <tbody>
-            {vis.map((r, ri) => (
+            {vis.map((r, ri) => { const few = !!weak?.(r); return (
               <tr key={ri} style={{ "--r": ri } as React.CSSProperties} className="row-in border-b border-line transition-colors last:border-0 hover:bg-white/[.04]">
                 {r.map((c, j) =>
                   j === 0 ? (
                     <td key={j} className="sticky left-0 z-10 max-w-[170px] bg-card py-2.5 pr-3 md:max-w-0" title={String(c)}>
-                      <div className="truncate">{fmtCell(c, fmt[0])}</div>
+                      <div className={`truncate ${few ? "text-dim" : ""}`}>{few && <span className="mr-1.5 rounded bg-white/[.08] px-1 py-px align-middle text-[9.5px] font-bold uppercase tracking-wide text-dim" title="Too few visits to trust">few</span>}{fmtCell(c, fmt[0])}</div>
                       {bar != null && (
                         <div aria-hidden="true" className="mt-1.5 h-[3px] overflow-hidden rounded-full bg-white/[.06]">
                           <div className="bar-grow h-full rounded-full bg-brand/70" style={{ width: `${pctOf(r)}%`, animationDelay: `${Math.min(ri, 12) * 28 + 200}ms` }} />
@@ -99,13 +101,13 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
                       )}
                     </td>
                   ) : (
-                    <td key={j} className={`w-px min-w-[5rem] whitespace-nowrap px-3 py-2.5 align-top text-[12.5px] ${numeric(j) ? "text-right text-ink/90" : "text-left text-mute"}`}>
+                    <td key={j} className={`w-px min-w-[5rem] whitespace-nowrap px-3 py-2.5 align-top text-[12.5px] ${numeric(j) ? `text-right ${few ? "text-dim" : "text-ink/90"}` : `text-left ${few ? "text-dim" : "text-mute"}`}`}>
                       {fmtCell(c, fmt[j])}
                     </td>
                   ),
                 )}
               </tr>
-            ))}
+            ); })}
           </tbody>
         </table>
       </div>

@@ -9,7 +9,7 @@ import { useFilters } from "@/lib/filters";
 import { metricByHost } from "@/lib/today";
 import { GLOSSARY } from "@/lib/glossary";
 import type { GAFile, GSCFile } from "@/lib/types";
-import { daysFor, usePulse, type Insights, type Live, type Summary } from "@/lib/pulse";
+import { daysFor, peopleOf, usePulse, type Insights, type Live, type Summary } from "@/lib/pulse";
 import { PopBox } from "@/components/Pop";
 import { Delta, Sk, Spark } from "@/components/ui";
 import { ORDER } from "./watchkit";
@@ -114,8 +114,8 @@ function WatchKpis() {
       return [...new Set(sum.daily.map((d) => d.day))].sort().map((d) => m.get(d) ?? 0);
     };
     const c = ins?.compare;
-    const real = sum.status.find((x) => x.status === "real")?.hits ?? 0;
-    const bot = sum.status.find((x) => x.status === "bot")?.hits ?? 0;
+    const real = peopleOf(sum.status, "real");
+    const bot = peopleOf(sum.status, "bot");
     return [
       { k: "real", title: "Real people", value: real, prev: c?.prevReal ?? 0, spark: per("real"), color: "var(--good)" },
       { k: "act", title: "Took action", value: c?.wins ?? 0, prev: c?.prevWins ?? 0, spark: (ins?.actedDaily ?? []).map((d) => d.n ?? 0), color: "var(--brand)" },

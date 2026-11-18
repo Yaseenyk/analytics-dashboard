@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 // @ts-expect-error plain JavaScript Worker, no type declarations
 import worker from "../pulse/src/index.js";
 // @ts-expect-error plain JavaScript, no type declarations
-import { classifyRef, clean, ingest, insights, isDatacenter, uaInfo } from "../pulse/src/lib.js";
+import { classifyRef, clean, ingest, insights, isDatacenter, meStep, uaInfo, visitorId } from "../pulse/src/lib.js";
 // @ts-expect-error plain JavaScript, no type declarations
 import { TRACKER } from "../pulse/src/tracker.js";
 
@@ -35,9 +35,15 @@ function fakeD1() {
 }
 
 const CHROME = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
-let ipn = 0;
-function post(msg: unknown, over: { ua?: string; origin?: string | null; cf?: object; raw?: string } = {}) {
-  const headers: Record<string, string> = { "User-Agent": over.ua ?? CHROME, "CF-Connecting-IP": `10.0.0.${++ipn}` };
+/* One address per browser tab, as in real life: the same tab id always comes from the same address unless a test says otherwise. */
+const ips = new Map<string, string>();
+function ipFor(m: unknown) {
+  const u = String((m as { u?: string } | null)?.u ?? `anon${ips.size}`);
+  if (!ips.has(u)) ips.set(u, `10.${Math.floor(ips.size / 250)}.${ips.size % 250}.7`);
+  return ips.get(u)!;
+}
+function post(msg: unknown, over: { ua?: string; origin?: string | null; cf?: object; raw?: string; ip?: string } = {}) {
+  const headers: Record<string, string> = { "User-Agent": over.ua ?? CHROME, "CF-Connecting-IP": over.ip ?? ipFor(msg) };
   if (over.origin !== null) headers.Origin = over.origin ?? "https://calc.streamerosai.com";
   const req = new Request("https://pulse.test/e", { method: "POST", body: over.raw ?? JSON.stringify(msg), headers });
   Object.defineProperty(req, "cf", { value: over.cf ?? { country: "IN", asOrganization: "Reliance Jio", asn: 55836 } });
@@ -200,7 +206,7 @@ describe("reads", () => {
     await ingest(post(msg({ i: "idle0000001", u: "sessidle001" })), env);
     const feed = await (await get(env, "/v/feed", "open-sesame")).json();
     const by = Object.fromEntries(feed.map((r: { id: string; status: string; why: string }) => [r.id, `${r.status}/${r.why}`]));
-    expect(by).toEqual({ uahuman0001: "real/acted", dchuman0001: "real/acted", wdhuman0001: "bot/auto", uaidle00001: "bot/ua", dcidle00001: "bot/host", idle0000001: "unclear/idle" });
+    expect(by).toEqual({ uahuman0001: "real/acted", dchuman0001: "real/acted", wdhuman0001: "bot/auto", uaidle00001: "bot/ua", dcidle00001: "bot/host", idle0000001: "unclear/left" });
     const people = await (await get(env, "/v/feed?who=people", "open-sesame")).json();
     expect(people.map((r: { id: string }) => r.id).sort()).toEqual(["dchuman0001", "idle0000001", "uahuman0001"]);
     const sum = await (await get(env, "/v/summary?days=7")).json();
@@ -260,6 +266,130 @@ describe("reads", () => {
   });
 });
 
+describe("counting people, not page views", () => {
+  const get = (env: object, path: string, key?: string) =>
+    worker.fetch(new Request(`https://pulse.test${path}`, { headers: key ? { Authorization: `Bearer ${key}` } : {} }), env);
+  const sendMine = (env: object, body: object, key?: string) =>
+    worker.fetch(new Request("https://pulse.test/v/mine", { method: "POST", body: JSON.stringify(body), headers: key ? { Authorization: `Bearer ${key}` } : {} }), env);
+  const statusOf = async (env: object, extra = "") => {
+    const j = await (await get(env, `/v/summary?days=7&who=all${extra}`)).json();
+    return Object.fromEntries(j.status.map((r: { status: string; people: number; sessions: number; hits: number }) => [r.status, [r.people, r.sessions, r.hits]]));
+  };
+
+  it("counts one person once: two tabs and three pages are still one person", async () => {
+    const env = { DB: fakeD1(), PULSE_KEY: "open-sesame" };
+    const ip = "49.36.1.1";
+    await ingest(post(msg({ i: "tab1page001", u: "tabone00001", p: "/", hu: 1, a: 8 }), { ip }), env);
+    await ingest(post(msg({ i: "tab1page002", u: "tabone00001", p: "/emi-calculator/", hu: 1, a: 5 }), { ip }), env);
+    await ingest(post(msg({ i: "tab2page001", u: "tabtwo00001", p: "/sip-calculator/", hu: 1, a: 4 }), { ip }), env);
+    // someone else on a different phone
+    await ingest(post(msg({ i: "otherpage01", u: "other000001", p: "/", hu: 1, a: 3 }), { ip: "49.36.9.9" }), env);
+    expect(await statusOf(env)).toEqual({ real: [2, 3, 4] }); // 2 people, 3 visits, 4 pages
+    const ins = await insights(env, new URLSearchParams({ days: "7" }));
+    expect(ins.compare).toMatchObject({ real: 2, visits: 3, pages: 4 });
+    expect(ins.funnel).toMatchObject({ sessions: 2, multi: 1 });
+    // the list of visits has one line per tab, with its page count
+    const feed = await (await get(env, "/v/feed", "open-sesame")).json();
+    expect(feed.map((r: { sid: string; pages: number }) => [r.sid, r.pages]).sort()).toEqual([["other000001", 1], ["tabone00001", 2], ["tabtwo00001", 1]]);
+  });
+
+  it("keeps a visit with one person when the phone changes network half way", async () => {
+    const env = { DB: fakeD1() };
+    await ingest(post(msg({ i: "wifipage001", u: "roaming0001", p: "/", hu: 1 }), { ip: "49.36.1.1" }), env);
+    await ingest(post(msg({ i: "datapage001", u: "roaming0001", p: "/emi-calculator/", hu: 1 }), { ip: "106.200.5.5" }), env);
+    expect(await statusOf(env)).toEqual({ real: [1, 1, 2] });
+  });
+
+  it("makes a visitor code that changes with the salt and never contains the address", async () => {
+    const a = await visitorId("salt-one", "49.36.1.1", CHROME);
+    expect(a).toMatch(/^[0-9a-f]{16}$/);
+    expect(await visitorId("salt-one", "49.36.1.1", CHROME)).toBe(a);
+    expect(await visitorId("salt-two", "49.36.1.1", CHROME)).not.toBe(a);
+    expect(await visitorId("salt-one", "49.36.1.2", CHROME)).not.toBe(a);
+    const env = { DB: fakeD1() };
+    await ingest(post(msg(), { ip: "49.36.1.1" }), env);
+    const text = JSON.stringify(rows(env.DB, "SELECT * FROM hits"));
+    expect(text).not.toMatch(/49\.36/);
+    expect(rows(env.DB, "SELECT vid FROM hits")[0]!.vid).toMatch(/^[0-9a-f]{16}$/);
+  });
+
+  it("leaves the owner's own devices out of every number, and lets a visit be marked by hand", async () => {
+    const env = { DB: fakeD1(), PULSE_KEY: "open-sesame" };
+    const mine = "49.36.7.7";
+    // the owner opened a page before the device was marked, then again after: both go
+    await ingest(post(msg({ i: "minebefore1", u: "minetab0001", p: "/", hu: 1, a: 9 }), { ip: mine }), env);
+    await ingest(post(msg({ i: "mineafter01", u: "minetab0002", p: "/emi-calculator/", hu: 1, a: 9, me: 1 }), { ip: mine }), env);
+    await ingest(post(msg({ i: "visitor0001", u: "visitortab1", p: "/", hu: 1, a: 3 }), { ip: "49.36.9.9" }), env);
+    await ingest(post(msg({ i: "visitor0002", u: "visitortab2", p: "/", hu: 1, a: 3 }), { ip: "49.36.9.10" }), env);
+    expect(await statusOf(env)).toEqual({ real: [2, 2, 2] });
+    const sum = await (await get(env, "/v/summary?days=7")).json();
+    expect(sum.mine).toEqual({ people: 1, visits: 2, hits: 2 });
+    expect((await insights(env, new URLSearchParams({ days: "7" }))).compare.real).toBe(2);
+    expect((await (await get(env, "/v/live")).json()).status).toEqual([{ status: "real", n: 2 }]);
+    expect(await (await get(env, "/v/feed", "open-sesame")).json()).toHaveLength(2);
+    expect(await (await get(env, "/v/feed?who=me", "open-sesame")).json()).toHaveLength(2);
+
+    // marking by hand needs the key, and can be undone
+    expect((await sendMine(env, { sid: "visitortab1" })).status).toBe(401);
+    expect(await (await sendMine(env, { sid: "visitortab1" }, "open-sesame")).json()).toMatchObject({ ok: true, me: 1 });
+    expect(await statusOf(env)).toEqual({ real: [1, 1, 1] });
+    await sendMine(env, { sid: "visitortab1", me: false }, "open-sesame");
+    expect(await statusOf(env)).toEqual({ real: [2, 2, 2] });
+    expect(await (await sendMine(env, { sid: "no" }, "open-sesame")).json()).toEqual({ ok: false });
+  });
+
+  it("puts a visit on the Indian day it happened", async () => {
+    const env = { DB: fakeD1() };
+    await ingest(post(msg({ i: "lateutc0001", u: "latetab0001", hu: 1 })), env);
+    // 20:00 UTC yesterday is 01:30 the next morning in India, so it belongs to the next calendar day there
+    const now = new Date();
+    const t = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1, 20, 0);
+    const india = new Date(t + 5.5 * 36e5);
+    expect(india.toISOString().slice(0, 10)).not.toBe(new Date(t).toISOString().slice(0, 10));
+    env.DB.db.exec(`UPDATE hits SET ts=${t}, last=${t}`);
+    const j = await (await get(env, "/v/summary?days=7&who=all")).json();
+    expect(j.daily).toEqual([{ day: india.toISOString().slice(0, 10), status: "real", n: 1 }]);
+    const ins = await insights(env, new URLSearchParams({ days: "7" }));
+    expect(ins.hours).toEqual([{ hour: 1, dow: india.getUTCDay(), n: 1 }]);
+  });
+
+  it("splits visits that did nothing into left at once and stayed without touching", async () => {
+    const env = { DB: fakeD1(), PULSE_KEY: "open-sesame" };
+    await ingest(post(msg({ i: "bounce00001", u: "bouncetab01", vs: 1 })), env);
+    await ingest(post(msg({ i: "reader00001", u: "readertab01", vs: 40 })), env);
+    await ingest(post(msg({ i: "oldrow00001", u: "oldrowtab01" })), env);
+    env.DB.db.exec("UPDATE hits SET last = ts + 16000 WHERE id='oldrow00001'"); // a row from before seconds on screen were sent
+    const sum = await (await get(env, "/v/summary?days=7")).json();
+    expect(sum.idle).toEqual({ left: 1, stayed: 2 });
+    const feed = await (await get(env, "/v/feed", "open-sesame")).json();
+    expect(Object.fromEntries(feed.map((r: { id: string; why: string }) => [r.id, r.why]))).toEqual({ bounce00001: "left", reader00001: "stayed", oldrow00001: "stayed" });
+  });
+
+  it("reports arrivals from Google by site and day, for the Search Console cross-check", async () => {
+    const env = { DB: fakeD1() };
+    await ingest(post(msg({ i: "google00001", u: "googletab01", hu: 1, r: "https://www.google.com/" })), env);
+    await ingest(post(msg({ i: "google00002", u: "googletab02", r: "android-app://com.google.android.googlequicksearchbox/" })), env);
+    await ingest(post(msg({ i: "bing0000001", u: "bingtab0001", hu: 1, r: "https://www.bing.com/" })), env);
+    await ingest(post(msg({ i: "gbot0000001", u: "gbottab0001", r: "https://www.google.com/" }), { ua: "Googlebot/2.1 (+http://www.google.com/bot.html)" }), env);
+    const ins = await insights(env, new URLSearchParams({ days: "7" }));
+    expect(ins.google.rows).toHaveLength(1);
+    expect(ins.google.rows[0]).toMatchObject({ site: "calc.streamerosai.com", real: 1, idle: 1 });
+    expect(ins.google.starts).toEqual([{ site: "calc.streamerosai.com", day: ins.google.rows[0].day }]);
+  });
+
+  it("walks the owner's browser through every site and back to the dashboard", async () => {
+    expect(meStep(new URLSearchParams("v=on"))).toBe("https://streamerosai.com/#pulse-me=on-0");
+    expect(meStep(new URLSearchParams("v=off&step=3"))).toBe("https://campus.streamerosai.com/#pulse-me=off-3");
+    expect(meStep(new URLSearchParams("v=on&step=12"))).toBe("https://analytics.streamerosai.com/watch/?me=on");
+    expect(meStep(new URLSearchParams("v=https://evil.example&step=999"))).toBe("https://analytics.streamerosai.com/watch/?me=on");
+    const r = await get({ DB: fakeD1() }, "/me?v=on&step=11");
+    expect(r.status).toBe(302);
+    expect(r.headers.get("Location")).toBe("https://esports.streamerosai.com/#pulse-me=on-11");
+    // the script only ever goes back to its own Worker, never to an address taken from the page
+    expect(TRACKER).toMatch(/location\.replace\(new URL\(s\.src\)\.origin \+ '\/me\?v='/);
+  });
+});
+
 describe("the browser script", () => {
   it("is valid JavaScript and small", () => {
     expect(() => new Function(TRACKER)).not.toThrow();
@@ -267,7 +397,12 @@ describe("the browser script", () => {
   });
 
   it("holds the privacy rules in code: no cookies, no stored id, no typed text", () => {
-    expect(TRACKER).not.toMatch(/document\.cookie|localStorage|\.value\b/);
+    expect(TRACKER).not.toMatch(/document\.cookie|\.value\b/);
+    // the only thing ever kept in the browser beyond the tab is the owner's yes/no "this is my device" flag
+    const stored = [...TRACKER.matchAll(/localStorage\.(\w+)\('([^']+)'/g)].map((m) => m[2]);
+    expect(stored.length).toBeGreaterThan(0);
+    expect(new Set(stored)).toEqual(new Set(["_pme"]));
+    expect(TRACKER.match(/localStorage/g)).toHaveLength(stored.length);
     expect(TRACKER).toMatch(/globalPrivacyControl/);
     expect(TRACKER).toMatch(/doNotTrack/);
   });
@@ -291,7 +426,8 @@ describe("insights", () => {
     // visits are stamped with now(), so the two pages of one session would tie: space them like real life
     env.DB.db.exec("UPDATE hits SET ts = ts - 5000 WHERE id='hit0000001a'");
     const r = await insights(env, qs());
-    expect(r.compare).toMatchObject({ real: 4, wins: 1, bots: 1 });
+    // three people made three visits and opened four pages; one of them tapped something
+    expect(r.compare).toMatchObject({ real: 3, visits: 3, pages: 4, wins: 1, bots: 1 });
     expect(r.sources.find((x: { ref_kind: string }) => x.ref_kind === "search")).toMatchObject({ visits: 1, wins: 0 });
     const home = r.pages.find((x: { path: string }) => x.path === "/");
     expect(home).toMatchObject({ visits: 2, entries: 2, exits: 1 });

@@ -11,8 +11,16 @@
  *   GET  /v/clickmap  every click on one page             needs PULSE_KEY
  *
  *   GET  /v/insights  wins, sources, landing pages, paths, funnel, hours, broken pages, speed, alerts. Public aggregates.
+ *   POST /v/mine      mark one visit (and the same visitor that day) as the owner's own, or undo it. Needs PULSE_KEY
+ *   GET  /me          walks the owner's browser through every site once so each one remembers "this is my device"
  *
- * Never stored: IP addresses, user agents, cookies, typed text. The IP is read only to rate-limit, in memory.
+ * Counting: one row is one page view. A visit is one browser tab (sid). A person is one visitor on one day (vid),
+ * so the same person on two days counts twice, and two tabs on the same day count once.
+ * Days and hours are in Indian time. Visits from the owner's marked devices (me=1) are left out of every number.
+ *
+ * Never stored: IP addresses, user agents, cookies, typed text. The IP is read in memory only, to rate-limit and to
+ * make the day's visitor code: SHA-256 of a random daily salt + address + browser name. The salt is deleted the next
+ * day, so the code cannot be turned back into an address or linked across days.
  * Rows older than 90 days are deleted by the daily cron.
  */
 import { TRACKER } from './tracker.js';
@@ -100,15 +108,16 @@ export function clean(m) {
   return {
     site: m.s, id: m.i, sid: m.u, path: p, refHost, refPath, utmSource: us, utmMedium: um, utmCampaign: uc,
     w: int(m.w, 0, 2e4), h: int(m.h, 0, 2e4), lang: str(m.l, 12),
-    human: m.hu ? 1 : 0, wd: m.wd ? 1 : 0, active: int(m.a, 0, 14400), scroll: int(m.sc, 0, 100), nclicks: int(m.nc, 0, 1e6), err: int(m.er, 0, 20), st: int(m.st, 0, 999), lcp: int(m.lc, 0, 6e4), clicks,
+    human: m.hu ? 1 : 0, wd: m.wd ? 1 : 0, me: m.me ? 1 : 0, active: int(m.a, 0, 14400), seen: int(m.vs, 0, 14400), scroll: int(m.sc, 0, 100), nclicks: int(m.nc, 0, 1e6), err: int(m.er, 0, 20), st: int(m.st, 0, 999), lcp: int(m.lc, 0, 6e4), clicks,
   };
 }
 
-const UPSERT = `INSERT INTO hits (id,sid,site,path,ts,last,ref_host,ref_path,ref_kind,utm_source,utm_medium,utm_campaign,country,device,browser,os,w,h,lang,org,asn,human,bot,dc,wd,scroll,active,clicks,st,lcp,err)
-VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+const UPSERT = `INSERT INTO hits (id,sid,site,path,ts,last,ref_host,ref_path,ref_kind,utm_source,utm_medium,utm_campaign,country,device,browser,os,w,h,lang,org,asn,human,bot,dc,wd,scroll,active,clicks,st,lcp,err,vid,me,seen)
+VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,COALESCE((SELECT x.vid FROM hits x WHERE x.sid=? AND x.vid!='' ORDER BY x.ts LIMIT 1),?),?,?)
 ON CONFLICT(id) DO UPDATE SET last=excluded.last, human=MAX(hits.human,excluded.human), wd=MAX(hits.wd,excluded.wd),
   scroll=MAX(hits.scroll,excluded.scroll), active=MAX(hits.active,excluded.active), clicks=MAX(hits.clicks,excluded.clicks),
-  st=MAX(hits.st,excluded.st), lcp=MAX(hits.lcp,excluded.lcp), err=MAX(hits.err,excluded.err)
+  st=MAX(hits.st,excluded.st), lcp=MAX(hits.lcp,excluded.lcp), err=MAX(hits.err,excluded.err),
+  me=MAX(hits.me,excluded.me), seen=MAX(hits.seen,excluded.seen)
 WHERE hits.site=excluded.site AND hits.sid=excluded.sid`;
 const CLICK = `INSERT OR IGNORE INTO clicks (hid,n,ts,site,path,kind,label,href,x,y,sec,z)
 SELECT ?,?,hits.ts+?,hits.site,hits.path,?,?,?,?,?,?,? FROM hits WHERE hits.id=?`;
@@ -125,10 +134,32 @@ function limited(ip) {
   return ++e.n > 90;
 }
 
+/** Seconds Indian time is ahead of UTC. Days and hours in every report use it. */
+export const IST = 19800;
+export const istDay = (ms) => new Date(ms + IST * 1000).toISOString().slice(0, 10);
+const hex = (bytes) => Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+
+let saltCache = { day: '', salt: '' };
+/** The random salt for one Indian day: made on first use, kept in the database for that day, deleted by the cron after it. */
+async function dailySalt(env, day) {
+  if (saltCache.day === day) return saltCache.salt;
+  const fresh = hex(crypto.getRandomValues(new Uint8Array(16)));
+  await env.DB.batch([env.DB.prepare('INSERT OR IGNORE INTO salts (day, salt) VALUES (?, ?)').bind(day, fresh)]);
+  const rows = (await env.DB.prepare('SELECT salt FROM salts WHERE day=?').bind(day).all()).results || [];
+  saltCache = { day, salt: (rows[0] && rows[0].salt) || fresh };
+  return saltCache.salt;
+}
+/** "The same visitor today": a one-way code. Neither the address nor the browser name is stored anywhere. */
+export async function visitorId(salt, ip, ua) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + '|' + ip + '|' + ua));
+  return hex(new Uint8Array(buf)).slice(0, 16);
+}
+
 export async function ingest(req, env) {
   const text = await req.text();
   if (text.length > 8000) return;
-  if (limited(req.headers.get('CF-Connecting-IP') || 'x')) return;
+  const ip = req.headers.get('CF-Connecting-IP') || '';
+  if (limited(ip || 'x')) return;
   let msg;
   try { msg = JSON.parse(text); } catch { return; }
   const c = clean(msg);
@@ -145,10 +176,13 @@ export async function ingest(req, env) {
   const dc = isDatacenter(org, cf.asn) ? 1 : 0;
   const now = Date.now();
   const kind = classifyRef(c.refHost, c.site, c.utmSource, c.utmMedium);
+  const vid = ip ? await visitorId(await dailySalt(env, istDay(now)), ip, req.headers.get('User-Agent') || '') : '';
   const stmts = [
     env.DB.prepare(UPSERT).bind(c.id, c.sid, c.site, c.path, now, now, c.refHost || c.utmSource.toLowerCase(), c.refPath, kind, c.utmSource, c.utmMedium, c.utmCampaign,
       String(cf.country || '').slice(0, 2), ua.device, ua.browser, ua.os, c.w, c.h, c.lang, org, Number(cf.asn) || 0,
-      c.human, ua.bot ? 1 : 0, dc, c.wd, c.scroll, c.active, c.nclicks, c.st, c.lcp, c.err),
+      c.human, ua.bot ? 1 : 0, dc, c.wd, c.scroll, c.active, c.nclicks, c.st, c.lcp, c.err, c.sid, vid, c.me, c.seen),
+    // a marked device also claims what the same visitor did earlier today, before the mark reached this site
+    ...(c.me ? [env.DB.prepare(`UPDATE hits SET me=1 WHERE me=0 AND (sid=? OR (vid!='' AND vid=?))`).bind(c.sid, vid)] : []),
     ...c.clicks.map((k) => env.DB.prepare(CLICK).bind(c.id, k.n, k.t, k.k, k.l, k.h, k.x, k.y, k.g, k.z, c.id)),
   ];
   await env.DB.batch(stmts);
@@ -160,8 +194,22 @@ export async function ingest(req, env) {
     so a person is never called a bot only because of a word in the browser name or the network they are on.
     With no human action, a robot browser name or a hosting network is a bot; the rest is unclear. */
 export const STATUS = `(CASE WHEN wd=1 THEN 'bot' WHEN human=1 THEN 'real' WHEN bot=1 OR dc=1 THEN 'bot' ELSE 'unclear' END)`;
-/** Why a visit got its verdict: auto (automated browser), acted (human action), ua (says it is a robot), host (hosting network, no action), idle (nothing happened). */
-export const WHY = `(CASE WHEN wd=1 THEN 'auto' WHEN human=1 THEN 'acted' WHEN bot=1 THEN 'ua' WHEN dc=1 THEN 'host' ELSE 'idle' END)`;
+/** Seconds a page was on screen. Rows from before 18 Nov 2026 have no count, so the gap between first and last message stands in. */
+const ON_SCREEN = `MAX(seen,(last-ts)/1000)`;
+/** Why a visit got its verdict: auto (automated browser), acted (human action), ua (says it is a robot), host (hosting network, no action),
+    and for visits where nothing happened: left (gone within 2 seconds) or stayed (page stayed open, never touched). */
+export const WHY = `(CASE WHEN wd=1 THEN 'auto' WHEN human=1 THEN 'acted' WHEN bot=1 THEN 'ua' WHEN dc=1 THEN 'host' WHEN ${ON_SCREEN}>=3 THEN 'stayed' ELSE 'left' END)`;
+/** One person on one day: the day's visitor code, or the tab id for rows from before the code existed. */
+export const PK = `(CASE WHEN vid!='' THEN vid ELSE sid END)`;
+/** The same two verdicts for a group of page views (one visit, or one person). */
+const AGG_STATUS = `(CASE WHEN MAX(wd)=1 THEN 'bot' WHEN MAX(human)=1 THEN 'real' WHEN MAX(bot)=1 OR MAX(dc)=1 THEN 'bot' ELSE 'unclear' END)`;
+const AGG_WHY = `(CASE WHEN MAX(wd)=1 THEN 'auto' WHEN MAX(human)=1 THEN 'acted' WHEN MAX(bot)=1 THEN 'ua' WHEN MAX(dc)=1 THEN 'host' WHEN MAX(${ON_SCREEN})>=3 THEN 'stayed' ELSE 'left' END)`;
+/** The Indian calendar day of a page view. */
+const DAY = `date(ts/1000+${IST},'unixepoch')`;
+/** Search Console counts its days in Pacific time, so the cross-check has to as well. */
+function pacificOffset(ms) {
+  try { return /PDT/.test(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', timeZoneName: 'short' }).format(new Date(ms))) ? -25200 : -28800; } catch { return -28800; }
+}
 
 const all = async (env, sql, args = []) => (await env.DB.prepare(sql).bind(...args).all()).results || [];
 const num = (v, d, lo, hi) => { const x = parseInt(v, 10); return Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : d; };
@@ -172,45 +220,75 @@ export async function summary(env, q) {
   const site = siteOf(q.get('site'));
   const who = q.get('who') === 'all' ? '' : ` AND ${STATUS}='real'`;
   const since = Date.now() - days * 864e5;
-  const base = `FROM hits WHERE ts>=?${site ? ' AND site=?' : ''}`;
+  const base = `FROM hits WHERE ts>=? AND me=0${site ? ' AND site=?' : ''}`;
   const a = site ? [since, site] : [since];
-  const cbase = `FROM clicks c JOIN hits ON hits.id=c.hid WHERE c.ts>=?${site ? ' AND c.site=?' : ''}${who}`;
-  const [status, bySite, kinds, hosts, pages, countries, devices, daily, clicks, signals, actions, bots] = await Promise.all([
-    all(env, `SELECT ${STATUS} AS status, COUNT(*) AS hits, COUNT(DISTINCT sid) AS sessions, ROUND(AVG(active),1) AS active, ROUND(AVG(scroll)) AS scroll ${base} GROUP BY status`, a),
-    all(env, `SELECT site, ${STATUS} AS status, COUNT(*) AS n ${base} GROUP BY site, status`, a),
+  const cbase = `FROM clicks c JOIN hits ON hits.id=c.hid WHERE c.ts>=? AND hits.me=0${site ? ' AND c.site=?' : ''}${who}`;
+  const [status, bySite, kinds, hosts, pages, countries, devices, daily, clicks, signals, actions, bots, idle, mine] = await Promise.all([
+    // people = visitors per day, sessions = visits (tabs), hits = pages opened
+    all(env, `SELECT status, COUNT(*) AS people, SUM(visits) AS sessions, SUM(hits) AS hits, ROUND(SUM(active)*1.0/SUM(hits),1) AS active, ROUND(SUM(scroll)*1.0/SUM(hits)) AS scroll FROM (SELECT ${PK} AS pk, ${AGG_STATUS} AS status, COUNT(DISTINCT sid) AS visits, COUNT(*) AS hits, SUM(active) AS active, SUM(scroll) AS scroll ${base} GROUP BY pk) GROUP BY status`, a),
+    all(env, `SELECT site, status, COUNT(*) AS n FROM (SELECT site, ${PK} AS pk, ${AGG_STATUS} AS status ${base} GROUP BY site, pk) GROUP BY site, status`, a),
     all(env, `SELECT ref_kind, COUNT(*) AS n ${base}${who} GROUP BY ref_kind ORDER BY n DESC`, a),
     all(env, `SELECT ref_kind, ref_host, COUNT(*) AS n ${base}${who} AND ref_host!='' GROUP BY ref_kind, ref_host ORDER BY n DESC LIMIT 15`, a),
     all(env, `SELECT site, path, COUNT(*) AS n, ROUND(AVG(active),1) AS active, ROUND(AVG(scroll)) AS scroll ${base}${who} GROUP BY site, path ORDER BY n DESC LIMIT 20`, a),
-    all(env, `SELECT country, COUNT(*) AS n ${base}${who} AND country!='' GROUP BY country ORDER BY n DESC LIMIT 12`, a),
-    all(env, `SELECT device, browser, COUNT(*) AS n ${base}${who} GROUP BY device, browser ORDER BY n DESC LIMIT 12`, a),
-    all(env, `SELECT date(ts/1000,'unixepoch') AS day, ${STATUS} AS status, COUNT(*) AS n ${base} GROUP BY day, status ORDER BY day`, a),
+    all(env, `SELECT country, COUNT(DISTINCT ${PK}) AS n ${base}${who} AND country!='' GROUP BY country ORDER BY n DESC LIMIT 12`, a),
+    all(env, `SELECT device, browser, COUNT(DISTINCT ${PK}) AS n ${base}${who} GROUP BY device, browser ORDER BY n DESC LIMIT 12`, a),
+    all(env, `SELECT day, status, COUNT(*) AS n FROM (SELECT ${DAY} AS day, ${PK} AS pk, ${AGG_STATUS} AS status ${base} GROUP BY day, pk) GROUP BY day, status ORDER BY day`, a),
     all(env, `SELECT c.site, c.kind, c.label, c.href, COUNT(*) AS n, SUM(c.z) AS rage ${cbase} AND c.kind!='other' GROUP BY c.site, c.kind, c.label, c.href ORDER BY n DESC LIMIT 25`, a),
     all(env, `SELECT SUM(CASE WHEN c.kind='other' THEN 1 ELSE 0 END) AS dead, SUM(c.z) AS rage, COUNT(*) AS total ${cbase}`, a),
     all(env, `SELECT c.site, c.path, c.kind, c.label, c.href, COUNT(*) AS n, MAX(c.ts) AS last ${cbase} AND c.kind IN ('dl','out','mail','tel','goal') GROUP BY c.site, c.path, c.kind, c.label, c.href ORDER BY last DESC LIMIT 40`, a),
     all(env, `SELECT org, ${WHY} AS why, COUNT(*) AS n, MAX(active) AS active, SUM(clicks) AS clicks ${base} AND ${STATUS}='bot' GROUP BY org, why ORDER BY n DESC LIMIT 12`, a),
+    all(env, `SELECT why, COUNT(*) AS n FROM (SELECT ${PK} AS pk, ${AGG_STATUS} AS status, ${AGG_WHY} AS why ${base} GROUP BY pk) WHERE status='unclear' GROUP BY why`, a),
+    all(env, `SELECT COUNT(DISTINCT ${PK}) AS people, COUNT(DISTINCT sid) AS visits, COUNT(*) AS hits FROM hits WHERE ts>=? AND me=1${site ? ' AND site=?' : ''}`, a),
   ]);
-  return { generatedAt: new Date().toISOString(), days, site: site || 'all', who: who ? 'real' : 'all', status, bySite, kinds, hosts, pages, countries, devices, daily, clicks, signals: signals[0] || {}, actions, bots };
+  const idleOf = (w) => (idle.find((r) => r.why === w) || {}).n || 0;
+  return {
+    generatedAt: new Date().toISOString(), days, site: site || 'all', who: who ? 'real' : 'all', status, bySite, kinds, hosts, pages, countries, devices, daily, clicks, signals: signals[0] || {}, actions, bots,
+    idle: { left: idleOf('left'), stayed: idleOf('stayed') }, mine: mine[0] || { people: 0, visits: 0, hits: 0 },
+  };
 }
 
 export async function live(env, q) {
   const site = siteOf(q.get('site'));
   const since = Date.now() - 40000;
-  const base = `FROM hits WHERE last>=?${site ? ' AND site=?' : ''}`;
+  const base = `FROM hits WHERE last>=? AND me=0${site ? ' AND site=?' : ''}`;
   const a = site ? [since, site] : [since];
   const [status, bySite, pages] = await Promise.all([
-    all(env, `SELECT ${STATUS} AS status, COUNT(*) AS n ${base} GROUP BY status`, a),
-    all(env, `SELECT site, ${STATUS} AS status, COUNT(*) AS n ${base} GROUP BY site, status`, a),
-    all(env, `SELECT site, path, COUNT(*) AS n ${base} AND ${STATUS}='real' GROUP BY site, path ORDER BY n DESC LIMIT 10`, a),
+    all(env, `SELECT ${STATUS} AS status, COUNT(DISTINCT ${PK}) AS n ${base} GROUP BY status`, a),
+    all(env, `SELECT site, ${STATUS} AS status, COUNT(DISTINCT ${PK}) AS n ${base} GROUP BY site, status`, a),
+    all(env, `SELECT site, path, COUNT(DISTINCT ${PK}) AS n ${base} AND ${STATUS}='real' GROUP BY site, path ORDER BY n DESC LIMIT 10`, a),
   ]);
   return { generatedAt: new Date().toISOString(), windowSeconds: 40, status, bySite, pages };
 }
 
+/** One line per visit (one browser tab): the page it started on, how many pages it opened, and the verdict for the whole visit.
+    who = real | unclear | bot | people (everyone but bots) | me (the owner's marked visits, which every other choice leaves out). */
 export async function feed(env, q) {
   const site = siteOf(q.get('site'));
   const limit = num(q.get('limit'), 60, 1, 200);
   const who = q.get('who');
-  const where = [site ? 'site=?' : '', ['real', 'bot', 'unclear'].includes(who) ? `${STATUS}='${who}'` : who === 'people' ? `${STATUS}!='bot'` : ''].filter(Boolean);
-  return all(env, `SELECT id, sid, site, path, ts, last, ref_host, ref_kind, country, device, browser, os, org, w, h, active, scroll, clicks AS nclicks, (SELECT COUNT(*) FROM clicks WHERE hid=hits.id AND kind='dl') AS ndl, (SELECT COUNT(*) FROM clicks WHERE hid=hits.id AND kind IN ('out','mail','tel')) AS nout, ${STATUS} AS status, ${WHY} AS why FROM hits ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY last DESC LIMIT ?`, [...(site ? [site] : []), limit]);
+  const having = [who === 'me' ? 'MAX(me)=1' : 'MAX(me)=0', ['real', 'bot', 'unclear'].includes(who) ? `${AGG_STATUS}='${who}'` : who === 'people' ? `${AGG_STATUS}!='bot'` : ''].filter(Boolean);
+  const taps = (kinds) => `(SELECT COUNT(*) FROM clicks c JOIN hits x ON x.id=c.hid WHERE x.sid=g.sid AND c.kind IN (${kinds}))`;
+  return all(env, `SELECT e.id, e.sid, e.site, e.path, e.ts, g.last, e.ref_host, e.ref_kind, e.country, e.device, e.browser, e.os, e.org, e.w, e.h,
+    g.pages, g.active, g.seen, g.scroll, g.nclicks, ${taps("'dl'")} AS ndl, ${taps("'out','mail','tel'")} AS nout, g.status, g.why, g.me
+    FROM (SELECT sid, MIN(ts) AS t0, MAX(last) AS last, COUNT(*) AS pages, SUM(active) AS active, SUM(${ON_SCREEN}) AS seen, MAX(scroll) AS scroll, SUM(clicks) AS nclicks, MAX(me) AS me, ${AGG_STATUS} AS status, ${AGG_WHY} AS why
+      FROM hits ${site ? 'WHERE site=?' : ''} GROUP BY sid HAVING ${having.join(' AND ')} ORDER BY last DESC LIMIT ?) g
+    JOIN hits e ON e.sid=g.sid AND e.ts=g.t0 GROUP BY g.sid ORDER BY g.last DESC`, [...(site ? [site] : []), limit]);
+}
+
+/** The owner says "this visit was me" (or takes it back). The same visitor's other visits that day follow. */
+export async function markMine(env, body) {
+  const sid = String((body && body.sid) || '');
+  if (!ID.test(sid)) return { ok: false };
+  const me = body.me === false || body.me === 0 ? 0 : 1;
+  await env.DB.batch([env.DB.prepare(`UPDATE hits SET me=? WHERE sid=? OR (vid!='' AND vid IN (SELECT vid FROM hits WHERE sid=?))`).bind(me, sid, sid)]);
+  return { ok: true, sid, me };
+}
+
+/** Where step N of the "this is my device" walk goes: each site in turn (the script there saves the flag and comes back), then the dashboard. */
+export function meStep(q) {
+  const v = q.get('v') === 'off' ? 'off' : 'on';
+  const step = num(q.get('step'), 0, 0, 99);
+  return step < SITES.length ? `https://${SITES[step]}/#pulse-me=${v}-${step}` : `https://analytics.streamerosai.com/watch/?me=${v}`;
 }
 
 export async function journey(env, q) {
@@ -229,8 +307,8 @@ export async function clickmap(env, q) {
   if (!site || !path.startsWith('/')) return { visits: 0, clicks: [] };
   const since = Date.now() - num(q.get('days'), 28, 1, 90) * 864e5;
   const [v, clicks] = await Promise.all([
-    all(env, `SELECT COUNT(*) AS n FROM hits WHERE site=? AND path=? AND ts>=? AND ${STATUS}='real'`, [site, path, since]),
-    all(env, `SELECT kind, label, x, y, z FROM clicks WHERE site=? AND path=? AND ts>=? ORDER BY ts DESC LIMIT 600`, [site, path, since]),
+    all(env, `SELECT COUNT(*) AS n FROM hits WHERE site=? AND path=? AND ts>=? AND me=0 AND ${STATUS}='real'`, [site, path, since]),
+    all(env, `SELECT kind, label, x, y, z FROM clicks WHERE site=? AND path=? AND ts>=? AND hid NOT IN (SELECT id FROM hits WHERE me=1) ORDER BY ts DESC LIMIT 600`, [site, path, since]),
   ]);
   return { visits: (v[0] && v[0].n) || 0, clicks };
 }
@@ -242,7 +320,7 @@ export function cors(req) {
   const h = { Vary: 'Origin' };
   if (DASH_ORIGIN.test(o)) {
     h['Access-Control-Allow-Origin'] = o;
-    h['Access-Control-Allow-Methods'] = 'GET, OPTIONS';
+    h['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
     h['Access-Control-Allow-Headers'] = 'Authorization, Content-Type';
     h['Access-Control-Max-Age'] = '86400';
   }
@@ -275,21 +353,25 @@ export async function insights(env, q) {
   const now = Date.now();
   const since = now - days * 864e5;
   const prevSince = since - days * 864e5;
-  const sq = site ? ' AND site=?' : '';
+  const sq = ` AND me=0${site ? ' AND site=?' : ''}`; // the owner's own visits are out of every number
   const sa = site ? [site] : [];
   const real = `${STATUS}='real'`;
   const notBot = `${STATUS}!='bot'`;
   const realA = `(CASE WHEN a.wd=1 THEN 'bot' WHEN a.human=1 THEN 'real' WHEN a.bot=1 OR a.dc=1 THEN 'bot' ELSE 'unclear' END)='real'`;
-  const win = (lo, hi) => all(env, `SELECT COUNT(*) AS people, SUM(${HAS_WIN}) AS wins FROM hits WHERE ts>=? AND ts<? AND ${real}${sq}`, [lo, hi, ...sa]);
-  const bots = (lo, hi) => all(env, `SELECT COUNT(*) AS n FROM hits WHERE ts>=? AND ts<? AND ${STATUS}='bot'${sq}`, [lo, hi, ...sa]);
-  const [cur, prev, curBots, prevBots, actedDaily, sources, pages, flows, funnel, hours, broken, errors, speed, wins48, newSrc, botDay, botBase] = await Promise.all([
+  // one row per person: their verdict, whether they tapped anything, how many visits and pages
+  const person = (extra) => `SELECT ${extra}${PK} AS pk, ${AGG_STATUS} AS st, SUM(${HAS_WIN}) AS w, COUNT(DISTINCT sid) AS visits, COUNT(*) AS hits FROM hits`;
+  const win = (lo, hi) => all(env, `SELECT COUNT(*) AS people, SUM(CASE WHEN w>0 THEN 1 ELSE 0 END) AS wins, SUM(visits) AS visits, SUM(hits) AS pages FROM (${person('')} WHERE ts>=? AND ts<?${sq} GROUP BY pk) WHERE st='real'`, [lo, hi, ...sa]);
+  const bots = (lo, hi) => all(env, `SELECT COUNT(DISTINCT ${PK}) AS n FROM hits WHERE ts>=? AND ts<? AND ${STATUS}='bot'${sq}`, [lo, hi, ...sa]);
+  const pt = pacificOffset(now);
+  const ptDay = `date(ts/1000${pt},'unixepoch')`;
+  const [cur, prev, curBots, prevBots, actedDaily, sources, pages, flows, funnel, hours, broken, errors, speed, wins48, newSrc, botDay, botBase, fromGoogle, starts] = await Promise.all([
     win(since, now + 1), win(prevSince, since), bots(since, now + 1), bots(prevSince, since),
-    all(env, `SELECT date(ts/1000,'unixepoch') AS day, SUM(${HAS_WIN}) AS n FROM hits WHERE ts>=? AND ${real}${sq} GROUP BY day ORDER BY day`, [since, ...sa]),
+    all(env, `SELECT day, SUM(CASE WHEN w>0 THEN 1 ELSE 0 END) AS n FROM (${person(`${DAY} AS day, `)} WHERE ts>=?${sq} GROUP BY day, pk) WHERE st='real' GROUP BY day ORDER BY day`, [since, ...sa]),
     all(env, `SELECT ref_kind, ref_host, COUNT(*) AS visits, SUM(${HAS_WIN}) AS wins, ROUND(AVG(active),1) AS active FROM hits WHERE ts>=? AND ${real} AND ref_kind!='internal'${sq} GROUP BY ref_kind, ref_host ORDER BY visits DESC LIMIT 25`, [since, ...sa]),
     all(env, `SELECT site, path, COUNT(*) AS visits, SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM hits h2 WHERE h2.sid=hits.sid AND h2.ts<hits.ts) THEN 1 ELSE 0 END) AS entries, SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM hits h2 WHERE h2.sid=hits.sid AND h2.ts>hits.ts) THEN 1 ELSE 0 END) AS exits, SUM(${HAS_WIN}) AS wins, ROUND(AVG(scroll)) AS scroll, ROUND(AVG(active),1) AS active, ROUND(AVG(CASE WHEN lcp>0 THEN lcp END)) AS lcp FROM hits WHERE ts>=? AND ${real}${sq} GROUP BY site, path ORDER BY visits DESC LIMIT 40`, [since, ...sa]),
-    all(env, `SELECT a.site, a.path AS from_path, b.path AS to_path, COUNT(*) AS n FROM hits a JOIN hits b ON b.sid=a.sid AND b.ts>a.ts AND b.site=a.site AND b.path!=a.path WHERE a.ts>=? AND ${realA}${site ? ' AND a.site=?' : ''} AND NOT EXISTS (SELECT 1 FROM hits m WHERE m.sid=a.sid AND m.ts>a.ts AND m.ts<b.ts) GROUP BY a.site, a.path, b.path ORDER BY n DESC LIMIT 15`, [since, ...sa]),
-    all(env, `SELECT COUNT(*) AS sessions, SUM(CASE WHEN p>1 THEN 1 ELSE 0 END) AS multi, SUM(CASE WHEN w>0 THEN 1 ELSE 0 END) AS won FROM (SELECT sid, COUNT(*) AS p, SUM(${HAS_WIN}) AS w FROM hits WHERE ts>=? AND ${real}${sq} GROUP BY sid)`, [since, ...sa]),
-    all(env, `SELECT CAST(strftime('%H', ts/1000, 'unixepoch') AS INTEGER) AS hour, CAST(strftime('%w', ts/1000, 'unixepoch') AS INTEGER) AS dow, COUNT(*) AS n FROM hits WHERE ts>=? AND ${real}${sq} GROUP BY hour, dow`, [since, ...sa]),
+    all(env, `SELECT a.site, a.path AS from_path, b.path AS to_path, COUNT(*) AS n FROM hits a JOIN hits b ON b.sid=a.sid AND b.ts>a.ts AND b.site=a.site AND b.path!=a.path WHERE a.ts>=? AND a.me=0 AND ${realA}${site ? ' AND a.site=?' : ''} AND NOT EXISTS (SELECT 1 FROM hits m WHERE m.sid=a.sid AND m.ts>a.ts AND m.ts<b.ts) GROUP BY a.site, a.path, b.path ORDER BY n DESC LIMIT 15`, [since, ...sa]),
+    all(env, `SELECT COUNT(*) AS sessions, SUM(CASE WHEN p>1 THEN 1 ELSE 0 END) AS multi, SUM(CASE WHEN w>0 THEN 1 ELSE 0 END) AS won FROM (SELECT ${PK} AS pk, COUNT(*) AS p, SUM(${HAS_WIN}) AS w FROM hits WHERE ts>=? AND ${real}${sq} GROUP BY pk)`, [since, ...sa]),
+    all(env, `SELECT CAST(strftime('%H', ts/1000+${IST}, 'unixepoch') AS INTEGER) AS hour, CAST(strftime('%w', ts/1000+${IST}, 'unixepoch') AS INTEGER) AS dow, COUNT(DISTINCT sid) AS n FROM hits WHERE ts>=? AND ${real}${sq} GROUP BY hour, dow`, [since, ...sa]),
     all(env, `SELECT site, path, ref_host, COUNT(*) AS n, MAX(ts) AS last FROM hits WHERE ts>=? AND st>=400 AND ${notBot}${sq} GROUP BY site, path, ref_host ORDER BY n DESC LIMIT 20`, [since, ...sa]),
     all(env, `SELECT site, path, SUM(err) AS errors, COUNT(*) AS visits, MAX(ts) AS last FROM hits WHERE ts>=? AND err>0 AND ${notBot}${sq} GROUP BY site, path ORDER BY errors DESC LIMIT 15`, [since, ...sa]),
     all(env, `SELECT site, path, COUNT(*) AS n, ROUND(AVG(lcp)) AS lcp FROM hits WHERE ts>=? AND lcp>0 AND ${notBot}${sq} GROUP BY site, path HAVING n>=1 ORDER BY lcp DESC LIMIT 15`, [since, ...sa]),
@@ -297,6 +379,9 @@ export async function insights(env, q) {
     all(env, `SELECT ref_kind, ref_host, MIN(ts) AS first, COUNT(*) AS n FROM hits WHERE ${real} AND ref_host!='' AND ref_kind NOT IN ('internal','own')${sq} AND (SELECT MIN(ts) FROM hits)<? GROUP BY ref_kind, ref_host HAVING MIN(ts)>=? ORDER BY first DESC LIMIT 8`, [...sa, now - 48 * 36e5, now - 48 * 36e5]),
     all(env, `SELECT COUNT(*) AS n FROM hits WHERE ts>=? AND ${STATUS}='bot'${sq}`, [now - 864e5, ...sa]),
     all(env, `SELECT COUNT(*) AS n FROM hits WHERE ts>=? AND ts<? AND ${STATUS}='bot'${sq}`, [now - 8 * 864e5, now - 864e5, ...sa]),
+    // arrivals from Google per site and Pacific day, to hold against Search Console's clicks
+    all(env, `SELECT site, ${ptDay} AS day, SUM(CASE WHEN ${real} THEN 1 ELSE 0 END) AS real, SUM(CASE WHEN ${real} THEN 0 ELSE 1 END) AS idle FROM hits WHERE ts>=? AND ref_kind='search' AND ref_host LIKE '%google%' AND ${notBot}${sq} GROUP BY site, day ORDER BY day`, [since, ...sa]),
+    all(env, `SELECT site, MIN(${ptDay}) AS day FROM hits GROUP BY site`),
   ]);
 
   const alerts = [];
@@ -304,14 +389,16 @@ export async function insights(env, q) {
   newSrc.forEach((s) => alerts.push({ id: `src-${s.ref_host}`, level: 'good', ts: s.first, site: '', title: `New source sent a real visitor: ${s.ref_host}`, detail: s.ref_kind }));
   const baseDaily = (botBase[0] && botBase[0].n ? botBase[0].n : 0) / 7;
   const today = (botDay[0] && botDay[0].n) || 0;
-  if (today >= 20 && today > 3 * Math.max(baseDaily, 1)) alerts.push({ id: `bots-${new Date(now).toISOString().slice(0, 10)}`, level: 'warn', ts: now, site: '', title: `Bot traffic is high today: ${today} visits (usual ${Math.round(baseDaily)} a day)`, detail: 'Not real people. Nothing to fix unless numbers elsewhere look wrong.' });
+  if (today >= 20 && today > 3 * Math.max(baseDaily, 1)) alerts.push({ id: `bots-${istDay(now)}`, level: 'warn', ts: now, site: '', title: `Bot traffic is high today: ${today} visits (usual ${Math.round(baseDaily)} a day)`, detail: 'Not real people. Nothing to fix unless numbers elsewhere look wrong.' });
   broken.filter((b) => b.last >= now - 48 * 36e5).forEach((b) => alerts.push({ id: `404-${b.site}${b.path}`, level: 'bad', ts: b.last, site: b.site, title: `Someone reached a broken page (${b.path})`, detail: b.ref_host ? `They came from ${b.ref_host}` : 'Typed or bookmarked address' }));
   errors.filter((e) => e.last >= now - 48 * 36e5).forEach((e) => alerts.push({ id: `js-${e.site}${e.path}`, level: 'warn', ts: e.last, site: e.site, title: `A script error happened on ${e.path}`, detail: `${e.errors} error${e.errors === 1 ? '' : 's'} in ${e.visits} visit${e.visits === 1 ? '' : 's'}` }));
   alerts.sort((a, b) => b.ts - a.ts);
 
   return {
     generatedAt: new Date().toISOString(), days, site: site || 'all',
-    compare: { real: (cur[0] || {}).people || 0, wins: (cur[0] || {}).wins || 0, bots: (curBots[0] || {}).n || 0, prevReal: (prev[0] || {}).people || 0, prevWins: (prev[0] || {}).wins || 0, prevBots: (prevBots[0] || {}).n || 0 },
+    compare: { real: (cur[0] || {}).people || 0, wins: (cur[0] || {}).wins || 0, visits: (cur[0] || {}).visits || 0, pages: (cur[0] || {}).pages || 0, bots: (curBots[0] || {}).n || 0, prevReal: (prev[0] || {}).people || 0, prevWins: (prev[0] || {}).wins || 0, prevBots: (prevBots[0] || {}).n || 0 },
     actedDaily, sources, pages, flows, funnel: funnel[0] || { sessions: 0, multi: 0, won: 0 }, hours, broken, errors, speed, alerts: alerts.slice(0, 20),
+    // Search Console's day ends at midnight Pacific time; starts = the first day each site's tracker reported (a part day)
+    google: { rows: fromGoogle, starts },
   };
 }

@@ -5,11 +5,11 @@ import { SITE_HOSTS } from "@/lib/config";
 import { n } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
 import {
-  WHY_LABEL, daysFor, regionName, useKey, usePulse,
+  PULSE_API, WHY_LABEL, daysFor, peopleOf, pulsePost, regionName, useKey, usePulse,
   type ClickMap, type FeedRow, type Insights, type Journey, type Live, type Status, type Summary,
 } from "@/lib/pulse";
 import { Card, Sk } from "@/components/ui";
-import { AlertsCard, Broken, Flow, Landing, PagesDeep, SourceQuality, When } from "./WatchDeep";
+import { AlertsCard, Broken, CrossCheck, Flow, Landing, PagesDeep, SourceQuality, When } from "./WatchDeep";
 import { Badge, CLICK_LABEL, COLOR, KIND_LABEL, ORDER, Rows, ago, offset, pct, say, secs, site, when } from "./watchkit";
 import { DataTable } from "@/components/DataTable";
 
@@ -26,8 +26,8 @@ function Daily({ rows }: { rows: Summary["daily"] }) {
   if (!days.length) return null;
   const max = Math.max(...days.map(([, o]) => o.real + o.unclear + o.bot), 1);
   return (
-    <Card title="Visits per day" note="Green is a real person, amber did nothing, red is a known bot.">
-      <div className="mt-3 flex h-36 items-end gap-[3px]" role="img" aria-label="Visits per day, split into real people, no interaction and bots">
+    <Card title="People per day" note="Green is a real person, amber did nothing, red is a bot. Each person counts once a day. Days are in Indian time.">
+      <div className="mt-3 flex h-36 items-end gap-[3px]" role="img" aria-label="People per day, split into real people, no interaction and bots">
         {days.map(([d, o]) => (
           <div key={d} title={`${d}: ${o.real} real, ${o.unclear} no interaction, ${o.bot} bots`} className="flex h-full min-w-[3px] max-w-10 flex-1 flex-col-reverse overflow-hidden rounded-t">
             {ORDER.map((s) => <i key={s} style={{ height: `${(100 * o[s]) / max}%`, background: COLOR[s] }} className="block w-full" />)}
@@ -39,13 +39,23 @@ function Daily({ rows }: { rows: Summary["daily"] }) {
   );
 }
 
-function Journeys({ row, keyStr }: { row: FeedRow; keyStr: string }) {
+function Journeys({ row, keyStr, onMarked }: { row: FeedRow; keyStr: string; onMarked: () => void }) {
   const params = useMemo(() => ({ sid: row.sid }), [row.sid]);
   const { data } = usePulse<Journey>("/v/journey", params, { key: keyStr });
+  const [busy, setBusy] = useState(false);
   if (!data) return <Sk w={200} h={14} className="m-3" />;
+  const mark = async () => {
+    setBusy(true);
+    const ok = await pulsePost("/v/mine", { sid: row.sid, me: !row.me }, keyStr);
+    setBusy(false);
+    if (ok) onMarked();
+  };
   return (
     <div className="border-t border-line px-3 py-3">
       <p className="m-0 mb-3 text-[12.5px] text-dim">This visitor’s steps in this browser tab, in order. {data.hits.length} page{data.hits.length === 1 ? "" : "s"}.</p>
+      <button type="button" disabled={busy} onClick={mark} className="mb-3 min-h-9 rounded-lg bg-white/[.07] px-3 text-[12.5px] font-semibold text-ink disabled:opacity-50">
+        {row.me ? "Not me: count this visit again" : "This was me: leave it out of the numbers"}
+      </button>
       <ol className="m-0 list-none p-0">
         {data.hits.map((h, i) => {
           const cl = data.clicks.filter((c) => c.hid === h.id);
@@ -82,28 +92,30 @@ function Journeys({ row, keyStr }: { row: FeedRow; keyStr: string }) {
   );
 }
 
-type Who = Status | "people" | "all";
+type Who = Status | "people" | "all" | "me";
 const WHO: { id: Who; label: string }[] = [
   { id: "people", label: "People" },
   { id: "real", label: "Real people" },
   { id: "unclear", label: "No interaction" },
   { id: "bot", label: "Bots" },
   { id: "all", label: "Everyone" },
+  { id: "me", label: "Mine" },
 ];
 
 function Feed({ keyStr, siteFilter, bots }: { keyStr: string; siteFilter: string; bots: number }) {
   const [who, setWho] = useState<Who>("people");
   const [onlyAct, setOnlyAct] = useState(false);
   const [open, setOpen] = useState("");
-  const params = useMemo(() => ({ limit: 60, site: siteFilter === "all" ? undefined : siteFilter, who: who === "all" ? undefined : who }), [siteFilter, who]);
+  const [bump, setBump] = useState(0); // asks for the list again straight after a visit is marked
+  const params = useMemo(() => ({ limit: 60, site: siteFilter === "all" ? undefined : siteFilter, who: who === "all" ? undefined : who, r: bump || undefined }), [siteFilter, who, bump]);
   const { data, err } = usePulse<FeedRow[]>("/v/feed", params, { key: keyStr, poll: 10000 });
   const rows = data && onlyAct ? data.filter((r) => (r.ndl ?? 0) + (r.nout ?? 0) > 0) : data;
   const chip = (on: boolean) => `min-h-10 shrink-0 rounded-full px-4 text-[13px] font-semibold ${on ? "bg-brand/15 text-brand" : "bg-white/[.05] text-mute"}`;
   const th = "whitespace-nowrap border-b border-line px-3 py-2 text-left text-[11.5px] font-medium text-dim";
   const td = "whitespace-nowrap px-3 py-2.5 text-[12.5px] text-mute";
-  const heads = ["Who", "Why", "Site", "Page", "Came from", "Country", "Network", "Device", "Time on page", "Read", "Taps", "Downloads", "Exits"];
+  const heads = ["Who", "Why", "Site", "First page", "Pages", "Came from", "Country", "Network", "Device", "On screen", "Active", "Read", "Taps", "Downloads", "Exits"];
   return (
-    <Card title="Visits one by one" note="One line per visit, newest first. Slide the table sideways for more. Tap a line to see that person’s steps.">
+    <Card title="Visits one by one" note="One line per visit, newest first, however many pages it opened. Slide the table sideways for more. Tap a line to see that person’s steps.">
       <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="Filter visits">
         {WHO.map((s) => (
           <button key={s.id} type="button" aria-pressed={who === s.id} onClick={() => setWho(s.id)} className={chip(who === s.id)}>{s.label}</button>
@@ -111,6 +123,7 @@ function Feed({ keyStr, siteFilter, bots }: { keyStr: string; siteFilter: string
         <button type="button" aria-pressed={onlyAct} onClick={() => setOnlyAct(!onlyAct)} className={chip(onlyAct)}>Downloads and exits only</button>
       </div>
       {who === "people" && <p className="m-0 mt-2 text-[12.5px] text-dim">Bots are left out of this list{bots ? ` (${n(bots)} in this period)` : ""}. Tap Bots to see them, and the Why column says how each visit got its label.</p>}
+      {who === "me" && <p className="m-0 mt-2 text-[12.5px] text-dim">Visits from your own devices. They are in no other number on this dashboard.</p>}
       {err === "key" && <p className="sub mt-3 text-bad">That key was not accepted.</p>}
       {!data && !err && <Sk w={300} h={14} className="mt-4" />}
       {rows && rows.length === 0 && <p className="sub mt-3">No visits like this yet.</p>}
@@ -134,10 +147,12 @@ function Feed({ keyStr, siteFilter, bots }: { keyStr: string; siteFilter: string
                     <td className={td}>{r.why ? WHY_LABEL[r.why] : "–"}</td>
                     <td className={td}>{site(r.site)}</td>
                     <td className={`${td} text-ink`}>{r.path}</td>
+                    <td className={td}>{r.pages ?? 1}</td>
                     <td className={td}>{KIND_LABEL[r.ref_kind] ?? r.ref_kind}{r.ref_host ? ` (${r.ref_host})` : ""}</td>
                     <td className={td}>{regionName(r.country)}</td>
                     <td className={td}>{r.org || "–"}</td>
                     <td className={td}>{r.device}, {r.browser}, {r.os}</td>
+                    <td className={td}>{secs(r.seen ?? 0)}</td>
                     <td className={td}>{secs(r.active)}</td>
                     <td className={td}>{r.scroll}%</td>
                     <td className={td}>{r.nclicks}</td>
@@ -146,7 +161,7 @@ function Feed({ keyStr, siteFilter, bots }: { keyStr: string; siteFilter: string
                   </tr>
                   {open === r.id && (
                     <tr className="border-b border-line">
-                      <td colSpan={heads.length + 1} className="p-0"><div className="sticky left-0 w-[min(100vw-56px,680px)] max-w-full"><Journeys row={r} keyStr={keyStr} /></div></td>
+                      <td colSpan={heads.length + 1} className="p-0"><div className="sticky left-0 w-[min(100vw-56px,680px)] max-w-full"><Journeys row={r} keyStr={keyStr} onMarked={() => { setOpen(""); setBump((b) => b + 1); }} /></div></td>
                     </tr>
                   )}
                 </Fragment>
@@ -230,6 +245,24 @@ function Unlock({ keyStr, setKey }: { keyStr: string; setKey: (k: string) => voi
   );
 }
 
+/** One tap marks this phone or computer as the owner's on every site, so their own visits stay out of the numbers. */
+function MyDevices({ mine, flash }: { mine: Summary["mine"]; flash: string }) {
+  const link = "inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-[14px] font-semibold";
+  return (
+    <Card title="Leave out my own visits" note="Do this once on each phone and computer you use. The page runs through your 12 sites, which takes about 20 seconds, and comes back here. From then on, visits from that device are left out of every number.">
+      {flash && <p role="status" className="m-0 mt-3 rounded-xl bg-brand/10 px-4 py-3 text-[13.5px] text-ink">{flash === "on" ? "Done. This device is now left out on all 12 sites." : "Done. This device counts as a normal visitor again."}</p>}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <a href={`${PULSE_API}/me?v=on&step=0`} className={`${link} bg-brand/15 text-brand`}>Mark this device as mine</a>
+        <a href={`${PULSE_API}/me?v=off&step=0`} className={`${link} bg-white/[.05] text-mute`}>Unmark this device</a>
+      </div>
+      <p className="sub">
+        {mine?.visits ? `${n(mine.visits)} of your own visits (${n(mine.hits)} pages) are left out in this period.` : "No visits from a marked device in this period yet."}{" "}
+        If the page stops on one of your sites and does not come back, that browser still holds an older copy of the tracker script: try again in an hour. For a visit that already happened, open it in the list below and tap “This was me”.
+      </p>
+    </Card>
+  );
+}
+
 /** "▲ 13 vs before": one short line, so every tile reads the same. */
 const vs = (cur: number, prev: number) => {
   const d = cur - prev;
@@ -248,6 +281,7 @@ export default function Watch() {
   const f = useFilters();
   const days = daysFor(f.range);
   const [keyStr, setKey] = useKey();
+  const [meFlash, setMeFlash] = useState("");
   const params = useMemo(() => ({ days, site: f.site === "all" ? undefined : f.site }), [days, f.site]);
   const { data: sum, err } = usePulse<Summary>("/v/summary", params, { poll: 60000 });
   const { data: ins } = usePulse<Insights>("/v/insights", params, { poll: 60000 });
@@ -259,13 +293,16 @@ export default function Watch() {
     try {
       const u = new URL(location.href);
       const k = u.searchParams.get("key");
-      if (k) { setKey(k); u.searchParams.delete("key"); history.replaceState(null, "", u.pathname + u.search); }
+      const me = u.searchParams.get("me"); // set when the "mark this device" walk comes back
+      if (me === "on" || me === "off") setMeFlash(me);
+      if (k) setKey(k);
+      if (k || me) { u.searchParams.delete("key"); u.searchParams.delete("me"); history.replaceState(null, "", u.pathname + u.search); }
     } catch { /* ignore */ }
   }, [setKey]);
 
   const counts = useMemo(() => {
     const o: Record<Status, number> = { real: 0, unclear: 0, bot: 0 };
-    sum?.status.forEach((r) => (o[r.status] = r.hits));
+    ORDER.forEach((s) => (o[s] = peopleOf(sum?.status, s)));
     return o;
   }, [sum]);
   const total = counts.real + counts.unclear + counts.bot;
@@ -293,7 +330,7 @@ export default function Watch() {
             {tile("Real people", n(counts.real), c ? vs(c.real, c.prevReal) : "no earlier data", COLOR.real, c ? tone(c.real, c.prevReal) : "")}
             {tile("Took action", n(c?.wins ?? 0), c ? vs(c.wins, c.prevWins) : "no earlier data", "var(--brand)", c ? tone(c.wins, c.prevWins) : "")}
             {tile("Online now", n(liveReal), "this minute", COLOR.real)}
-            {tile("Bots", n(counts.bot), `${pct(counts.bot, total)}% of all visits`, COLOR.bot)}
+            {tile("Bots", n(counts.bot), `${pct(counts.bot, total)}% of all visitors`, COLOR.bot)}
           </>
         ) : err ? (
           <p className="sub col-span-2">Cannot reach the tracker right now.</p>
@@ -301,7 +338,12 @@ export default function Watch() {
           <><Sk w="100%" h={84} /><Sk w="100%" h={84} /><Sk w="100%" h={84} /><Sk w="100%" h={84} /></>
         )}
       </div>
-      <p className="sub !mt-0 px-1">Our own tracker, not Google, for the last {days} days. <b className="font-medium text-mute">Real people</b> touched, scrolled or typed. <b className="font-medium text-mute">Took action</b> means a real visit that tapped something. <b className="font-medium text-mute">Bots</b> are robots that never touched the page{sum ? `, and ${n(counts.unclear)} more visits did nothing` : ""}. Arrows compare with the {days} days before.{sum && real ? ` A real visitor stays ${secs(real.active)} and reads ${real.scroll ?? 0}% of the page.` : ""}</p>
+      <p className="sub !mt-0 px-1">
+        Our own tracker, not Google, for the last {days} days. <b className="font-medium text-mute">Real people</b> touched, scrolled or typed, and each person counts once a day however many pages they open{c?.visits ? ` (${n(counts.real)} ${counts.real === 1 ? "person" : "people"} made ${n(c.visits)} visit${c.visits === 1 ? "" : "s"} and opened ${n(c.pages ?? 0)} page${c.pages === 1 ? "" : "s"})` : ""}. <b className="font-medium text-mute">Took action</b> is real people who tapped something. <b className="font-medium text-mute">Bots</b> are robots that never touched the page
+        {sum ? `, and ${n(counts.unclear)} more ${counts.unclear === 1 ? "visitor" : "visitors"} did nothing${sum.idle && counts.unclear ? ` (${n(sum.idle.left)} left within 2 seconds, ${n(sum.idle.stayed)} stayed but never touched the page)` : ""}` : ""}. Arrows compare with the {days} days before.
+        {sum && real ? ` A real visitor stays ${secs(real.active)} on a page and reads ${real.scroll ?? 0}% of it.` : ""}
+        {sum?.mine?.visits ? ` Your own ${n(sum.mine.visits)} visit${sum.mine.visits === 1 ? " is" : "s are"} left out.` : ""} Days are in Indian time.
+      </p>
 
       <AlertsCard ins={ins} />
 
@@ -322,6 +364,7 @@ export default function Watch() {
           />
           {ins && <SourceQuality ins={ins} />}
           {ins && <Landing ins={ins} />}
+          {ins && <CrossCheck ins={ins} />}
           {ins && <PagesDeep ins={ins} all={all} />}
           {ins && <Flow ins={ins} all={all} />}
           {ins && <When ins={ins} />}
@@ -335,8 +378,8 @@ export default function Watch() {
             empty="No taps on buttons or links yet."
             rows={sum.clicks.map((x) => [`${CLICK_LABEL[x.kind] ?? x.kind}: ${x.label || x.href || "(no label)"}`, x.n, x.rage ?? 0])}
           />
-          <DataTable title="Countries" cols={["Country", "Visits"]} fmt={[0, "n"]} bar={1} max={10} rows={sum.countries.map((x) => [regionName(x.country), x.n])} />
-          <DataTable title="Devices" cols={["Device", "Visits"]} fmt={[0, "n"]} bar={1} max={10} rows={sum.devices.map((d) => [`${d.device}, ${d.browser}`, d.n])} />
+          <DataTable title="Countries" cols={["Country", "People"]} fmt={[0, "n"]} bar={1} max={10} rows={sum.countries.map((x) => [regionName(x.country), x.n])} />
+          <DataTable title="Devices" cols={["Device", "People"]} fmt={[0, "n"]} bar={1} max={10} rows={sum.devices.map((d) => [`${d.device}, ${d.browser}`, d.n])} />
           <DataTable
             title="Your sites"
             note={silent.length ? `Not reporting yet: ${silent.map(site).join(", ")}.` : undefined}
@@ -363,6 +406,7 @@ export default function Watch() {
       <Unlock keyStr={keyStr} setKey={setKey} />
       {keyStr && (
         <>
+          <MyDevices mine={sum?.mine} flash={meFlash} />
           <Feed keyStr={keyStr} siteFilter={f.site} bots={counts.bot} />
           {sum && sum.pages.length > 0 && <ClickMapCard keyStr={keyStr} pages={sum.pages} days={days} />}
         </>
