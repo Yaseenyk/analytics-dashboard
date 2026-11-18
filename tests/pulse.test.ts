@@ -396,6 +396,26 @@ describe("the browser script", () => {
     expect(TRACKER.length).toBeLessThan(10000);
   });
 
+  it("marks or unmarks the owner's device and hops to the next site, even with Do Not Track on", () => {
+    const run = (hash: string, stored: Record<string, string>) => {
+      const went: string[] = [];
+      const localStorage = { getItem: (k: string) => stored[k] ?? null, setItem: (k: string, v: string) => { stored[k] = v; }, removeItem: (k: string) => { delete stored[k]; } };
+      const document = { currentScript: { src: "https://pulse.test/p.js", getAttribute: () => null } };
+      const location = { hash, hostname: "calc.streamerosai.com", replace: (u: string) => went.push(u) };
+      new Function("document", "window", "navigator", "location", "localStorage", TRACKER)(document, {}, { doNotTrack: "1" }, location, localStorage);
+      return went;
+    };
+    const store: Record<string, string> = {};
+    expect(run("#pulse-me=on-3", store)).toEqual(["https://pulse.test/me?v=on&step=4"]);
+    expect(store).toEqual({ _pme: "1" });
+    expect(run("#pulse-me=off-11", store)).toEqual(["https://pulse.test/me?v=off&step=12"]);
+    expect(store).toEqual({});
+    // without a step number it only sets the flag and stays on the page
+    expect(run("#pulse-me=on", store)).toEqual([]);
+    expect(store).toEqual({ _pme: "1" });
+    expect(run("#section-2", {})).toEqual([]);
+  });
+
   it("holds the privacy rules in code: no cookies, no stored id, no typed text", () => {
     expect(TRACKER).not.toMatch(/document\.cookie|\.value\b/);
     // the only thing ever kept in the browser beyond the tab is the owner's yes/no "this is my device" flag
