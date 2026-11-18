@@ -2,7 +2,7 @@
  * pulse Worker entry. A Worker module may export only its handler, so every helper lives in lib.js (and is tested there).
  * Routes are listed at the top of lib.js.
  */
-import { RETENTION_DAYS, authorised, clickmap, cors, feed, ingest, insights, istDay, journey, json, live, markMine, meStep, summary } from './lib.js';
+import { PK, RETENTION_DAYS, STATUS, authorised, clickmap, cors, feed, ingest, insights, istDay, journey, json, live, markMine, meStep, summary } from './lib.js';
 import { TRACKER } from './tracker.js';
 
 // The free D1 plan allows 5M rows read a day and every dashboard poll scans a whole period, so answers are
@@ -24,7 +24,13 @@ async function memo(env, key, ttlMs, fn) {
 export default {
   async scheduled(event, env) {
     const cut = Date.now() - RETENTION_DAYS * 864e5;
+    // Bot visits are kept for one day (so the Watch page can still show them), then dropped, which keeps the table
+    // small and the dashboard cheap to read. A visitor who ever showed a human sign is never touched.
+    const botCut = Date.now() - 864e5;
+    const oldBots = `SELECT id FROM hits WHERE ts<? AND ${STATUS}='bot' AND ${PK} NOT IN (SELECT ${PK} FROM hits WHERE human=1 AND wd=0)`;
     await env.DB.batch([
+      env.DB.prepare(`DELETE FROM clicks WHERE hid IN (${oldBots})`).bind(botCut),
+      env.DB.prepare(`DELETE FROM hits WHERE id IN (${oldBots})`).bind(botCut),
       env.DB.prepare('DELETE FROM clicks WHERE ts<?').bind(cut),
       env.DB.prepare('DELETE FROM hits WHERE ts<?').bind(cut),
       // yesterday's salt goes, so yesterday's visitor codes can never be worked back to an address

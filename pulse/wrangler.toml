@@ -11,7 +11,7 @@ database_name = "site-pulse"
 database_id = "5e096572-927d-4f8b-bcdf-fe206936d8fb"
 
 [triggers]
-crons = ["17 3 * * *"]
+crons = ["17 * * * *"]
 
 [observability]
 enabled = true
