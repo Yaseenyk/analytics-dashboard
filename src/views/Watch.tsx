@@ -225,13 +225,14 @@ function ClickMapCard({ keyStr, pages, days }: { keyStr: string; pages: Summary[
   );
 }
 
-function Unlock({ keyStr, setKey }: { keyStr: string; setKey: (k: string) => void }) {
+function Unlock({ keyStr, setKey, onDevices }: { keyStr: string; setKey: (k: string) => void; onDevices?: () => void }) {
   const [v, setV] = useState("");
   if (keyStr) {
     return (
       <p className="sub flex flex-wrap items-center gap-2">
         Private views are unlocked on this phone.
         <button type="button" onClick={() => setKey("")} className="min-h-9 rounded-full bg-white/[.05] px-3 text-[13px] font-semibold text-mute">Lock again</button>
+        {onDevices && <button type="button" onClick={onDevices} className="min-h-9 rounded-full bg-white/[.05] px-3 text-[13px] font-semibold text-mute">My devices</button>}
       </p>
     );
   }
@@ -245,15 +246,17 @@ function Unlock({ keyStr, setKey }: { keyStr: string; setKey: (k: string) => voi
   );
 }
 
+const ME_STORE = "pulse-me-device";
+
 /** One tap marks this phone or computer as the owner's on every site, so their own visits stay out of the numbers. */
-function MyDevices({ mine, flash }: { mine: Summary["mine"]; flash: string }) {
+function MyDevices({ mine, onMark, onUnmark, onHide }: { mine: Summary["mine"]; onMark: () => void; onUnmark: () => void; onHide: () => void }) {
   const link = "inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-[14px] font-semibold";
   return (
-    <Card title="Leave out my own visits" note="Do this once on each phone and computer you use. The page runs through your 12 sites, which takes about 20 seconds, and comes back here. From then on, visits from that device are left out of every number.">
-      {flash && <p role="status" className="m-0 mt-3 rounded-xl bg-brand/10 px-4 py-3 text-[13.5px] text-ink">{flash === "on" ? "Done. This device is now left out on all 12 sites." : "Done. This device counts as a normal visitor again."}</p>}
+    <Card title="Leave out my own visits" note="Do this once on each phone and computer you use. The page runs through your 12 sites, which takes about 20 seconds, and comes back here. From then on, visits from that device are left out of every number. This box hides itself once you tap Mark; the My devices button brings it back.">
       <div className="mt-3 flex flex-wrap gap-2">
-        <a href={`${PULSE_API}/me?v=on&step=0`} className={`${link} bg-brand/15 text-brand`}>Mark this device as mine</a>
-        <a href={`${PULSE_API}/me?v=off&step=0`} className={`${link} bg-white/[.05] text-mute`}>Unmark this device</a>
+        <a href={`${PULSE_API}/me?v=on&step=0`} onClick={onMark} className={`${link} bg-brand/15 text-brand`}>Mark this device as mine</a>
+        <a href={`${PULSE_API}/me?v=off&step=0`} onClick={onUnmark} className={`${link} bg-white/[.05] text-mute`}>Unmark this device</a>
+        <button type="button" onClick={onHide} className={`${link} bg-white/[.05] text-mute`}>Hide this box</button>
       </div>
       <p className="sub">
         {mine?.visits ? `${n(mine.visits)} of your own visits (${n(mine.hits)} pages) are left out in this period.` : "No visits from a marked device in this period yet."}{" "}
@@ -282,6 +285,12 @@ export default function Watch() {
   const days = daysFor(f.range);
   const [keyStr, setKey] = useKey();
   const [meFlash, setMeFlash] = useState("");
+  // "this device is marked" is remembered here only so the box can stay hidden; the sites keep their own flag
+  const [marked, setMarkedState] = useState(false);
+  const setMarked = (on: boolean) => {
+    setMarkedState(on);
+    try { on ? localStorage.setItem(ME_STORE, "1") : localStorage.removeItem(ME_STORE); } catch { /* storage can be blocked */ }
+  };
   const params = useMemo(() => ({ days, site: f.site === "all" ? undefined : f.site }), [days, f.site]);
   const { data: sum, err } = usePulse<Summary>("/v/summary", params, { poll: 60000 });
   const { data: ins } = usePulse<Insights>("/v/insights", params, { poll: 60000 });
@@ -294,7 +303,14 @@ export default function Watch() {
       const u = new URL(location.href);
       const k = u.searchParams.get("key");
       const me = u.searchParams.get("me"); // set when the "mark this device" walk comes back
-      if (me === "on" || me === "off") setMeFlash(me);
+      let saved = false;
+      try { saved = localStorage.getItem(ME_STORE) === "1"; } catch { /* ignore */ }
+      if (me === "on" || me === "off") {
+        setMeFlash(me);
+        saved = me === "on";
+        try { saved ? localStorage.setItem(ME_STORE, "1") : localStorage.removeItem(ME_STORE); } catch { /* ignore */ }
+      }
+      setMarkedState(saved);
       if (k) setKey(k);
       if (k || me) { u.searchParams.delete("key"); u.searchParams.delete("me"); history.replaceState(null, "", u.pathname + u.search); }
     } catch { /* ignore */ }
@@ -344,6 +360,9 @@ export default function Watch() {
         {sum && real ? ` A real visitor stays ${secs(real.active)} on a page and reads ${real.scroll ?? 0}% of it.` : ""}
         {sum?.mine?.visits ? ` Your own ${n(sum.mine.visits)} visit${sum.mine.visits === 1 ? " is" : "s are"} left out.` : ""} Days are in Indian time.
       </p>
+
+      {meFlash && <p role="status" className="m-0 rounded-xl bg-brand/10 px-4 py-3 text-[13.5px] text-ink">{meFlash === "on" ? "Done. This device is now left out on all 12 sites." : "Done. This device counts as a normal visitor again."}</p>}
+      {keyStr && <Feed keyStr={keyStr} siteFilter={f.site} bots={counts.bot} />}
 
       <AlertsCard ins={ins} />
 
@@ -403,11 +422,10 @@ export default function Watch() {
         </>
       )}
 
-      <Unlock keyStr={keyStr} setKey={setKey} />
+      <Unlock keyStr={keyStr} setKey={setKey} onDevices={marked ? () => setMarked(false) : undefined} />
       {keyStr && (
         <>
-          <MyDevices mine={sum?.mine} flash={meFlash} />
-          <Feed keyStr={keyStr} siteFilter={f.site} bots={counts.bot} />
+          {!marked && <MyDevices mine={sum?.mine} onMark={() => setMarked(true)} onUnmark={() => setMarked(false)} onHide={() => setMarked(true)} />}
           {sum && sum.pages.length > 0 && <ClickMapCard keyStr={keyStr} pages={sum.pages} days={days} />}
         </>
       )}
