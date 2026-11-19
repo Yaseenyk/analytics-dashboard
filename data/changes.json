@@ -222,6 +222,62 @@
       ],
       "detail": "Owner asked for it. Queued posts (20 Nov 2026 to 26 Feb 2027) went from 230-490 words to 963-1,351, with worked examples (labelled made-up data), checklists and sourced external facts; five unsupported product claims removed. Slugs, dates and titles unchanged.",
       "expect": "Posts publish indexable instead of noindex; each may gain long-tail impressions."
+    },
+    {
+      "id": "2026-11-19-root-guides-first",
+      "date": "2026-11-19",
+      "title": "Root site: guides-first home page, pre-launch pages noindex, AI Blogger paused, 10 overlapping posts noindex",
+      "kind": "content",
+      "hosts": [
+        "streamerosai.com"
+      ],
+      "detail": "From the AdSense case study. Home h1 and title now lead with OBS/streaming guides (41 guides by topic); the app is one section 'coming February 2027'. /download, /pricing, /vs/*, /streamers noindex and out of the sitemap (96->79 URLs). AI Blogger schedule commented out. 10 posts answering the same question as a stronger post are noindex with a See also link (51->41 indexable).",
+      "expect": "Home title change may shift impressions for brand queries; fewer, clearer pages for the AdSense review."
+    },
+    {
+      "id": "2026-11-19-solar-ad-langs",
+      "date": "2026-11-19",
+      "title": "Solar: ads can never load on Odia or Assamese pages",
+      "kind": "content",
+      "hosts": [
+        "solar.streamerosai.com"
+      ],
+      "detail": "AdSense does not support or/as. Ad script and slots gated on an allow-list of 11 supported languages; build check fails if ad markup appears on or/as pages. Ads remain off.",
+      "expect": "No visible change."
+    },
+    {
+      "id": "2026-11-19-calc-income-tax",
+      "date": "2026-11-19",
+      "title": "Calc: income tax calculator page deepened",
+      "kind": "content",
+      "hosts": [
+        "calc.streamerosai.com"
+      ],
+      "detail": "Body text 188->862 words: how it works, a worked ₹15 lakh example computed by the tool's own function, break-even between regimes, marginal-relief caveat.",
+      "expect": "May rank better for income tax calculator queries."
+    },
+    {
+      "id": "2026-11-19-privacy-audit",
+      "date": "2026-11-19",
+      "title": "All sites: privacy pages match what actually loads; sitemap crawl clean",
+      "kind": "content",
+      "hosts": [
+        "streamerosai.com",
+        "yk.streamerosai.com",
+        "campus.streamerosai.com",
+        "spotai.streamerosai.com",
+        "solar.streamerosai.com",
+        "exams.streamerosai.com",
+        "esports.streamerosai.com",
+        "fitrank.streamerosai.com",
+        "sable.streamerosai.com",
+        "tools.streamerosai.com",
+        "calc.streamerosai.com",
+        "images.streamerosai.com",
+        "math.streamerosai.com"
+      ],
+      "detail": "Every privacy page now names GA4 cookies + opt-out, Clarity and its Microsoft cookies, Pulse's exact facts; added missing services (Ahrefs on portfolio, Google Fonts on spotai, Plausible on root), fixed a wrong GoatCounter cookie claim (campus) and a wrong DNT claim (exams). 785 sitemap URLs all 200; no JS-only pages.",
+      "expect": "No ranking change; removes a privacy-mismatch risk."
     }
   ]
 }
