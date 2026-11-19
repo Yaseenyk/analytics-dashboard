@@ -112,6 +112,17 @@
       ],
       "detail": "Made during the freeze at the owner's request, for the AdSense review. The 28 publisher store icons (BGMI, Valorant and others) were removed; every game now shows the site's own text badge. Footer and About say no publisher logos or artwork are used. Guides are bylined Yaseen Khatib (Person in the Article schema) instead of 'the Esports Hub team'.",
       "expect": "No ranking change expected. Removes a copyright risk in the domain-level AdSense review."
+    },
+    {
+      "id": "2026-11-19-campus-project-classes",
+      "date": "2026-11-19",
+      "title": "Campus: the offer becomes project classes, built together",
+      "kind": "content",
+      "hosts": [
+        "campus.streamerosai.com"
+      ],
+      "detail": "Made during the freeze at the owner's request, for the AdSense review. Done-for-you wording removed site-wide (built for you, you write none of it, a varied module so submissions differ, per-college caps). Tiers are now Starter (design + starter repo), Guided (reviews of what the student writes) and Mentored (live classes where the project is built together, student writes part of every module). Home title and h1, Terms, the enrolment agreement (v2.0), about 28 guides and llms.txt match. Prices unchanged.",
+      "expect": "Some click-through on 'with source code' and 'built for you' searches may drop. Removes the main policy risk for the domain-level AdSense review."
     }
   ]
 }
