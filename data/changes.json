@@ -101,6 +101,17 @@
       ],
       "detail": "Made during the freeze at the owner's request. The Sable product page, the projects list, the footer and the home page data now link sable.streamerosai.com and show real screenshots. Facts corrected: Android only, no SMS access. The deep-dive page keeps its first-design write-up with a dated note.",
       "expect": "No ranking change expected on the portfolio. The link helps Google find the new Sable site."
+    },
+    {
+      "id": "2026-11-19-esports-badges-byline",
+      "date": "2026-11-19",
+      "title": "Esports: own game badges, guides bylined Yaseen Khatib",
+      "kind": "content",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Made during the freeze at the owner's request, for the AdSense review. The 28 publisher store icons (BGMI, Valorant and others) were removed; every game now shows the site's own text badge. Footer and About say no publisher logos or artwork are used. Guides are bylined Yaseen Khatib (Person in the Article schema) instead of 'the Esports Hub team'.",
+      "expect": "No ranking change expected. Removes a copyright risk in the domain-level AdSense review."
     }
   ]
 }
