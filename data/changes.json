@@ -278,6 +278,17 @@
       ],
       "detail": "Every privacy page now names GA4 cookies + opt-out, Clarity and its Microsoft cookies, Pulse's exact facts; added missing services (Ahrefs on portfolio, Google Fonts on spotai, Plausible on root), fixed a wrong GoatCounter cookie claim (campus) and a wrong DNT claim (exams). 785 sitemap URLs all 200; no JS-only pages.",
       "expect": "No ranking change; removes a privacy-mismatch risk."
+    },
+    {
+      "id": "2026-11-19-demo-separate-mobile",
+      "date": "2026-11-19",
+      "title": "Demo: separate app, readable static HTML, phone layout",
+      "kind": "content",
+      "hosts": [
+        "demo.streamerosai.com"
+      ],
+      "detail": "streamerOS repo: the web demo is now its own Next.js app in demo/ (desktop src/ untouched). Static HTML has a plain-text intro instead of an empty body plus the default 404 fallback text; real 404 page; phone menu drawer, scrolling status badges, stacked Chat Archive/Media Kit/Sponsors, larger-screen note on the two editors. Fixed Aura Studio overlay previews that were 404 on the host. Commits 27e087d, d9c6a1b and the overlay fix.",
+      "expect": "No ranking change; removes a broken-looking page from the AdSense review of the domain."
     }
   ]
 }
