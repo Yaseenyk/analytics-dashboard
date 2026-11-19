@@ -211,6 +211,17 @@
       ],
       "detail": "Release-by-date system like esports (POSTS_NOW override, max 2 per ISO week, no links to unreleased posts). Eight posts from the 19 Nov keyword research (Android, Python, Java, IoT, PHP, C, cyber security, data science; 24 Nov to 18 Dec) are written and waiting for the owner's review before commit.",
       "expect": "Each post targets a search with 170-1,900 monthly India searches."
+    },
+    {
+      "id": "2026-11-19-fitrank-queue-deepened",
+      "date": "2026-11-19",
+      "title": "FitRank: all 29 queued blog posts deepened to 960-1,350 words",
+      "kind": "content",
+      "hosts": [
+        "fitrank.streamerosai.com"
+      ],
+      "detail": "Owner asked for it. Queued posts (20 Nov 2026 to 26 Feb 2027) went from 230-490 words to 963-1,351, with worked examples (labelled made-up data), checklists and sourced external facts; five unsupported product claims removed. Slugs, dates and titles unchanged.",
+      "expect": "Posts publish indexable instead of noindex; each may gain long-tail impressions."
     }
   ]
 }
