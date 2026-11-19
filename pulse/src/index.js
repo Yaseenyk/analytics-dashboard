@@ -2,7 +2,7 @@
  * pulse Worker entry. A Worker module may export only its handler, so every helper lives in lib.js (and is tested there).
  * Routes are listed at the top of lib.js.
  */
-import { PK, RETENTION_DAYS, STATUS, authorised, clickmap, cors, feed, ingest, insights, istDay, journey, json, live, markMine, meStep, summary } from './lib.js';
+import { PK, RETENTION_DAYS, STATUS, authorised, clickmap, cors, feed, goals, ingest, insights, istDay, journey, json, live, markMine, meStep, summary } from './lib.js';
 import { TRACKER } from './tracker.js';
 
 // The free D1 plan allows 5M rows read a day and every dashboard poll scans a whole period, so answers are
@@ -71,6 +71,7 @@ export default {
       try {
         if (url.pathname === '/v/summary') return json(await memo(env, url.search + '|summary', 60000, () => summary(env, q)), ch, 200, 'public, max-age=30');
         if (url.pathname === '/v/insights') return json(await memo(env, url.search + '|insights', 60000, () => insights(env, q)), ch, 200, 'public, max-age=30');
+        if (url.pathname === '/v/goals') return json(await memo(env, url.search + '|goals', 60000, () => goals(env, q)), ch, 200, 'public, max-age=30');
         if (url.pathname === '/v/live') return json(await memo(env, url.search + '|live', 8000, () => live(env, q)), ch);
         if (['/v/feed', '/v/journey', '/v/clickmap'].includes(url.pathname)) {
           if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);

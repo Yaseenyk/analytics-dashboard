@@ -161,3 +161,16 @@ export interface Insights {
   /** Arrivals from Google per site and Pacific day (Search Console's day), and the first, partial day each site reported. */
   google?: { rows: { site: string; day: string; real: number; idle: number }[]; starts: { site: string; day: string }[] };
 }
+
+export type GoalKey = "whatsapp" | "email" | "phone" | "form" | "named" | "download" | "store" | "product" | "github";
+/** /v/goals: the moments a real visitor became a lead or went on to a product, per site. */
+export interface Goals {
+  generatedAt: string;
+  days: number;
+  types: { goal: GoalKey; n: number; people: number; prevN: number; prevPeople: number }[];
+  sites: { site: string; people: number; converters: number; goals: number; byGoal: Partial<Record<GoalKey, number>> }[];
+  daily: { day: string; g: GoalKey; n: number }[];
+  pages: { site: string; path: string; g: GoalKey; n: number }[];
+  sources: { ref_kind: string; ref_host: string; people: number; n: number }[];
+  recent: { site: string; path: string; g: GoalKey; label: string; href: string; ts: number }[];
+}

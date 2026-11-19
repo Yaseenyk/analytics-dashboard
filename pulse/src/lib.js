@@ -11,6 +11,7 @@
  *   GET  /v/clickmap  every click on one page             needs PULSE_KEY
  *
  *   GET  /v/insights  wins, sources, landing pages, paths, funnel, hours, broken pages, speed, alerts. Public aggregates.
+ *   GET  /v/goals     goals per site: WhatsApp, email, phone, form sent, download, app store, product site, GitHub. Public aggregates.
  *   POST /v/mine      mark one visit (and the same visitor that day) as the owner's own, or undo it. Needs PULSE_KEY
  *   GET  /me          walks the owner's browser through every site once so each one remembers "this is my device"
  *
@@ -401,5 +402,63 @@ export async function insights(env, q) {
     actedDaily, sources, pages, flows, funnel: funnel[0] || { sessions: 0, multi: 0, won: 0 }, hours, broken, errors, speed, alerts: alerts.slice(0, 20),
     // Search Console's day ends at midnight Pacific time; starts = the first day each site's tracker reported (a part day)
     google: { rows: fromGoogle, starts },
+  };
+}
+
+// ---- goals: the moments a visitor became a lead or went on to the product ----
+
+/** A click's goal, or NULL. Read from what the tracker already records, so no site has to change. Out links keep only
+    host + first path part (for example play.google.com/store), which is what these patterns match. */
+export const GOAL = `(CASE
+  WHEN c.kind='out' AND (c.href LIKE 'wa.me%' OR c.href LIKE '%whatsapp%') THEN 'whatsapp'
+  WHEN c.kind='mail' THEN 'email'
+  WHEN c.kind='tel' THEN 'phone'
+  WHEN c.kind='goal' AND c.label LIKE 'form:%' THEN 'form'
+  WHEN c.kind='goal' THEN 'named'
+  WHEN c.kind='dl' THEN 'download'
+  WHEN c.kind='out' AND (c.href LIKE 'play.google.com%' OR c.href LIKE 'apps.apple.com%') THEN 'store'
+  WHEN c.kind='out' AND c.href LIKE '%streamerosai.com%' THEN 'product'
+  WHEN c.kind='out' AND (c.href LIKE 'github.com%' OR c.href LIKE 'www.github.com%') THEN 'github'
+  ELSE NULL END)`;
+export const GOAL_KEYS = ['whatsapp', 'email', 'phone', 'form', 'named', 'download', 'store', 'product', 'github'];
+
+export async function goals(env, q) {
+  const days = num(q.get('days'), 28, 1, 90);
+  const site = siteOf(q.get('site'));
+  const now = Date.now();
+  const since = now - days * 864e5;
+  const prevSince = since - days * 864e5;
+  const realH = `(CASE WHEN hits.wd=1 THEN 'bot' WHEN hits.human=1 THEN 'real' WHEN hits.bot=1 OR hits.dc=1 THEN 'bot' ELSE 'unclear' END)='real'`;
+  const pkH = `(CASE WHEN hits.vid!='' THEN hits.vid ELSE hits.sid END)`;
+  const sq = site ? ' AND hits.site=?' : '';
+  // every goal moment by a real person, the owner's own visits left out
+  const rows = (lo, hi) => `SELECT ${GOAL} AS g, ${pkH} AS pk, hits.sid AS sid, hits.site AS site, hits.path AS path, c.label AS label, c.href AS href, c.ts AS ts
+    FROM clicks c JOIN hits ON hits.id=c.hid WHERE c.ts>=${lo} AND c.ts<${hi} AND hits.me=0 AND ${realH}${sq}`;
+  const cur = rows('?', '?');
+  const a = [since, now + 864e5, ...(site ? [site] : [])]; // a click time is its page time plus up to a day
+  const [types, prevTypes, bySite, people, converters, daily, pages, sources, recent] = await Promise.all([
+    all(env, `SELECT g, COUNT(*) AS n, COUNT(DISTINCT pk) AS people FROM (${cur}) WHERE g IS NOT NULL GROUP BY g`, a),
+    all(env, `SELECT g, COUNT(*) AS n, COUNT(DISTINCT pk) AS people FROM (${cur}) WHERE g IS NOT NULL GROUP BY g`, [prevSince, since, ...(site ? [site] : [])]),
+    all(env, `SELECT site, g, COUNT(*) AS n FROM (${cur}) WHERE g IS NOT NULL GROUP BY site, g`, a),
+    all(env, `SELECT site, COUNT(DISTINCT ${PK}) AS n FROM hits WHERE ts>=? AND me=0 AND ${STATUS}='real'${site ? ' AND site=?' : ''} GROUP BY site`, [since, ...(site ? [site] : [])]),
+    all(env, `SELECT site, COUNT(DISTINCT pk) AS n FROM (${cur}) WHERE g IS NOT NULL GROUP BY site`, a),
+    all(env, `SELECT date(ts/1000+${IST},'unixepoch') AS day, g, COUNT(*) AS n FROM (${cur}) WHERE g IS NOT NULL GROUP BY day, g ORDER BY day`, a),
+    all(env, `SELECT site, path, g, COUNT(*) AS n FROM (${cur}) WHERE g IS NOT NULL GROUP BY site, path, g ORDER BY n DESC LIMIT 25`, a),
+    // where the people who reached a goal first came from: the first page of their visit
+    all(env, `SELECT f.ref_kind AS ref_kind, f.ref_host AS ref_host, COUNT(DISTINCT x.pk) AS people, COUNT(*) AS n FROM (SELECT * FROM (${cur}) WHERE g IS NOT NULL) x
+      JOIN hits f ON f.sid=x.sid AND f.ts=(SELECT MIN(h3.ts) FROM hits h3 WHERE h3.sid=x.sid) GROUP BY f.ref_kind, f.ref_host ORDER BY people DESC LIMIT 12`, a),
+    all(env, `SELECT site, path, g, label, href, ts FROM (${cur}) WHERE g IS NOT NULL ORDER BY ts DESC LIMIT 15`, a),
+  ]);
+  const prev = new Map(prevTypes.map((r) => [r.g, r]));
+  const sites = new Map();
+  const siteRow = (h) => { if (!sites.has(h)) sites.set(h, { site: h, people: 0, converters: 0, goals: 0, byGoal: {} }); return sites.get(h); };
+  people.forEach((r) => (siteRow(r.site).people = r.n));
+  converters.forEach((r) => (siteRow(r.site).converters = r.n));
+  bySite.forEach((r) => { const o = siteRow(r.site); o.byGoal[r.g] = r.n; o.goals += r.n; });
+  return {
+    generatedAt: new Date().toISOString(), days,
+    types: GOAL_KEYS.map((g) => { const t = types.find((r) => r.g === g) || {}; const p = prev.get(g) || {}; return { goal: g, n: t.n || 0, people: t.people || 0, prevN: p.n || 0, prevPeople: p.people || 0 }; }),
+    sites: [...sites.values()].sort((x, y) => y.goals - x.goals || y.people - x.people),
+    daily, pages, sources, recent,
   };
 }

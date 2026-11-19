@@ -9,6 +9,8 @@
  *  - Sends: the page path (no query string), where the visitor came from, three utm values, screen size, language,
  *    scroll depth, seconds on screen, seconds of real activity, whether a real person acted (human), and for each
  *    click the kind of thing clicked, its label, its position and the page section.
+ *  - Goals: a WhatsApp, email, phone, download, app-store, product-site or GitHub tap is read from the click kinds; a form
+ *    sent adds a goal named after the form (never its fields); a page can name its own with data-pulse-goal or pulse('name').
  *  - Never: input or textarea values, anything typed, cookies, a stored id (the tab id lives in sessionStorage and
  *    dies with the tab), IP addresses (the Worker never writes them).
  *  - The owner's devices only: opening a site with #pulse-me=on keeps a yes/no flag (not an id) in localStorage, so
@@ -199,6 +201,12 @@ export const TRACKER = String.raw`(function () {
     dirty = true; send();
   }
   w.pulse = function (name) { goal(name); };
+  d.addEventListener('submit', function (e) {
+    var f = e.target, a;
+    if (!e.isTrusted || !f || !f.getAttribute) return;
+    a = (f.getAttribute('action') || '').split(/[?#]/)[0].split('/').filter(Boolean).pop();
+    goal('form:' + (f.getAttribute('data-pulse-form') || f.getAttribute('name') || f.id || a || 'form'));
+  }, true);
   d.addEventListener('click', function (e) {
     if (!e.isTrusted || !e.target || !e.target.closest) return;
     var g = e.target.closest('[data-pulse-goal]');

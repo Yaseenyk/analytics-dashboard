@@ -6,10 +6,11 @@ import { n } from "@/lib/derive";
 import { useFilters } from "@/lib/filters";
 import {
   PULSE_API, WHY_LABEL, daysFor, peopleOf, pulsePost, regionName, useKey, usePulse,
-  type ClickMap, type FeedRow, type Insights, type Journey, type Live, type Status, type Summary,
+  type ClickMap, type FeedRow, type Goals, type Insights, type Journey, type Live, type Status, type Summary,
 } from "@/lib/pulse";
 import { Card, Sk } from "@/components/ui";
 import { AlertsCard, Broken, CrossCheck, Flow, Landing, PagesDeep, SourceQuality, When } from "./WatchDeep";
+import { GoalsCard } from "./WatchGoals";
 import { Badge, CLICK_LABEL, COLOR, KIND_LABEL, ORDER, Rows, ago, offset, pct, say, secs, site, when } from "./watchkit";
 import { DataTable } from "@/components/DataTable";
 
@@ -294,6 +295,7 @@ export default function Watch() {
   const params = useMemo(() => ({ days, site: f.site === "all" ? undefined : f.site }), [days, f.site]);
   const { data: sum, err } = usePulse<Summary>("/v/summary", params, { poll: 60000 });
   const { data: ins } = usePulse<Insights>("/v/insights", params, { poll: 60000 });
+  const { data: goals } = usePulse<Goals>("/v/goals", params, { poll: 60000 });
   const liveParams = useMemo(() => ({ site: f.site === "all" ? undefined : f.site }), [f.site]);
   const { data: live } = usePulse<Live>("/v/live", liveParams, { poll: 10000 });
 
@@ -371,6 +373,7 @@ export default function Watch() {
       {sum && total > 0 && (
         <>
           <Daily rows={sum.daily} />
+          {goals && <GoalsCard g={goals} all={all} />}
           <DataTable
             title="Key moments: downloads, exits, contacts and goals"
             note="The biggest actions: a file downloaded, a link to another website, an email or phone tap, or a goal a page reported. Every other tap is in the list further down. Real people only."

@@ -189,6 +189,22 @@ describe("reads", () => {
   const get = (env: object, path: string, key?: string) =>
     worker.fetch(new Request(`https://pulse.test${path}`, { headers: key ? { Authorization: `Bearer ${key}` } : {} }), env);
 
+  it("counts goals per site from real people only: WhatsApp, form sent, app store, product site", async () => {
+    const env = { DB: fakeD1(), PULSE_KEY: "open-sesame" };
+    const c = (n: number, k: string, l: string, h: string) => ({ n, t: n * 1000, k, l, h, x: 1, y: 1, g: "", z: 0 });
+    await ingest(post(msg({ i: "goal0000001", u: "sessgoal001", hu: 1, nc: 4, r: "https://www.google.com/",
+      c: [c(1, "out", "Chat", "wa.me"), c(2, "goal", "form:enquiry", ""), c(3, "out", "Get it on Google Play", "play.google.com/store"), c(4, "link", "Home", "/")] })), env);
+    await ingest(post(msg({ i: "goal0000002", u: "sessgoal002", hu: 1, nc: 1, c: [c(1, "out", "Live site", "sable.streamerosai.com/")] })), env);
+    // a robot tapping WhatsApp is not a goal
+    await ingest(post(msg({ i: "goalbot0001", u: "sessgoalbt1", nc: 1, c: [c(1, "out", "Chat", "wa.me")] }), { ua: "Googlebot/2.1 (+http://www.google.com/bot.html)" }), env);
+    const j = await (await get(env, "/v/goals?days=7")).json();
+    const t = Object.fromEntries(j.types.map((x: { goal: string; n: number }) => [x.goal, x.n]));
+    expect(t).toMatchObject({ whatsapp: 1, form: 1, store: 1, product: 1, email: 0 });
+    expect(j.sites[0]).toMatchObject({ site: "calc.streamerosai.com", people: 2, converters: 2, goals: 4 });
+    expect(j.sources.find((s: { ref_kind: string }) => s.ref_kind === "search")).toMatchObject({ people: 1, n: 3 });
+    expect(j.recent).toHaveLength(4);
+  });
+
   it("sorts visits into real, unclear and bot", async () => {
     const env = await seeded();
     const j = await (await get(env, "/v/summary?days=7&who=all")).json();
@@ -414,7 +430,8 @@ describe("counting people, not page views", () => {
 describe("the browser script", () => {
   it("is valid JavaScript and small", () => {
     expect(() => new Function(TRACKER)).not.toThrow();
-    expect(TRACKER.length).toBeLessThan(10000);
+    expect(TRACKER.length).toBeLessThan(11000);
+    expect(TRACKER).toMatch(/addEventListener\('submit'/);
   });
 
   it("marks or unmarks the owner's device and hops to the next site, even with Do Not Track on", () => {
