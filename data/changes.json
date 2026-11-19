@@ -123,6 +123,94 @@
       ],
       "detail": "Made during the freeze at the owner's request, for the AdSense review. Done-for-you wording removed site-wide (built for you, you write none of it, a varied module so submissions differ, per-college caps). Tiers are now Starter (design + starter repo), Guided (reviews of what the student writes) and Mentored (live classes where the project is built together, student writes part of every module). Home title and h1, Terms, the enrolment agreement (v2.0), about 28 guides and llms.txt match. Prices unchanged.",
       "expect": "Some click-through on 'with source code' and 'built for you' searches may drop. Removes the main policy risk for the domain-level AdSense review."
+    },
+    {
+      "id": "2026-11-19-root-claims",
+      "date": "2026-11-19",
+      "title": "Root site: unverified speed and Hinglish claims reworded, two thin pages deepened",
+      "kind": "content",
+      "hosts": [
+        "streamerosai.com"
+      ],
+      "detail": "AdSense revamp after the owner lifted the freeze (19 Nov). 'Instant'/latency claims replaced with what the code does (once-per-second sampling, no round-trip); Hinglish now says prompted, accuracy not tested; installation guide 421->924 words (no more pointer to a non-existent v1.0 download); Nightbot glossary 436->665. AI Blogger slowed to Thursdays only and formula titles retitled (URLs unchanged).",
+      "expect": "No ranking change expected; removes unverifiable claims before the AdSense review."
+    },
+    {
+      "id": "2026-11-19-portfolio-products",
+      "date": "2026-11-19",
+      "title": "Portfolio: product pages deepened, /uses rewritten to the truth, /interview noindex",
+      "kind": "content",
+      "hosts": [
+        "yk.streamerosai.com"
+      ],
+      "detail": "AdSense revamp after the owner lifted the freeze (19 Nov). Five product pages deepened to 790-970 words with How it works and Timeline from the repos; DefendIt described as project classes; /uses removed gear and tools with no evidence (now 809 words of real tools); /interview noindex and out of the sitemap.",
+      "expect": "Product pages may gain long-tail impressions; /interview leaves the index."
+    },
+    {
+      "id": "2026-11-19-spotai-thin-hubs",
+      "date": "2026-11-19",
+      "title": "SpotAI: 18 thin non-English hub pages noindexed",
+      "kind": "content",
+      "hosts": [
+        "spotai.streamerosai.com"
+      ],
+      "detail": "AdSense revamp after the owner lifted the freeze (19 Nov). Guides index, features index and pricing in six non-English languages (177-264 words) are noindex, out of the sitemap and hreflang (169->151 URLs). Rule: THIN_HUBS in src/i18n/indexed.mjs.",
+      "expect": "Fewer thin pages in the index; no traffic loss expected (those hubs had none)."
+    },
+    {
+      "id": "2026-11-19-solar-facts",
+      "date": "2026-11-19",
+      "title": "Solar: facts re-checked against official guidelines, calculator and home deepened (English)",
+      "kind": "content",
+      "hosts": [
+        "solar.streamerosai.com"
+      ],
+      "detail": "AdSense revamp after the owner lifted the freeze (19 Nov). facts.ts checked 19 Nov against the MNRE operational guidelines and the portal; no value changed, trade-press citations replaced by official sections, one fact added. English calculator 250->1,040 words, home 345->660, in an English-only file.",
+      "expect": "English calculator may rank better; non-English calculator pages are still thin."
+    },
+    {
+      "id": "2026-11-19-exams-facts",
+      "date": "2026-11-19",
+      "title": "Exams: facts re-checked, JEE fees and NEET eligibility pages back in the index",
+      "kind": "content",
+      "hosts": [
+        "exams.streamerosai.com"
+      ],
+      "detail": "AdSense revamp after the owner lifted the freeze (19 Nov). JEE Main, NEET UG and CUET UG blocks re-checked against NTA bulletins (UPSC blocked, left at 10 Nov). /jee-main/fees/ (~900 words) and /neet-ug/eligibility/ (~980) deepened from bulletins and indexed again; exam pattern and FAQ extended. Sitemap 26->28.",
+      "expect": "Two more indexable pages with search demand."
+    },
+    {
+      "id": "2026-11-19-esports-queue",
+      "date": "2026-11-19",
+      "title": "Esports: guide queue cut and slowed, duplicates merged, money wording fixed",
+      "kind": "content",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "AdSense revamp after the owner lifted the freeze (19 Nov). Cadence 3/week -> 2/week (85 scheduled, last 6 Sep 2027); 35 near-duplicate or money guides held; team-name and poster duplicates merged (old URLs noindex); 'Common mistakes' heading varied on 90 guides; demo events no longer show invented entry fees or prizes; contact email published; ID card studio masked from Clarity recordings.",
+      "expect": "Fewer, less templated pages; removes scaled-content and gambling-adjacent signals."
+    },
+    {
+      "id": "2026-11-19-fitrank-merge",
+      "date": "2026-11-19",
+      "title": "FitRank: 5 weak feature pages merged, short blog posts deepened or noindexed",
+      "kind": "content",
+      "hosts": [
+        "fitrank.streamerosai.com"
+      ],
+      "detail": "AdSense revamp after the owner lifted the freeze (19 Nov). Feature pages 19->14 (old URLs noindex pointers); max overlap 52%->40%; 6 live posts deepened; posts under 600 words now publish noindex; two posts' unsupported product claims reworded.",
+      "expect": "Less duplicate text; queued short posts will publish noindex until deepened."
+    },
+    {
+      "id": "2026-11-19-campus-scheduler",
+      "date": "2026-11-19",
+      "title": "Campus: scheduled guide releases (daily 00:17 UTC build), 8 posts written for review",
+      "kind": "content",
+      "hosts": [
+        "campus.streamerosai.com"
+      ],
+      "detail": "Release-by-date system like esports (POSTS_NOW override, max 2 per ISO week, no links to unreleased posts). Eight posts from the 19 Nov keyword research (Android, Python, Java, IoT, PHP, C, cyber security, data science; 24 Nov to 18 Dec) are written and waiting for the owner's review before commit.",
+      "expect": "Each post targets a search with 170-1,900 monthly India searches."
     }
   ]
 }
