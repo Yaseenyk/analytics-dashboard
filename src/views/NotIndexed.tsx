@@ -202,7 +202,7 @@ export default function NotIndexedLink() {
   const h = useHealth().data;
   const sp = h ? splitAll((f.site === "all" ? SITE_HOSTS : [f.site]).map((x) => h.index?.[x])) : null;
   const dropN = rows ? rows.filter((r) => r.flags.dropped).length : 0;
-  const extra = sp ? [sp.waiting ? `${sp.waiting.toLocaleString("en-US")} new, not checked yet` : "", sp.onPurpose ? `${sp.onPurpose.toLocaleString("en-US")} noindex on purpose` : ""].filter(Boolean).join(" · ") : "";
+  const extra = sp ? [sp.waiting ? `${sp.waiting.toLocaleString("en-US")} new, not checked yet` : "", sp.onPurpose ? `${sp.onPurpose.toLocaleString("en-US")} noindex on purpose` : "", sp.failed ? `${sp.failed.toLocaleString("en-US")} Google did not answer for in the last check` : ""].filter(Boolean).join(" · ") : "";
   return (
     <PopBox id="not-indexed" title="Not indexed" radius={20} className="card flex w-full items-center gap-3 !border-transparent !p-4" label={`Not indexed: ${rows?.length ?? 0} pages`} render={() => <Sheet site={f.site} />}>
       <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-white/[.06] text-mute"><Icon name="health" className="h-5 w-5" /></span>
