@@ -55,7 +55,9 @@ export async function addAlerts(env, list) {
 export async function recordHealth(env, prior, index, nowIso) {
   const d = nowIso.slice(0, 10);
   const hist = (await kvJson(env, 'history:index')) || [];
-  const row = { d, sites: Object.fromEntries(Object.entries(index).map(([h, s]) => [h, [s.indexed, s.inspected]])) };
+  // Pages whose check failed are left out of the history, so a Google timeout never draws a drop on the chart.
+  const failedN = (s) => Object.entries(s.byState ?? {}).reduce((a, [k, v]) => a + (String(k).startsWith('Could not inspect') ? v : 0), 0);
+  const row = { d, sites: Object.fromEntries(Object.entries(index).map(([h, s]) => [h, [s.indexed, s.inspected - failedN(s)]])) };
   await env.DATA.put('history:index', JSON.stringify(hist.filter((x) => x.d !== d).concat(row).slice(-400)));
   const alerts = [];
   for (const [h, s] of Object.entries(index)) {

@@ -31,3 +31,17 @@ describe("index split", () => {
     expect(isReal("Crawled - currently not indexed")).toBe(true);
   });
 });
+
+describe("failed checks in the Worker", () => {
+  it("falls back to the page's last known answer", async () => {
+    // @ts-expect-error plain JavaScript Worker, no type declarations
+    const { lastKnown } = await import("../worker/src/index.js");
+    const before = { index: { "a.com": { indexedUrls: ["https://a.com/in/"], urls: [["https://a.com/out/", "Discovered - currently not indexed", "2026-11-01"], ["https://a.com/err/", "Could not inspect (598)", null]] } } };
+    const fail = (u: string) => [u, "Could not inspect (598)", "ERROR", null];
+    expect(lastKnown(before, "a.com", fail("https://a.com/in/"))).toEqual(["https://a.com/in/", "Submitted and indexed", "PASS", null]);
+    expect(lastKnown(before, "a.com", fail("https://a.com/out/"))).toEqual(["https://a.com/out/", "Discovered - currently not indexed", "NEUTRAL", "2026-11-01"]);
+    // No usable earlier answer: it stays a failed check (and is left out of counts and the chart).
+    expect(lastKnown(before, "a.com", fail("https://a.com/err/"))[2]).toBe("ERROR");
+    expect(lastKnown(null, "a.com", fail("https://a.com/new/"))[2]).toBe("ERROR");
+  });
+});

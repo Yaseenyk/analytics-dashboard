@@ -304,6 +304,15 @@ async function inspectOne(env, property, url) {
   const r = json.inspectionResult?.indexStatusResult ?? {};
   return [url, r.coverageState || 'Unknown', r.verdict || 'UNKNOWN', r.lastCrawlTime ? r.lastCrawlTime.slice(0, 10) : null];
 }
+/** The previous check's answer for a page whose check failed this time, or the failed row when there is none. Exported for tests. */
+export function lastKnown(before, host, row) {
+  const prev = before?.index?.[host];
+  if (!prev) return row;
+  if ((prev.indexedUrls ?? []).includes(row[0])) return [row[0], 'Submitted and indexed', 'PASS', null];
+  const old = (prev.urls ?? []).find((u) => u[0] === row[0]);
+  if (old && !String(old[1]).startsWith('Could not inspect')) return [row[0], old[1], 'NEUTRAL', old[2] ?? null];
+  return row;
+}
 async function healthStart(env, trigger) {
   await env.DATA.put('health:state', JSON.stringify({ stage: 'plan', startedAt: Date.now(), trigger, queue: [], results: {}, total: 0 }));
   await env.DATA.put('health:lastStart', String(Date.now()));
@@ -323,6 +332,18 @@ async function healthTick(env) {
   const rows = await pool(batch.map(([h, u]) => () => inspectOne(env, HEALTH_SITES[h], u)), 6);
   batch.forEach(([h], i) => (st.results[h] = st.results[h] || []).push(rows[i]));
   if (st.queue.length) { await env.DATA.put('health:state', JSON.stringify(st)); return; }
+  // A failed check ("Could not inspect", e.g. a Google timeout) says nothing about the page, so it must never look like a
+  // page that left Google. Ask Google once more for those pages; whatever still fails keeps its last known answer.
+  if (!st.retried) {
+    const failed = [];
+    for (const [h, r] of Object.entries(st.results)) {
+      st.results[h] = r.filter((x) => (x[2] === 'ERROR' ? (failed.push([h, x[0]]), false) : true));
+    }
+    st.retried = true;
+    if (failed.length) { st.queue = failed; await env.DATA.put('health:state', JSON.stringify(st)); return; }
+  }
+  const before = await kvJson(env, 'health:file');
+  for (const [h, r] of Object.entries(st.results)) st.results[h] = r.map((x) => (x[2] === 'ERROR' ? lastKnown(before, h, x) : x));
   // Done: summarise per site and publish.
   const index = {};
   for (const [h, property] of Object.entries(HEALTH_SITES)) {
@@ -334,7 +355,6 @@ async function healthTick(env) {
   }
   const prior = await fetch('https://analytics.streamerosai.com/data/health.json').then((x) => (x.ok ? x.json() : null)).catch(() => null);
   const now = new Date().toISOString();
-  const before = await kvJson(env, 'health:file');
   await recordHealth(env, before, index, now).catch((e) => console.log('history failed:', String((e && e.message) || e)));
   await env.DATA.put('health:file', JSON.stringify({ generatedAt: now, indexAt: now, index, ...(prior?.bing ? { bing: prior.bing } : {}) }));
   await env.DATA.delete('health:state');
