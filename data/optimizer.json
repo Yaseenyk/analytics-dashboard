@@ -1,49 +1,55 @@
 {
-  "generatedAt": "2026-11-16T12:00:50.659Z",
+  "generatedAt": "2026-11-23T13:38:11.630Z",
   "lastRun": {
-    "date": "2026-11-16",
-    "proposed": 34,
+    "date": "2026-11-23",
+    "proposed": 39,
     "judged": 0,
     "mode": "pr",
-    "costUsd": 0.118,
+    "costUsd": 0.141,
     "log": [
-      "optimizer 2026-11-16: pull requests on, indexed sites frozen until 2026-11-18",
-      "34 candidate page(s)",
-      "no change for https://streamerosai.com/blog/obs-timer-plugin: Rejected by the numbers check: the proposal introduced 1610, 3, which the page does not have. People searching this quer",
-      "report only for https://math.streamerosai.com/percentage-increase-calculator/ (frozen)",
-      "report only for https://yk.streamerosai.com/solutions/food-delivery-app-development/ (frozen)",
-      "no change for https://streamerosai.com/blog/how-to-track-sponsor-deals-as-a-streamer: Rejected by the numbers check: the proposal introduced 10, 4, which the page does not have. The page is practical but sh",
-      "report only for https://streamerosai.com/blog/stream-automation-101 (frozen)",
-      "report only for https://spotai.streamerosai.com/hi/guides/ (frozen)",
-      "report only for https://math.streamerosai.com/percent-change-calculator/ (frozen)",
-      "report only for https://math.streamerosai.com/date-calculator/ (frozen)",
-      "report only for https://math.streamerosai.com/hours-calculator/ (frozen)",
-      "report only for https://math.streamerosai.com/time-calculator/ (frozen)",
-      "report only for https://esports.streamerosai.com/guides/cod-mobile-tournament-rules-template/ (no token or dry run)",
-      "no change for https://esports.streamerosai.com/guides/bgmi-team-names-ideas/: Rejected by the numbers check: the proposal introduced 2, which the page does not have. The page provides useful ideas b",
-      "report only for https://yk.streamerosai.com/products/tool-sites/ (frozen)",
-      "report only for https://yk.streamerosai.com/blog/crawled-currently-not-indexed-blank-render-bug/ (frozen)",
-      "report only for https://streamerosai.com/vs/streamer-bot (frozen)",
-      "report only for https://streamerosai.com/blog/ai-tools-for-streamers-the-setup-that-works (frozen)",
-      "report only for https://spotai.streamerosai.com/guides/gym-attendance-register/ (frozen)",
-      "report only for https://spotai.streamerosai.com/guides/gym-software-for-small-gyms/ (frozen)",
-      "report only for https://solar.streamerosai.com/mr/rooftop-solar-technical-specifications-india/ (frozen)",
-      "report only for https://calc.streamerosai.com/hourly-to-salary-calculator/ (frozen)",
-      "report only for https://calc.streamerosai.com/salary-to-hourly-calculator/ (frozen)",
-      "report only for https://calc.streamerosai.com/emi-calculator/ (frozen)",
-      "report only for https://calc.streamerosai.com/home-loan-emi-calculator/ (frozen)",
-      "report only for https://calc.streamerosai.com/car-loan-emi-calculator/ (frozen)",
-      "report only for https://images.streamerosai.com/jpeg-compressor/ (frozen)",
-      "report only for https://images.streamerosai.com/png-to-jpg/ (frozen)",
-      "report only for https://images.streamerosai.com/avif-to-jpg/ (frozen)",
-      "report only for https://images.streamerosai.com/image-to-jpg/ (frozen)",
-      "report only for https://images.streamerosai.com/guides/ (frozen)",
-      "report only for https://exams.streamerosai.com/jee-main/exam-pattern/ (frozen)",
-      "report only for https://exams.streamerosai.com/neet-ug/exam-pattern/ (frozen)",
-      "report only for https://esports.streamerosai.com/tools/ (no token or dry run)",
-      "report only for https://esports.streamerosai.com/tools/brackets/ (no token or dry run)",
-      "report only for https://esports.streamerosai.com/tools/display-screen/ (no token or dry run)",
-      "OpenAI: 37 calls, 118808 in / 44088 out tokens, about $0.118"
+      "optimizer 2026-11-23: pull requests on, indexed sites frozen until 2026-12-01",
+      "40 candidate page(s)",
+      "no change for https://math.streamerosai.com/percentage-calculator: Rejected by the numbers check: the proposal introduced 3, 3.33, which the page does not have. The query '工作率 分数 计算' look",
+      "report only for https://fitrank.streamerosai.com/blog/what-is-rostering/ (frozen)",
+      "report only for https://fitrank.streamerosai.com/blog/staffing-vs-scheduling/ (frozen)",
+      "skip https://fitrank.streamerosai.com/features/decision-api/: marked noindex on purpose",
+      "report only for https://spotai.streamerosai.com/ (frozen)",
+      "report only for https://spotai.streamerosai.com/features/ai-coach/ (frozen)",
+      "report only for https://spotai.streamerosai.com/features/check-in/ (frozen)",
+      "report only for https://spotai.streamerosai.com/features/privacy/ (frozen)",
+      "report only for https://spotai.streamerosai.com/for-gym-owners/ (frozen)",
+      "report only for https://solar.streamerosai.com/about/ (frozen)",
+      "report only for https://solar.streamerosai.com/contact/ (frozen)",
+      "report only for https://solar.streamerosai.com/ (frozen)",
+      "report only for https://solar.streamerosai.com/hi/ (frozen)",
+      "report only for https://solar.streamerosai.com/bn/ (frozen)",
+      "report only for https://math.streamerosai.com/ (frozen)",
+      "report only for https://math.streamerosai.com/percentage-difference-calculator/ (frozen)",
+      "report only for https://math.streamerosai.com/discount-calculator/ (frozen)",
+      "report only for https://math.streamerosai.com/standard-deviation-calculator/ (frozen)",
+      "report only for https://exams.streamerosai.com/about/ (frozen)",
+      "report only for https://exams.streamerosai.com/contact/ (frozen)",
+      "report only for https://exams.streamerosai.com/jee-main/ (frozen)",
+      "report only for https://exams.streamerosai.com/jee-main/complete-guide/ (frozen)",
+      "report only for https://exams.streamerosai.com/neet-ug/how-to-apply/ (frozen)",
+      "report only for https://esports.streamerosai.com/ (no token or dry run)",
+      "report only for https://esports.streamerosai.com/tools/registration/ (no token or dry run)",
+      "report only for https://esports.streamerosai.com/tools/poster/ (no token or dry run)",
+      "report only for https://esports.streamerosai.com/tools/groups/ (no token or dry run)",
+      "report only for https://esports.streamerosai.com/tools/check-in/ (no token or dry run)",
+      "report only for https://streamerosai.com/features/live-cockpit (frozen)",
+      "report only for https://streamerosai.com/blog/how-to-make-youtube-shorts-from-a-live-stream (frozen)",
+      "report only for https://fitrank.streamerosai.com/tools/employee-skill-matrix-template/ (frozen)",
+      "report only for https://tools.streamerosai.com/base64-decode/ (frozen)",
+      "report only for https://tools.streamerosai.com/privacy/ (frozen)",
+      "report only for https://calc.streamerosai.com/pay-raise-calculator/ (frozen)",
+      "report only for https://calc.streamerosai.com/overtime-pay-calculator/ (frozen)",
+      "report only for https://calc.streamerosai.com/loan-eligibility-calculator/ (frozen)",
+      "report only for https://calc.streamerosai.com/gst-calculator/ (frozen)",
+      "report only for https://calc.streamerosai.com/compound-interest-calculator/ (frozen)",
+      "report only for https://images.streamerosai.com/guides/image-size-limits-on-forms/ (frozen)",
+      "report only for https://images.streamerosai.com/terms/ (frozen)",
+      "OpenAI: 42 calls, 138166 in / 53478 out tokens, about $0.141"
     ]
   },
   "experiments": [
@@ -55,7 +61,7 @@
       "q": "advanced scene switcher",
       "type": "description",
       "created": "2026-11-05",
-      "status": "report",
+      "status": "live",
       "baseline": {
         "pos": 8.4,
         "ctr": 0,
@@ -63,7 +69,7 @@
         "clicks": 0
       },
       "before": "OBS Advanced Scene Switcher setup: install it, build a first macro, copy five recipes, fix it not switching, and see the one trigger it lacks.",
-      "after": "Advanced Scene Switcher (free OBS plugin) — download and install on Windows, macOS or Linux. Setup, build macros, five recipes and troubleshooting.",
+      "after": "Advanced Scene Switcher is a free OBS plugin for Windows, macOS and Linux. Install it, build macros, copy five recipes and fix it not switching.",
       "rationale": "The query is the plugin name; results that show direct downloads, platform support and version information look more relevant. Our page already contains install steps and platform support, but the current description highlights recipes and a limitation rather than signalling that the page helps users get and run the plugin. Updating the meta description to mention download, install and platforms uses facts already on the page and should improve CTR for that query. Note: the overall ranking gap versus the official forum and GitHub likely reflects authority/backlinks; this change targets CTR rather than authority.",
       "evidence": [
         "https://obsproject.com/forum/resources/advanced-scene-switcher.395/",
@@ -85,7 +91,11 @@
         }
       ],
       "authorityGap": true,
-      "gap": "Searchers for \"advanced scene switcher\" expect the plugin download, platform support and quick install instructions. Our meta description doesn't call out download or platforms, so competitors (official forum, package listings, GitHub) look more relevant in results."
+      "gap": "Searchers for \"advanced scene switcher\" expect the plugin download, platform support and quick install instructions. Our meta description doesn't call out download or platforms, so competitors (official forum, package listings, GitHub) look more relevant in results.",
+      "liveSince": "2026-11-17",
+      "judgeAfter": "2026-12-15",
+      "kind": "rank",
+      "note": "Applied by hand on 17 Nov 2026 (commit eea5022 in streamer-os-website) with a shorter description than the proposal, using only facts on the page."
     },
     {
       "id": "2026-11-05-fitrank-blog-what-is-rostering",
@@ -1850,6 +1860,1065 @@
       "competitors": [],
       "authorityGap": false,
       "gap": "Google discovered the URL but hasn't fetched it because it has no prominent internal links from related tool pages on the site."
+    },
+    {
+      "id": "2026-11-23-math-percentage-calculator",
+      "host": "math.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://math.streamerosai.com/percentage-calculator",
+      "q": "工作率 分数 计算",
+      "kind": "rank",
+      "state": null,
+      "type": "none",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": 9.7,
+        "ctr": 0,
+        "impr": 26,
+        "clicks": 0
+      },
+      "before": "## Worked examples from everyday life",
+      "after": "## Working-rate (工作率) and fractions\n\nTreat the whole job as 1. Use the basic relation:\n\nWork = rate × time\n\nSo:\n- rate = work / time\n- time = work / rate\n\nIf A completes a job in 5 days, A's daily rate = 1/5 of the job. If B completes it in 10 days, B's rate = 1/10. Together their rate = 1/5 + 1/10 = 3/10 of the job per day. Time together = 1 ÷ (3/10) = 10/3 days ≈ 3.33 days.\n\nWhen one leaves early, compute each person's work done (rate × days), subtract from 1 for remaining work, then use the remaining worker's rate to find extra time.\n\nConvert rates to percentages by multiplying by 100 (e.g. 1/5 = 20% of the job per day).",
+      "rationale": "Rejected by the numbers check: the proposal introduced 3, 3.33, which the page does not have. The query '工作率 分数 计算' looks for how to calculate work rates using fractions. Competitors show the 'work = rate × time' approach and Chinese worked examples. Adding a concise section that explains treating the whole as 1, gives formulas and a clear worked example will increase relevance for that query without changing the page's voice. This is a content gap rather than an authority/link problem.",
+      "evidence": [
+        "https://www.mianfeiwendang.com/doc/1eac6dd36d63073ba887e78a",
+        "https://www.douyin.com/video/7287847980663606568?source=Baiduspider-sdc"
+      ],
+      "competitors": [
+        {
+          "url": "https://www.mianfeiwendang.com/doc/1eac6dd36d63073ba887e78a",
+          "does_better": "Explains 工程问题 (work-rate problems) in Chinese, shows the principle 'total work = 1' and gives step-by-step fraction examples."
+        },
+        {
+          "url": "https://www.douyin.com/video/7287847980663606568?source=Baiduspider-sdc",
+          "does_better": "Provides a short worked demonstration (video) of solving a work-rate problem, matching user intent for quickly seeing calculation steps."
+        }
+      ],
+      "authorityGap": false,
+      "gap": "The page explains percentages but lacks a clear section on 'work rate' (工作率) problems using fractions — the exact intent of the query. Competing pages explain treating the whole job as 1 and using fractional rates with worked examples."
+    },
+    {
+      "id": "2026-11-23-fitrank-blog-what-is-rostering",
+      "host": "fitrank.streamerosai.com",
+      "repo": "Yaseenyk/fitrank-website",
+      "page": "https://fitrank.streamerosai.com/blog/what-is-rostering/",
+      "q": "rostering",
+      "kind": "rank",
+      "state": null,
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": 45.6,
+        "ctr": 0,
+        "impr": 130,
+        "clicks": 0
+      },
+      "before": "## What is rostering? Meaning, types and how it differs from scheduling",
+      "after": "Quick definition\n\nRostering — the short answer\n\nRostering is the process of creating a roster: assigning people to shifts, duties or time slots so every required shift has the right number and skills of staff. It covers who works when, who is off, and the coverage each shift needs. The term is common in the UK, Ireland, Australia, New Zealand and India; in US English the same work is usually called scheduling.",
+      "rationale": "Searchers for the single word “rostering” usually want a short, authoritative definition near the top of the page. Competitors that outrank this page present a concise dictionary-style answer immediately. Adding a brief, standalone definition directly under the H2 gives Google a clear snippet to use for the query and improves relevance for users who expect a quick meaning. This change does not invent facts — it simply foregrounds content already present in the page (the page already explains the process and regional usage) in a compact form readers and search engines favour.",
+      "evidence": [
+        "https://www.hyphenation.one/word/rostering/",
+        "https://word.ws/rostering",
+        "https://www.idea.org/words/rostering"
+      ],
+      "competitors": [
+        {
+          "url": "https://www.hyphenation.one/word/rostering/",
+          "does_better": "Shows a short, immediate definition/meaning of 'rostering' at the top of the page (dictionary-style)."
+        },
+        {
+          "url": "https://word.ws/rostering",
+          "does_better": "Presents a clear dictionary entry and one-line meaning that matches search intent for a definition query."
+        },
+        {
+          "url": "https://www.idea.org/words/rostering",
+          "does_better": "Gives a short plain-language definition and synonyms immediately, matching users seeking the meaning."
+        }
+      ],
+      "authorityGap": false,
+      "gap": "The page lacks a very short, standalone definition suitable for the single-word query “rostering” and for featured-snippet style results. Competitors that rank for this query show a concise dictionary-style line near the top."
+    },
+    {
+      "id": "2026-11-23-fitrank-blog-staffing-vs-scheduling",
+      "host": "fitrank.streamerosai.com",
+      "repo": "Yaseenyk/fitrank-website",
+      "page": "https://fitrank.streamerosai.com/blog/staffing-vs-scheduling/",
+      "q": "staffing and scheduling",
+      "kind": "rank",
+      "state": null,
+      "type": "title",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": 79.5,
+        "ctr": 0,
+        "impr": 17,
+        "clicks": 0
+      },
+      "before": "Staffing vs scheduling: meaning and software | FitRank",
+      "after": "Staffing and scheduling: meaning & software",
+      "rationale": "Changing the title to the exact query wording ('staffing and scheduling') improves on-page relevance and increases the chance Google will show this page for that query and users will recognise it in results. Keep the page voice and concise language. Note: even with a better title there may still be an authority gap because top results are MeSH/academic pages; backlinks or citations may be needed to outrank them.",
+      "evidence": [
+        "https://profiles.uchicago.edu/profiles/display/34558",
+        "https://profiles.umassmed.edu/display/126963"
+      ],
+      "competitors": [
+        {
+          "url": "https://profiles.uchicago.edu/profiles/display/34558",
+          "does_better": "Uses the exact phrase 'Personnel Staffing and Scheduling' in the title and page, and is an authoritative institutional/MeSH-backed resource."
+        },
+        {
+          "url": "https://profiles.umassmed.edu/display/126963",
+          "does_better": "Also uses 'Personnel Staffing and Scheduling' as a descriptor and appears as an authoritative profile/MeSH resource."
+        }
+      ],
+      "authorityGap": true,
+      "gap": "The page title uses 'Staffing vs scheduling' while the query is 'staffing and scheduling'. That mismatch reduces exact-term relevance and likely lowers CTR. Competing top results use the exact phrase and come from high-authority sites (MeSH/academic profiles), so there may also be an authority gap."
+    },
+    {
+      "id": "2026-11-23-spotai-home",
+      "host": "spotai.streamerosai.com",
+      "repo": "Yaseenyk/spotai-website",
+      "page": "https://spotai.streamerosai.com/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "",
+      "after": "## What the free 90‑day pilot includes\n\n- Quick start over a video call: we set up your account and load your register so you don’t have to enter every member manually.\n- Owner, front‑desk and trainer consoles in the browser so staff can check arrivals, dues and AI tips from day one.\n- Member features ready to use: AI camera coach (phone-only pose tracking), workouts in Indian languages, leaderboards, buddy suggestions and UPI payments inside the app.\n- Dues reminders via WhatsApp that respect each member’s consent and land as references in your ledger.\n- Privacy-first defaults: pose runs on the device, frames never leave the phone, and camera/clip/face features are separate opt-ins.\n\nContact us on WhatsApp to book the pilot and see how the console looks before you start.",
+      "rationale": "Adding a concise \"what the pilot includes\" section turns the page from a feature list into a practical, actionable page that answers the likely visitor question (“what happens if I sign up?”). That makes the page more unique and useful compared with other site pages and reduces the chance Google marks it as thin or repetitive.",
+      "evidence": [
+        "https://spotai.streamerosai.com/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely saw this page as thin and repetitive of other site pages (features are listed but there's no clear, standalone explanation of the pilot or next steps)."
+    },
+    {
+      "id": "2026-11-23-spotai-features-ai-coach",
+      "host": "spotai.streamerosai.com",
+      "repo": "Yaseenyk/spotai-website",
+      "page": "https://spotai.streamerosai.com/features/ai-coach/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## How it works",
+      "after": "## Before you start — quick setup checklist\n\n- Pick an angle: side-on or 45° as shown in the preview.\n- Prop your phone on the rack or a bench so it is steady; you do not need to hold it.\n- Make sure your whole body is in frame so hips, knees and ankles are visible — the preview box will confirm tracking before you start.\n- Use steady, gym or window light so the model can see joint landmarks.\n- Camera features are only available to members aged 18+; clips are off by default and require separate consent.\n\nIf the preview box doesn’t appear, re-position the phone or change the angle so your hips and knees are visible.",
+      "rationale": "Adding a short, actionable setup checklist turns a feature list into a practical how-to that users and Google find useful; it uses only details already on the page (angles, phone placement, preview, lighting, age and clip consent) and addresses the common user need of getting the feature to work.",
+      "evidence": [
+        "https://spotai.streamerosai.com/features/ai-coach/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely rejected the page because it lists features but lacks a concise, practical setup or troubleshooting section that makes the page independently useful to someone trying the feature right now."
+    },
+    {
+      "id": "2026-11-23-spotai-features-check-in",
+      "host": "spotai.streamerosai.com",
+      "repo": "Yaseenyk/spotai-website",
+      "page": "https://spotai.streamerosai.com/features/check-in/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## What you get",
+      "after": "## Quick setup checklist for gym owners\n\n- Install the owner app and open the owner overview so arrivals appear live on your screen.\n- Enable QR check-in at the desk; staff can scan the code or type a member’s name. (The code refreshes every 100 seconds.)\n- Enable UPI payments in the app and support Google Pay, PhonePe, Paytm or BHIM so payment references land in the dues ledger.\n- Turn on reminders only with member consent via the privacy centre; otherwise reminders are disabled from your side.\n- If you plan to use face check-in, run it on the entrance device and calibrate with consenting members; keep it optional.\n- Use demo mode to test flows: payments will be marked paid and reminders go to a stub so nothing is charged.\n- Train front-desk staff on scanning, typing names, handling overdue flags, and where to look for live arrival and dues info.",
+      "rationale": "The page currently reads like a feature list. Adding a short, practical checklist aimed at gym owners turns features into clear next steps they can act on immediately, increasing the page’s standalone usefulness and addressing Google’s \"thin/repetitive\" reason for not indexing.",
+      "evidence": [
+        "https://spotai.streamerosai.com/features/check-in/",
+        "https://spotai.streamerosai.com/features/owners/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped this page because it lists features but lacks a short, actionable section for gym owners that makes the page uniquely useful on its own."
+    },
+    {
+      "id": "2026-11-23-spotai-features-privacy",
+      "host": "spotai.streamerosai.com",
+      "repo": "Yaseenyk/spotai-website",
+      "page": "https://spotai.streamerosai.com/features/privacy/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Missing practical 'What members can do' section",
+      "after": "### What members can do now\n- Check the Privacy centre on your profile: use Export my data to download a JSON of everything SpotAI holds, or use Delete my account to remove your account and clips without emailing support.\n- Keep camera features off: leave camera coaching off and the app never opens the camera; saved clips are off by default and remain private unless you choose to share them.\n- Turn on features separately: enable face check-in, buddy matching, chat or reminders only when you want them; each opt-in is recorded with notice version, method and time.\n- Be assured on-device and isolation controls: pose coaching runs on your phone (MediaPipe) and model calls pass through a gateway that strips identity and checks consent first.\n- Raise issues from the app: file a complaint to get a reference number the gym must answer.\nThese steps make it easy to control what the app can see and keep a record of your choices.",
+      "rationale": "Adding a short, practical 'What members can do' section turns the feature list into actionable guidance that users and searchers expect from a privacy page—raising the page's standalone value and reducing the chance Google treats it as thin or duplicative.",
+      "evidence": [
+        "https://spotai.streamerosai.com/features/privacy/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely viewed the page as thin or repetitive because it lists features but lacks a concise, user-focused section that explains concrete steps a member can take—making the page less useful on its own."
+    },
+    {
+      "id": "2026-11-23-spotai-for-gym-owners",
+      "host": "spotai.streamerosai.com",
+      "repo": "Yaseenyk/spotai-website",
+      "page": "https://spotai.streamerosai.com/for-gym-owners/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Insert before the \"Questions gym owners ask\" section",
+      "after": "## How to join the free 90‑day pilot\n\n1. Contact us — tap “Chat on WhatsApp” or leave your number on this page.\n2. Quick setup call — we do a video call and ask for 30 minutes a week while you pilot. During the call we’ll explain the consoles and support.\n3. Send your register — WhatsApp the register or Excel; we load names, plans, end dates and dues for you.\n4. Start using the owner console — get a QR poster for the desk and the member‑app poster for the floor; front desk checks members in by QR or name.\n5. Pilot notes — reminders and UPI run in demo mode until you switch live; WhatsApp support is available during the pilot.",
+      "rationale": "Google flagged the page as thin and repetitive versus other site pages. Adding a short, practical “How to join” section turns this page into an action-oriented landing page that is clearly useful on its own (it uses only setup and pilot details already on the page) and reduces overlap with feature-only pages, improving chances of indexing.",
+      "evidence": [
+        "https://spotai.streamerosai.com/for-gym-owners/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "The page is thin and largely repeats feature lists found on other pages, so Google treats it as low-value and declined to index it."
+    },
+    {
+      "id": "2026-11-23-solar-about",
+      "host": "solar.streamerosai.com",
+      "repo": "Yaseenyk/solar-site",
+      "page": "https://solar.streamerosai.com/about/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## About Surya Ghar Guide",
+      "after": "## How to use this guide — a quick tour\n\n- What this page gives you: a single place that explains who runs the guide, how the numbers are sourced, and how to report errors. The guide's figures (subsidy per kW, benchmark costs and limits) are all linked to official documents so you can check the source.\n- Quick actions:\n  - Use the Rooftop Solar Subsidy Calculator to test whether a vendor quote is reasonable — it uses the same sourced entries as the tables.\n  - For applications, consumer login or vendor lists go to the official PM Surya Ghar portal; this site does not handle applications or request IDs/bank details.\n- Translations and trust: the site runs in English and twelve Indian languages; translations keep the same numbers and links.\n- Found a mistake? Email contact@streamerosai.com with the page address and an official-source link.",
+      "rationale": "A concise, practical \"how to use\" section makes the About page immediately useful to visitors (explains actions they can take and where authoritative actions happen), increases distinct user value beyond a mere description, and encourages linking to the data-rich pages and calculator — addressing Google's 'thin content' reason.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped this page because it reads as a short, self-descriptive 'about' note with limited standalone utility compared with the site's data-rich pages, so it looks thin or low-value."
+    },
+    {
+      "id": "2026-11-23-solar-contact",
+      "host": "solar.streamerosai.com",
+      "repo": "Yaseenyk/solar-site",
+      "page": "https://solar.streamerosai.com/contact/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Home / Contact · Updated 2026-11-16\n## Contact\nThe best way to reach me is email: contact@streamerosai.com. I read every message myself. This is a one-person site, so a reply can take a few days.\n## Write to me about\nA wrong or outdated figure. Send the page address, the figure you think is wrong and, if you have it, a link to the official document. Corrections are checked against the source and the date on the page is updated.\nA translation mistake in Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati, Kannada, Malayalam, Punjabi, Odia, Assamese or Urdu. Tell me the language, the page and the sentence.\nYour data. If you sent the second-opinion form and want what you typed deleted, email from the same address you used. See the privacy policy .\nThe site itself: something broken, a page that does not load on your phone, or a question about how the calculator works.\n## What I cannot help with\nI am not the government and cannot see, approve, speed up or change any application. For your application status use the consumer login on the official portal , or contact your DISCOM. The guide page on subsidy status explains the stages.\nI do not sell, install or recommend a particular vendor, and I cannot verify a quote you have received beyond what the calculator shows.\nI cannot give legal or financial advice.\n## Please do not send\nAadhaar numbers, bank details, OTPs or passwords. I never need them and will not ask for them.\n## About the author\nThe site is built and maintained by Yaseen Khatib in Hyderabad. More about the site is on the about page .",
+      "after": "## How to send a clear correction or translation fix\nTo help me act quickly, include all of the following in your message:\n\n- The full page address (URL) where the issue appears.\n- A short description of the problem: the exact figure, sentence or word you think is wrong.\n- If available, a link to the official source or document you used to check the fact — I verify corrections against sources and update the page date when changed.\n- For translations: the language, the page and the exact sentence as it appears.\n- If you want data deleted, send the request from the same email address you originally used.\n\nDo not include Aadhaar numbers, bank details, OTPs or passwords — I never need them.",
+      "rationale": "The page is currently short and largely a pointer to an email; adding a clear, actionable \"how to send\" section makes the contact page independently useful (shows the exact information visitors should provide), reduces repetition, and signals unique, practical content to crawlers.",
+      "evidence": [
+        "https://solar.streamerosai.com/contact/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely considered the page thin and redundant because it only gives a short contact email and general pointers; adding an explicit, actionable instruction section will make the page more useful and distinct."
+    },
+    {
+      "id": "2026-11-23-solar-home",
+      "host": "solar.streamerosai.com",
+      "repo": "Yaseenyk/solar-site",
+      "page": "https://solar.streamerosai.com/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "",
+      "after": "### Quick application checklist\n- Confirm your eligibility and decide system size (1, 2 or 3 kW) before you request quotes.\n- Choose a registered vendor and check that the modules meet the Domestic Content Requirement and that the vendor agrees to 5 years' free upkeep.\n- Get a written quote and invoice that lists system size, total price and any state-specific rates.\n- Pay the vendor up front (the scheme reimburses the subsidy after inspection) and keep the payment receipt and invoice.\n- After installation, request commissioning/inspection from your DISCOM and note the approval date; the subsidy is paid back after approval.\n- Keep all documents (quotes, invoices, commissioning certificate, inspection report and warranty) and use the status pages linked above to track your subsidy.",
+      "rationale": "Adding a short, practical checklist makes the page immediately useful on its own (actionable steps a homeowner can follow) without repeating detailed policy text found elsewhere on the site; this increases unique, user-focused content and reduces the \"thin/repetitive\" signal that caused Google to not index the page.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely marked the page as thin or repetitive because it is a short summary/landing page that echoes other site pages without a standalone, actionable element users can use immediately."
+    },
+    {
+      "id": "2026-11-23-solar-hi",
+      "host": "solar.streamerosai.com",
+      "repo": "Yaseenyk/solar-site",
+      "page": "https://solar.streamerosai.com/hi/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## यहाँ से शुरू करें",
+      "after": "## आवेदन — कदम‑दर‑कदम चेकलिस्ट\n\n1. राज्य और श्रेणी पक्की करें — आप किस श्रेणी के राज्य/केंद्रशासित प्रदेश में हैं (उदा. पूर्वोत्तर, उत्तराखंड, हिमाचल, J&K, लद्दाख, A&N, लक्षद्वीप) ताकि सब्सिडी सीमा स्पष्ट हो।\n2. वेंडर से लिखित कोटेशन लें — सिस्टम साइज, कुल कोटेशन और घटित लागत साफ़ लिखें; हमारी कोटेशन जाँच वाली टूल से परखें।\n3. दस्तावेज़ तैयार रखें — पहचान, वर्तमान बिजली बिल और मालिकाना/पते के सबूत तैयार रखें।\n4. कोटेशन पहले भुगतान करें — पूरा कोटेशन ग्राहक को देना होता है; सब्सिडी बाद में रीइम्बर्स होती है।\n5. ऑनलाइन आवेदन भरें और लॉगिन पेज नोट करें — आवेदन भरते समय वेंडर निर्देशों और MNRE गाइडलाइन की लिंक रखें।\n6. स्टेटस नियमित रूप से जाँचें और रसीदें संभालकर रखें — आवेदन, इंस्टॉलेशन और सब्सिडी के रसीदों की कॉपी सुरक्षित रखें।\n\nयह चेकलिस्ट पेज के वर्णन और टूल का तुरंत उपयोग योग्य सार देती है।",
+      "rationale": "Adding a concise, practical checklist makes the page directly actionable (how to apply, what to prepare, what to expect) without adding new claims or figures; that raises topical uniqueness and user value so Google is less likely to mark it as thin or redundant.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped the page because it is short and mostly descriptive — it needs a small, unique, actionable section (step‑by‑step checklist) to be clearly useful on its own."
+    },
+    {
+      "id": "2026-11-23-solar-bn",
+      "host": "solar.streamerosai.com",
+      "repo": "Yaseenyk/solar-site",
+      "page": "https://solar.streamerosai.com/bn/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## এখান থেকে শুরু করুন",
+      "after": "## এখান থেকে শুরু করুন\n\n### দ্রুত চেকলিস্ট: আবেদন করার আগে\n\n- আপনার বিদ্যুতের সাম্প্রতিক বিল হাতে রাখুন (কাস্টমার/কনজিউমার নম্বর দেখা যাবে)।\n- ভেন্ডরের কোটেশন PDF বা ই-মেইল সংরক্ষণ করুন — এটি আবেদন ও ভেরিফিকেশনের সময় লাগে।\n- সিস্টেমের মাপ (kW) নিশ্চিত করুন এবং কোটেশন-এ সেটি কীভাবে ব্যাখ্যা করা হয়েছে দেখুন।\n- আপনার রাজ্যটি কি বিশেষ শ্রেণীর মধ্যে পড়ে তা দেখে নিন (এটা ভর্তুকি নির্ধারণে গুরুত্বপূর্ণ)।\n- অনলাইনে আবেদন ও স্ট্যাটাস চেক করার জন্য লগইন-নাম কি দরকার হবে তা ভেন্ডর/বিল থেকে নোট করুন।\n- এখানে দেওয়া “দ্বিতীয় মতামত” অপশন ব্যবহার করে কোটেশন ও হিসাব যাচাই করুন — আমরা কেবল ব্যাখ্যা ও পরামর্শ দেই, ইনস্টলেশন পরিষেবা নয়।\n\nএই চেকলিস্টটি অনুসরণ করলে আবেদন ও ভর্তুকি যাচাই ধাপে ধাপে সহজ হবে।",
+      "rationale": "A short, practical checklist makes the page immediately useful to visitors and distinguishes it from thin reference pages; it uses only tasks already implied by the page (bills, quotations, system size, state category, application/status, second opinion) and adds no new facts or figures, which should reduce Google’s ‘low-value’ signal.",
+      "evidence": [
+        "https://solar.streamerosai.com/bn/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely found the page thin or not independently useful — it states scheme facts but lacks a short, actionable section that a visitor can use immediately to apply or verify a vendor quote."
+    },
+    {
+      "id": "2026-11-23-math-home",
+      "host": "math.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://math.streamerosai.com/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "No dedicated 'How to use' section present.",
+      "after": "## How to use these calculators\n\nType your numbers and the result updates instantly — there is no submit button. Each calculator displays the formula it used and works a few example calculations so you can check the arithmetic yourself. Date tools operate on calendar dates rather than timestamps, so daylight‑saving changes never shift a day; the age calculator explains its rule for Feb 29 birthdays. When a result depends on a convention (for example, whether to count the end date or skip weekends) the calculator states which convention it used and how to change it. Everything runs in your browser so calculations stay private and no sign‑in is required.",
+      "rationale": "Adding a concise, standalone 'How to use' section gives the index page unique, directly useful content (behavior, conventions, privacy) beyond the individual calculator links, which reduces the appearance of a thin link list and helps Google see the page as valuable on its own.",
+      "evidence": [
+        "https://math.streamerosai.com/",
+        "https://math.streamerosai.com/about/",
+        "https://math.streamerosai.com/guides/counting-days-between-dates/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "The page is mainly a navigational hub with little standalone explanatory content, so Google treats it as thin or low-value compared with the calculator pages themselves."
+    },
+    {
+      "id": "2026-11-23-math-percentage-difference-calculator",
+      "host": "math.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://math.streamerosai.com/percentage-difference-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "After the 'Which percentage should I use?' section.",
+      "after": "## Quick decision guide: which percentage to use\n\n- Percentage difference — Use when you compare two values on equal footing with no natural starting value. The base is the average, so order does not matter and the result is always non‑negative.\n- Percent change — Use when you have a clear starting (old) value and want the move to a new value; this gives a direction (+/–) and uses the old value as the base.\n- Percent error — Use when comparing a measured value to an accepted or true value; divide by that reference value.\n- More than two values — Use spread measures (for example, standard deviation) rather than pairwise percentage differences.\n- Edge cases — If the two numbers average to zero the percentage difference is undefined; if you need to know which value is larger, use percent change.",
+      "rationale": "Adding a short, practical decision guide turns the page from a definition-plus-examples item into a quick, actionable reference. That reduces the chance Google labels it as thin or duplicative because it helps users choose the correct measure in real situations and highlights edge cases already mentioned on the page.",
+      "evidence": [
+        "https://math.streamerosai.com/percentage-difference-calculator/",
+        "https://math.streamerosai.com/guides/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped the page because it mostly restates the same definition and examples without a concise, user-focused decision aid that tells readers when to use percentage difference versus other percentage measures."
+    },
+    {
+      "id": "2026-11-23-math-discount-calculator",
+      "host": "math.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://math.streamerosai.com/discount-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## How to use the calculator",
+      "after": "### Quick guide: which box to use\n- I know the original price and the discount: use \"Sale price after a discount\" to get the sale price and saving immediately.\n- I know the original and sale price: use \"What discount is it?\" to find the percent off and the saving.\n- I know what I paid and the discount it had: use \"Original price before the discount\" to work backwards to the original price.\n- There are two discounts (sale then coupon): enter the first discount and put the coupon percent in the \"Extra discount\" box — the calculator applies it to the reduced price.\n- Comparing two offers: fill the two-price box (original and sale) to see the real percent off and which is better.\n\nUse this checklist before typing so you pick the right input and get an instant answer.",
+      "rationale": "Adds a short, directly useful section that makes the page self-contained and clearly practical without adding new claims; helps users (and search engines) see distinct, actionable value beyond a bare tool, addressing the 'thin or repetitive' reason for non-indexing.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped this page because it reads as a short utility with content similar to other percentage tools on the site and lacks a single, clearly unique, self-contained help section that makes the page useful without interacting with the calculator."
+    },
+    {
+      "id": "2026-11-23-math-standard-deviation-calculator",
+      "host": "math.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://math.streamerosai.com/standard-deviation-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Insert after 'Sample or population: how much does it matter?'",
+      "after": "### Quick guide: which standard deviation should I use?\n\n- If your list contains every member of the group you care about (for example, the marks of every student in one class), use the population formula (divide by n).\n- If your numbers are a subset intended to represent a larger group (for example, 30 customers out of thousands), use the sample formula (divide by n - 1).\n- If you are unsure whether your data are the whole group or a sample, choose the sample version—it is the usual conservative choice for inference.\n- Remember the calculator does not know how your data were collected, and the sample formula requires at least two values.\n\nThis short decision aid saves readers time and avoids misapplication of the two formulas.",
+      "rationale": "Adding a concise, actionable decision guide directly answers the most common user question—when to use sample vs population—making the page more practically useful and distinct from generic definitions. That reduces the chance Google treats it as thin or redundant.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely marked the page as low-value because it explains calculations but lacks a short, practical decision aid that helps readers quickly choose between sample and population standard deviation."
+    },
+    {
+      "id": "2026-11-23-exams-about",
+      "host": "exams.streamerosai.com",
+      "repo": "Yaseenyk/exams",
+      "page": "https://exams.streamerosai.com/about/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Insert after the 'How the facts are kept current' section",
+      "after": "### How to verify an official bulletin yourself\n\nIf you want to check a date or rule on the official source, use these simple steps:\n\n1. Open the official link we list for the exam (we link the bulletin or notice).\n2. If the source is a PDF, use your PDF viewer's search (Ctrl/Cmd+F) for words such as \"dates\", \"important\", \"schedule\", \"eligibility\" or \"fee\".\n3. Note the document title and any publish date or reference number shown on the first page or in the header/footer.\n4. Compare the exact paragraph or table you found with the same item on this site.\n5. If they differ, save the official page or PDF page and tell us at contact@streamerosai.com.\n\nThese steps let you confirm the original document we read without needing any extra tools.",
+      "rationale": "The page currently reads like site metadata; adding a short, practical 'how to verify' section gives independent, actionable value to readers (and search engines) by teaching visitors how to confirm the official source themselves, reducing perceived thinness and duplication.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped this page because it is short and mostly site-meta (who runs it, what it covers) rather than offering a standalone, actionable resource."
+    },
+    {
+      "id": "2026-11-23-exams-contact",
+      "host": "exams.streamerosai.com",
+      "repo": "Yaseenyk/exams",
+      "page": "https://exams.streamerosai.com/contact/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## Contact\nEmail contact@streamerosai.com . This is a one-person site and I read every message myself, so a reply can take a few days.\n## Report a wrong or out-of-date fact\nThis is the most useful message you can send. Tell me the page, the figure you think is wrong and the official document or notice that says otherwise (a link or the notice number is enough). I check it against the official source and, if you are right, change the figure and the checked date.\n## Ask about the site\nSomething that does not load, a page that is hard to read on your phone, or a question about where a figure came from. The source of every figure is linked on its page and listed on the about page .\n## Your data\nThe site has no accounts and no forms, so it holds no personal data about you apart from what is described in the privacy policy . If you email me, I keep the message only as long as needed to answer it. Ask me to delete it any time.\n## What I cannot help with\nI cannot see or change your application, admit card, fee payment or result. Those are with the exam body: use the official site and its helpline.\nI cannot tell you whether you will qualify, what a cut-off will be, or which college to pick.\nI do not sell coaching or admission services, and I cannot recommend any.\n## Please do not send\nApplication numbers with passwords, OTPs, Aadhaar numbers, payment details or scanned documents. I never need them.\n## Who you are writing to\nThe site is built by Yaseen Khatib in Hyderabad.",
+      "after": "### How to report a wrong fact (what to include)\nWhen you email, include the following so I can verify and fix the page quickly:\n\n- The full page URL where the figure appears.\n- The exact figure or sentence you think is wrong (copy the text if possible).\n- A link to the official source or the notice number that shows the correct information.\n- A clear screenshot of the page if it helps — but remove any personal data before sending.\n- One-line summary of the discrepancy (optional).\n\nI check reports against the official source and update the page if you are right. Please do not send any passwords, OTPs, Aadhaar numbers, payment details or scanned personal documents.",
+      "rationale": "Adding a concise, actionable \"what to include\" section makes the contact page directly useful and unique (practical guidance users can act on), increases content length and clarity, and reduces the \"thin/low-value\" signal that caused Google to skip indexing.",
+      "evidence": [
+        "https://exams.streamerosai.com/contact/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "The page is very short and mostly administrative (contact instructions), so Google treats it as thin or low-value compared with other pages on the site."
+    },
+    {
+      "id": "2026-11-23-exams-jee-main",
+      "host": "exams.streamerosai.com",
+      "repo": "Yaseenyk/exams",
+      "page": "https://exams.streamerosai.com/jee-main/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "The page currently lists dates and repeats them in the Common questions section but lacks a clear explanation of how the data is checked or how users should act on it.",
+      "after": "## How we check these dates and how to use this page\nWe pull dates only from the official JEE Main site (jeemain.nta.nic.in) and the NTA public notices referenced on this page. Each date row shows the source and the day we checked it. We do not guess unpublished items — this page is updated when NTA publishes new notices or the bulletin.\n\nHow to use this page: bookmark the official JEE Main site for live updates and use this page as a quick reference to the current announced windows (applications, corrections, admit cards, exam days). Before you act, open the official site to complete forms or pay fees. For step‑by‑step application help and required documents (photo, ID, signature), see our detailed how-to-apply page.",
+      "rationale": "Adding a short verification-and-use section increases unique, practical value without adding new facts: it explains sources and how users should rely on the page, reducing the appearance of thin, duplicated content and helping indexing.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped this page because it mostly reproduces official dates and Q&A without an explanatory or verification section that adds unique, useful context."
+    },
+    {
+      "id": "2026-11-23-exams-jee-main-complete-guide",
+      "host": "exams.streamerosai.com",
+      "repo": "Yaseenyk/exams",
+      "page": "https://exams.streamerosai.com/jee-main/complete-guide/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## JEE Main: the complete guide, from login to result",
+      "after": "### Quick checklist before you submit\n\nBefore you finalise your JEE Main 2027 application, verify these items so the page works as a standalone reference:\n\n- Identity: name and date of birth must exactly match your Class 10 certificate or marksheet.\n- Login/KYC: use your own MeriPehchaan / DigiLocker / JanParichay account so identity and biometric details match later stages.\n- Photos & signature: live photo on white background; photograph JPG/JPEG 10 kB–200 kB; signature JPG/JPEG 10 kB–100 kB.\n- Documents: upload only your own certificates; PDFs (Class 10, disability, passport) 50 kB–300 kB and clearly legible.\n- Exam cities: pick up to four choices within the State of your permanent or present address.\n- Payment & confirmation: keep payment proof and print the Confirmation Page; if the bank shows success but no Confirmation Page, contact the NTA helpline.\n- Fixes: use the correction window for minor changes; submit a fresh form only when you must replace the entire application.\n\nThis compact checklist lets a reader complete the main tasks without hunting across multiple pages.",
+      "rationale": "Adding a concise, action-focused checklist makes the page self-contained and immediately useful; it reduces repetition by summarising essential steps already described on the page and addresses the thinness that likely caused Google to reject indexing.",
+      "evidence": [
+        "https://exams.streamerosai.com/jee-main/complete-guide/",
+        "https://exams.streamerosai.com/jee-main/how-to-apply/",
+        "https://exams.streamerosai.com/jee-main/eligibility/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped the page because it reads like a collection of links and repeated bulletin excerpts without a concise, standalone section that a user can act on immediately (the page feels thin and fragmented)."
+    },
+    {
+      "id": "2026-11-23-exams-neet-ug-how-to-apply",
+      "host": "exams.streamerosai.com",
+      "repo": "Yaseenyk/exams",
+      "page": "https://exams.streamerosai.com/neet-ug/how-to-apply/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "How to apply for NEET (UG): steps, photo and document sizes",
+      "after": "## Before you start — checklist\n\n- Register on neet.nta.nic.in and note the system-generated Application Number; create your password and security question.\n- Keep 6–8 recent passport-size photographs with a white background ready (use the same photo for form, exam and counselling).\n- Scan and save these files before you begin: live photograph, signature, left and right thumb/finger impressions, Class 10 certificate and marksheet, conversion certificate (if CGPA), and category certificate (if applicable). Ensure fingerprints and images are clear — unclear impressions are rejected.\n- Check the file types and strict size limits shown on this page and in the official bulletin before uploading.\n- Have a debit/credit card, UPI or netbanking ready; banks/gateways may add processing charges and GST.\n- If an image is over the size limit, use our free in‑browser compression tool to shrink it before upload.\n- Choose up to three exam cities in order of preference within the address limits described in the bulletin.\n\nThis checklist gathers the practical steps from the bulletin so you can complete the form in one session.",
+      "rationale": "Adding a concise, actionable 'Before you start' checklist creates a clear, standalone utility that visitors can use immediately; it reduces repetition and increases on-page value without introducing new facts, addressing Google's low-value/thin-content reason.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped the page because it mostly repeats brief step lists from other pages and lacks a single practical checklist or standalone section that helps applicants act immediately."
+    },
+    {
+      "id": "2026-11-23-esports-home",
+      "host": "esports.streamerosai.com",
+      "repo": "",
+      "page": "https://esports.streamerosai.com/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## How an event comes together",
+      "after": "## Quick start: run a small tournament\n\nUse these steps to go from sign-ups to results in one place — no account needed.\n\n1. Plan: choose the game and a format with Plan my tournament and copy the schedule and rules.\n2. Register: collect teams with the Registration form and approve entries.\n3. ID passes: make player passes with the ID card maker and share the signed QR passes.\n4. Posters & schedule: download a tournament poster and the match timetable to post online and at the venue.\n5. Run the day: scan passes at the gate with the Gate check-in scanner (works offline) and show live standings on the Display screen for TV and OBS.\n6. Finish: publish results, export certificates and keep the roster for the next event.\n\nOpen any tool to try it — everything runs in the browser.",
+      "rationale": "Adding a short, practical quick-start section turns this index-style page into a standalone, actionable resource that ties the individual tools together. That increases unique on-page value (not just links to tool pages), answers the likely user intent immediately, and should reduce the chance Google treats the page as thin or duplicative.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped this page because it lists tools without a self-contained, actionable section that ties them together — it reads like a directory of links rather than a useful standalone guide."
+    },
+    {
+      "id": "2026-11-23-esports-tools-registration",
+      "host": "esports.streamerosai.com",
+      "repo": "",
+      "page": "https://esports.streamerosai.com/tools/registration/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Free tournament registration form for esports events",
+      "after": "## Quick organiser checklist\n1. Pick team size (solo, duo, 4+sub for squad, or 5+sub for 5v5) so the form shows the correct number of player lines.\n2. Type your event name at the top so every response is labelled.\n3. Decide how to collect entries: copy the questions into Google Forms/WhatsApp/print, or create a free account to get a registration link captains can use.\n4. Include a rules link and a yes/no consent line so teams confirm they read the rules.\n5. Add an under‑18 consent line and plan how you will record guardian consent before printing ID cards.\n6. Set a team limit and a closing time (if using the registration link) to avoid late entries.\n7. Test the form or link once, approve a sample team, and confirm the approved roster appears correctly for ID cards and gate check‑in.\n8. Share the form or link in your event channels (Discord, WhatsApp, college group) and monitor registrations from one list.",
+      "rationale": "Adding a compact, actionable checklist turns the page from a descriptive template into a practical how-to that organisers can use immediately; this increases unique, useful content and reduces the chance Google treats the page as low-value or duplicate.",
+      "evidence": [
+        "https://esports.streamerosai.com/tools/registration/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely finds the page thin and redundant: it describes a simple copyable form but lacks a concise, practical takeaway that makes it clearly useful on its own."
+    },
+    {
+      "id": "2026-11-23-esports-tools-poster",
+      "host": "esports.streamerosai.com",
+      "repo": "",
+      "page": "https://esports.streamerosai.com/tools/poster/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "No concise poster checklist or quick best-practices section.",
+      "after": "### Poster checklist — quick steps\n\n- Enter the event name (only this is required). Leave date, venue, prize or organiser blank to omit that line from the poster.\n- Pick a look (Free Fire, BGMI, Valorant, cricket or football) and a shape: Poster (4:5 — 1080×1350), Story (9:16 — 1080×1920) or Square (1080×1080).\n- Add up to two sponsor logos you have the right to use. Logos are shrunk in your browser (max 240 px wide, 60 KB) and drawn on a white tile for readability.\n- Check the preview and proofread everything — the poster shows exactly what you type.\n- On a phone use Share to send to WhatsApp or Instagram; on a computer download the PNG to save or attach.\n- Remember: the picture is drawn in your browser and nothing is uploaded or stored by the tool.",
+      "rationale": "Adding a short, actionable checklist makes the page demonstrably useful on its own and answers common user intent (how to make a poster correctly and safely). The content is drawn only from the page's existing details plus general usability advice (preview, proofread, share), so it does not introduce new claims. This should reduce the 'thin/repetitive' signal and give Google a clear, unique section to index.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely treated the page as thin or duplicative because it describes a simple tool but lacks a concise, practical section that users (and searchers) find immediately useful."
+    },
+    {
+      "id": "2026-11-23-esports-tools-groups",
+      "host": "esports.streamerosai.com",
+      "repo": "",
+      "page": "https://esports.streamerosai.com/tools/groups/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "## Why use this groups and knockout tournament maker",
+      "after": "### Practical uses and quick checklist\n\nUse this tool when you need a simple groups + knockout format for a live event — for example college fests, club or community tournaments. It runs in your browser with no account and accepts a list of teams (between 4 and 64).\n\nHow it helps\n- Split teams into 2–6 groups; group sizes differ by at most one.\n- Turn on pots to spread stronger teams across groups.\n- Each group plays a single round robin; the top teams from each group advance to a knockout where one loss eliminates.\n- Group tables and the knockout bracket update automatically as you type scores.\n\nQuick checklist before you start\n1. Paste or type one team per line.\n2. Pick number of groups and how many qualify from each.\n3. Enable pots if you want seeded distribution.\n4. Enter match scores as they finish so standings and the bracket stay current.\n\nTie-break rules are shown on the page (points, score difference, scores for, head‑to‑head, then name).",
+      "rationale": "Adding a concise, practical “when to use” section makes the page useful on its own (not just an app UI) by explaining use cases, steps and benefits; that increases unique textual content Google can index without changing the tool. The section uses only details already present on the page.",
+      "evidence": [
+        "https://esports.streamerosai.com/tools/groups/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely skipped indexing because the page is mostly the interactive tool UI with little standalone explanatory text, so it reads as thin or low‑value content on its own."
+    },
+    {
+      "id": "2026-11-23-esports-tools-check-in",
+      "host": "esports.streamerosai.com",
+      "repo": "",
+      "page": "https://esports.streamerosai.com/tools/check-in/",
+      "q": null,
+      "kind": "index",
+      "state": "Crawled - currently not indexed",
+      "type": "section",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "Record who arrived at your event by scanning QR passes with any phone. Each scan shows the person's photo, team, role and access zones, and a copied, edited or already-used pass is flagged straight away. This is for event attendance at a gate, not classroom registers. Make the passes in the ID card maker; door staff need no account.",
+      "after": "## Quick gate checklist\n- Load the offline pack on each phone (for one door) or paste the gate key (for live multi-door).\n- If you have no signal at the venue, load the pack while on Wi‑Fi and test one card before doors open.\n- Allow camera access in the browser settings so the scanner can start.\n- Brief each volunteer: green = let them in, amber = already inside, red = stop and call an organiser.\n- Keep a printed guest list or an organiser desk for unknown people and emergencies.\n- Keep phones charged; if a volunteer’s phone is lost, revoke its gate key from your account so it stops checking people in.",
+      "rationale": "Adding a short, actionable gate checklist turns feature descriptions into a practical, standalone reference organisers can follow at an event, increasing the page's direct usefulness and reducing the chance Google treats it as low-value.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google likely sees the page as thin because it mainly describes features without a standalone, actionable section that organisers can use at the gate (practical checklist or quick reference)."
+    },
+    {
+      "id": "2026-11-23-streamerosai-features-live-cockpit",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/features/live-cockpit",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://streamerosai.com/features",
+      "after": "Live Cockpit dashboard",
+      "rationale": "Add a clear internal link from the site’s main Features page (a high‑value, frequently crawled page) so Google can find and fetch the Live Cockpit page. Place the link in the features list or next to related items like OBS Scene Switcher and Auto‑Hype Director with the concise anchor “Live Cockpit dashboard” so the URL’s purpose is explicit to crawlers and users.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn’t fetched it, likely because there are no prominent internal links pointing from high-level pages."
+    },
+    {
+      "id": "2026-11-23-streamerosai-blog-how-to-make-youtube-shorts-from-a-l",
+      "host": "streamerosai.com",
+      "repo": "Yaseenyk/streamer-os-website",
+      "page": "https://streamerosai.com/blog/how-to-make-youtube-shorts-from-a-live-stream",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://streamerosai.com/features/shorts-factory",
+      "after": "How to make YouTube Shorts from a stream",
+      "rationale": "Add a clear, contextual internal link from the Shorts Factory feature page back to this how-to guide. Shorts Factory and this guide are tightly related (crop/export workflow and chat‑marked highlights), so a link with the proposed anchor both helps users find practical steps and signals to Google that the blog post is important and should be crawled and indexed.",
+      "evidence": [
+        "https://streamerosai.com/blog/how-to-make-youtube-shorts-from-a-live-stream"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because there are no prominent internal links pointing to this guide, so it looks unimportant to the crawler."
+    },
+    {
+      "id": "2026-11-23-fitrank-tools-employee-skill-matrix-template",
+      "host": "fitrank.streamerosai.com",
+      "repo": "Yaseenyk/fitrank-website",
+      "page": "https://fitrank.streamerosai.com/tools/employee-skill-matrix-template/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://fitrank.streamerosai.com/tools/",
+      "after": "Employee skill matrix template (Excel)",
+      "rationale": "Add a clear, descriptive internal link from the site’s Tools index to signal the page is important and worth crawling; the Tools page is the most relevant host for downloads and will help Google find and fetch this lightweight Excel template quickly.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but did not fetch it because there are no important internal links pointing to the page."
+    },
+    {
+      "id": "2026-11-23-tools-base64-decode",
+      "host": "tools.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://tools.streamerosai.com/base64-decode/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://tools.streamerosai.com/base64/",
+      "after": "Base64 Decode tool",
+      "rationale": "Add a clear internal link from the site's main Base64 page to this dedicated decode tool using the anchor text \"Base64 Decode tool.\" Google reported the page as discovered but not fetched because nothing important links to it; linking from the closely related/high-level base64 page gives a strong, contextually relevant crawl path and makes the tool easier for users and search engines to find.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because there are no important internal links pointing to this specific tool page."
+    },
+    {
+      "id": "2026-11-23-tools-privacy",
+      "host": "tools.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://tools.streamerosai.com/privacy/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://tools.streamerosai.com/terms/",
+      "after": "Privacy policy and data practices",
+      "rationale": "Add a clear internal link from the site's Terms of Use page (a logical legal location) to the Privacy Policy using the suggested anchor text. This gives Google a contextual, crawlable signal that the privacy page is important and relevant, helping it get fetched and indexed without changing page content or adding new claims.",
+      "evidence": [
+        "https://tools.streamerosai.com/privacy/",
+        "https://tools.streamerosai.com/terms/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the privacy URL but hasn't fetched it because nothing important links to it on the site, so it lacks internal signals that would prompt crawling."
+    },
+    {
+      "id": "2026-11-23-calc-pay-raise-calculator",
+      "host": "calc.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://calc.streamerosai.com/pay-raise-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://calc.streamerosai.com/salary-calculator/",
+      "after": "Pay Raise Calculator: new pay",
+      "rationale": "Google explicitly says the page was discovered but not fetched because it lacks important links. Adding a clear internal link from the closely related Salary Calculator page gives Google a direct crawl path and a relevant anchor text signal, helps users find the tool from a related page, and is the simplest change to get the URL fetched and indexed.",
+      "evidence": [
+        "https://calc.streamerosai.com/pay-raise-calculator/",
+        "https://calc.streamerosai.com/salary-calculator/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn't fetched it because nothing important links to it, so the page is effectively isolated from the site's internal linking."
+    },
+    {
+      "id": "2026-11-23-calc-overtime-pay-calculator",
+      "host": "calc.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://calc.streamerosai.com/overtime-pay-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://calc.streamerosai.com/time-and-a-half-calculator/",
+      "after": "Overtime pay calculator (weekly)",
+      "rationale": "Add a clear internal link from the related Time and a Half Calculator page to this Overtime Pay Calculator using the anchor text above (for example in a 'Related calculators' section or where the page already mentions 'time and a half calculator'). Because Google reported the URL as discovered but not fetched, giving the page an explicit, contextually relevant internal link will make it discoverable through site navigation and increase the chance Google will crawl and index it.",
+      "evidence": [
+        "https://calc.streamerosai.com/overtime-pay-calculator/",
+        "https://calc.streamerosai.com/time-and-a-half-calculator/"
+      ],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but has not fetched it because nothing important on the site links to the page."
+    },
+    {
+      "id": "2026-11-23-calc-loan-eligibility-calculator",
+      "host": "calc.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://calc.streamerosai.com/loan-eligibility-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://calc.streamerosai.com/",
+      "after": "Loan Eligibility Calculator",
+      "rationale": "Add a clear internal link from the main calculators/index page to this calculator using the descriptive anchor text above. The page is currently 'discovered' but unfetched; a prominent link from the site’s homepage or calculators index (for example in the related tools list near EMI calculators) signals importance to Google and helps the crawler find and fetch the page.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but did not fetch it because there are no meaningful internal links from important pages on the site pointing to this calculator."
+    },
+    {
+      "id": "2026-11-23-calc-gst-calculator",
+      "host": "calc.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://calc.streamerosai.com/gst-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://calc.streamerosai.com/",
+      "after": "GST Calculator: Add or Remove GST",
+      "rationale": "Google says “nothing important links to it.” Adding a clear internal link from the site’s main calculators page (the central navigation hub) will give the GST calculator a prominent, crawlable path and increase the chance Google fetches and indexes it. Use the suggested anchor text so the link is descriptive and matches user intent.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google reports the URL as discovered but not indexed because there are no important internal links pointing to it."
+    },
+    {
+      "id": "2026-11-23-calc-compound-interest-calculator",
+      "host": "calc.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://calc.streamerosai.com/compound-interest-calculator/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://calc.streamerosai.com/sip-calculator/",
+      "after": "Compound interest calculator",
+      "rationale": "Add a clear internal link from the closely related SIP Calculator page to this compound interest calculator. The Google status indicates the URL was discovered but not crawled because nothing important links to it; a contextual link from a related, already-indexed tool (SIP Calculator) will help crawlers find and prioritise the page, improve discoverability, and make the page’s purpose explicit to both users and search engines.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but hasn’t fetched it because the page has few or no important internal links pointing to it, so it isn’t being crawled for indexing."
+    },
+    {
+      "id": "2026-11-23-images-guides-image-size-limits-on-forms",
+      "host": "images.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://images.streamerosai.com/guides/image-size-limits-on-forms/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://images.streamerosai.com/compress-image-to-50kb/",
+      "after": "photo upload size limits guide",
+      "rationale": "The crawl message says “nothing important links to it.” Adding a clear, contextual internal link from the closely related 50 KB compressor page will create a direct discovery path, pass relevance signals, and help Google prioritise fetching this guide without changing the guide text. The chosen anchor is descriptive and matches user intent for form upload limits.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google found the URL but likely skipped fetching it because there are no strong internal links pointing to the page, so it appears low-priority to crawl."
+    },
+    {
+      "id": "2026-11-23-images-terms",
+      "host": "images.streamerosai.com",
+      "repo": "Yaseenyk/sites-lab-yk",
+      "page": "https://images.streamerosai.com/terms/",
+      "q": null,
+      "kind": "index",
+      "state": "Discovered - currently not indexed",
+      "type": "internal_link",
+      "created": "2026-11-23",
+      "status": "report",
+      "baseline": {
+        "pos": null,
+        "ctr": 0,
+        "impr": 0,
+        "clicks": 0
+      },
+      "before": "https://images.streamerosai.com/privacy/",
+      "after": "Terms of Use",
+      "rationale": "Link the terms page from the privacy page (a closely related, high‑visibility page) using the anchor 'Terms of Use'. That creates an obvious internal link Google can follow to fetch and index the page without changing the terms themselves; privacy pages are natural locations users and crawlers expect to find legal links.",
+      "evidence": [],
+      "competitors": [],
+      "authorityGap": false,
+      "gap": "Google discovered the URL but has not fetched it because nothing important on the site links to the terms page, so it lacks an internal signal to crawl and index it."
     }
   ],
   "learnings": {}
