@@ -2,6 +2,7 @@
  * pulse Worker entry. A Worker module may export only its handler, so every helper lives in lib.js (and is tested there).
  * Routes are listed at the top of lib.js.
  */
+import { esportsStats } from './esports.js';
 import { LEAD_RETENTION_DAYS, leadCors, listLeads, receiveLead, updateLead } from './leads.js';
 import { PK, RETENTION_DAYS, STATUS, authorised, clickmap, cors, feed, goals, ingest, insights, istDay, journey, json, live, markMine, meStep, summary } from './lib.js';
 import { TRACKER } from './tracker.js';
@@ -61,6 +62,14 @@ export default {
       }
     }
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: ch });
+    if (url.pathname === '/v/esports' && req.method === 'GET') {
+      if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
+      if (!authorised(req, env)) return json({ error: 'wrong key' }, ch, 401);
+      try { return json(await esportsStats(env, url.searchParams), ch); } catch (e) {
+        console.error('esports read failed:', String((e && e.message) || e));
+        return json({ error: 'esports read failed' }, ch, 500);
+      }
+    }
     if (url.pathname === '/v/leads' || url.pathname === '/v/leads/update') {
       if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
       if (!authorised(req, env)) return json({ error: 'wrong key' }, ch, 401);

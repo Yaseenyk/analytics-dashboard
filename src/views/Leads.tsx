@@ -8,6 +8,7 @@ import { useFilters } from "@/lib/filters";
 import { Card, Kpi, Sk, SkCard, SkKpi } from "@/components/ui";
 import { GaArea, GaTable, WaitingGate, cols2, grid4, useGaMemo } from "./kit";
 import { FormInbox } from "./FormInbox";
+import { EsportsCard } from "./EsportsCard";
 
 const DEFAULT_KEYS = ["whatsapp_click", "email_click", "phone_click", "generate_lead", "app_download", "template_download", "agreement_signed", "calculator_use"];
 
@@ -73,6 +74,7 @@ export default function Leads() {
   return (
     <>
     <FormInbox />
+    <EsportsCard />
     <WaitingGate>
       <EventKpis />
       <div className={cols2}>

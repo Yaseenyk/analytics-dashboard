@@ -620,3 +620,33 @@ describe("form inbox", () => {
     expect((await pre("https://evil.example")).headers.get("Access-Control-Allow-Origin")).toBeNull();
   });
 });
+
+describe("esports numbers", () => {
+  const ESPORTS = `
+    CREATE TABLE users (id TEXT, email TEXT, name TEXT, pw_hash TEXT, created_at TEXT, email_verified_at TEXT, discord_user_id TEXT);
+    CREATE TABLE organisations (id TEXT); CREATE TABLE teams (id TEXT); CREATE TABLE events (id TEXT);
+    CREATE TABLE tournaments (id TEXT); CREATE TABLE registrations (id TEXT); CREATE TABLE player_profiles (id TEXT);
+    CREATE TABLE feedback_reports (id TEXT, created_at INTEGER, kind TEXT, message TEXT, page_path TEXT, signed_in INTEGER, contact TEXT, status TEXT);
+    CREATE TABLE contact_messages (id TEXT, name TEXT, email TEXT, message TEXT, created_at TEXT);`;
+  function esportsDb() {
+    const d = fakeD1();
+    d.db.exec(ESPORTS);
+    const now = new Date().toISOString();
+    d.db.exec(`INSERT INTO users VALUES ('u1','a@x.co','A','secret-hash','${now}','${now}',NULL), ('u2','b@x.co','B','secret-hash','${now}',NULL,'123');
+      INSERT INTO organisations VALUES ('o1'); INSERT INTO teams VALUES ('t1'),('t2');
+      INSERT INTO feedback_reports VALUES ('f1', ${Math.floor(Date.now() / 1000)}, 'bug', 'Something is broken', '/', 0, '', 'new');`);
+    return d;
+  }
+  const get = (env: object, key?: string) => worker.fetch(new Request("https://pulse.test/v/esports", { headers: key ? { Authorization: `Bearer ${key}` } : {} }), env);
+
+  it("shows sign-ups, confirmed emails, counts and app feedback behind the key, never password hashes or emails", async () => {
+    const env = { DB: fakeD1(), ESPORTS_DB: esportsDb(), PULSE_KEY: "open-sesame" };
+    expect((await get(env)).status).toBe(401);
+    const r = await (await get(env, "open-sesame")).json();
+    expect(r.users).toMatchObject({ total: 2, verified: 1, discord: 1 });
+    expect(r.inPeriod).toMatchObject({ n: 2, verified: 1 });
+    expect(r.counts).toMatchObject({ orgs: 1, teams: 2, events: 0 });
+    expect(r.feedback[0]).toMatchObject({ kind: "bug", message: "Something is broken", page_path: "/" });
+    expect(JSON.stringify(r)).not.toMatch(/secret-hash|a@x\.co|b@x\.co/);
+  });
+});

@@ -10,6 +10,13 @@ binding = "DB"
 database_name = "site-pulse"
 database_id = "5e096572-927d-4f8b-bcdf-fe206936d8fb"
 
+# The esports app's own database, read only (SELECT queries in src/esports.js), so the dashboard can show its
+# sign-ups and the feedback people send from inside the app. Nothing in this Worker writes to it.
+[[d1_databases]]
+binding = "ESPORTS_DB"
+database_name = "esports-db"
+database_id = "440646ae-544f-492d-86bc-9a071d883607"
+
 [triggers]
 crons = ["17 * * * *"]
 
