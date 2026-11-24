@@ -426,6 +426,17 @@
       ],
       "detail": "Owner decided the privacy paragraphs (form inbox, analytics incl. Pulse data and Google signals) may be machine-translated with a visible notice linking to the English page (commit e075fd5). One-off exception to the no-machine-translation rule, recorded in docs/adsense-changes-2026-11-19.md; native review should follow, then remove mtNote.",
       "expect": "Privacy text in every language matches what loads."
+    },
+    {
+      "id": "2026-11-24-links-card",
+      "date": "2026-11-24",
+      "title": "Dashboard: backlinks (Links) section from Bing Webmaster API",
+      "kind": "tech",
+      "hosts": [
+        "analytics.streamerosai.com"
+      ],
+      "detail": "Search screen shows who links to each of the 13 sites from Bing's free link reports: linking domains, links, new and lost per week (daily snapshot at 03:11 UTC, quota-capped). First run: Bing reports 0 inbound links for every site. Commit eb2ef3b.",
+      "expect": "A baseline to measure backlink building before the AdSense review."
     }
   ]
 }
