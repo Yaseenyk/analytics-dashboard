@@ -12,19 +12,20 @@ import { PopBox } from "@/components/Pop";
 import { Icon } from "@/components/ui";
 
 const path = (u: string) => u.replace(/^https?:\/\/[^/]+/, "") || "/";
-const rowCls = "card flex w-full items-center gap-3 !border-transparent !p-4";
+/** A row inside the compact insight list on Home (the list card draws the box and the dividers). */
+export const rowCls = "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-white/[.04]";
 const btnMain = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-brand/15 px-4 text-[13.5px] font-semibold text-brand active:scale-[.98]";
 const H = ({ children }: { children: React.ReactNode }) => <h3 className="m-0 mb-1 mt-5 text-[12.5px] font-semibold uppercase tracking-wider text-dim first:mt-0">{children}</h3>;
 
 function Row({ icon, title, sub, value }: { icon: "live" | "search" | "health"; title: string; sub: string; value: string }) {
   return (
     <>
-      <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-white/[.06] text-mute"><Icon name={icon} className="h-5 w-5" /></span>
+      <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-white/[.06] text-mute"><Icon name={icon} className="h-[18px] w-[18px]" /></span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[15px] font-semibold">{title}</span>
-        <span className="block text-[12.5px] text-dim">{sub}</span>
+        <span className="block truncate text-[14.5px] font-semibold leading-tight">{title}</span>
+        <span className="mt-0.5 block truncate text-[12.5px] leading-tight text-dim">{sub}</span>
       </span>
-      <span className="font-mono text-[16px] font-semibold">{value}</span>
+      <span className="w-14 flex-none text-right font-mono text-[16px] font-semibold tabular-nums">{value}</span>
       <Icon name="chevron" className="h-4 w-4 flex-none -rotate-90 text-dim" />
     </>
   );
@@ -109,13 +110,13 @@ export function RealVisitorsLink() {
   if (v.total > 0) {
     return (
       <PopBox id="real-visitors" title="Real visitors" radius={20} className={rowCls} label="Real visitors and funnel" render={() => <VisitorsSheet />}>
-        <Row icon="live" title="Real visitors" sub={`${n(v.real)} of ${n(v.total)} visitors were a real person. Tap to see by site.`} value={`${Math.round((100 * v.real) / v.total)}%`} />
+        <Row icon="live" title="Real visitors" sub={`${n(v.real + v.unclear)} of ${n(v.total)} were people`} value={`${Math.round((100 * (v.real + v.unclear)) / v.total)}%`} />
       </PopBox>
     );
   }
   return (
     <PopBox id="real-visitors" title="Real visitors" radius={20} className={rowCls} label="Real visitors and funnel" render={() => <VisitorsSheet />}>
-      <Row icon="live" title="Real visitors" sub={rows.length ? (sus ? `${sus} ${sus === 1 ? "site looks" : "sites look"} like bots. Tap to see.` : "Visits that were really engaged, by site.") : "Loads with the Google Analytics numbers."} value={rows.length && total ? `${Math.round((100 * eng) / total)}%` : "–"} />
+      <Row icon="live" title="Real visitors" sub={rows.length ? (sus ? `${sus} ${sus === 1 ? "site looks" : "sites look"} like bots` : "Engaged visits, by site") : "Loads with Google Analytics"} value={rows.length && total ? `${Math.round((100 * eng) / total)}%` : "–"} />
     </PopBox>
   );
 }
@@ -149,7 +150,7 @@ export function WinsLink() {
   const k = quickWins(g, f.site).length;
   return (
     <PopBox id="wins" title="Closest to page one" radius={20} className={rowCls} label="Closest to page one" render={() => <WinsSheet />}>
-      <Row icon="search" title="Closest to page one" sub={g ? "Searches you almost win. Tap to see which pages to improve." : "Loads with the Search Console numbers."} value={g ? String(k) : "–"} />
+      <Row icon="search" title="Closest to page one" sub={g ? "Searches you almost win" : "Loads with Search Console"} value={g ? String(k) : "–"} />
     </PopBox>
   );
 }
@@ -184,17 +185,17 @@ function ChangesSheet() {
 export function ChangesLink() {
   return (
     <PopBox id="changes" title="What changed" radius={20} className={rowCls} label="What changed and what happened after" render={() => <ChangesSheet />}>
-      <Row icon="health" title="What changed" sub="Our changes, and what Google did after each." value={String(CHANGES.length)} />
+      <Row icon="health" title="What changed" sub="Changes and their results" value={String(CHANGES.length)} />
     </PopBox>
   );
 }
 
 export default function InsightLinks() {
   return (
-    <div className="space-y-2.5 lg:grid lg:grid-cols-3 lg:items-stretch lg:gap-3 lg:space-y-0">
+    <>
       <RealVisitorsLink />
       <WinsLink />
       <ChangesLink />
-    </div>
+    </>
   );
 }

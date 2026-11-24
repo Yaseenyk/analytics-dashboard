@@ -9,10 +9,9 @@ import { useFilters } from "@/lib/filters";
 import { metricByHost } from "@/lib/today";
 import { GLOSSARY } from "@/lib/glossary";
 import type { GAFile, GSCFile } from "@/lib/types";
-import { daysFor, peopleOf, usePulse, type Insights, type Live, type Summary } from "@/lib/pulse";
+import { daysFor, peopleOf, usePulse, type Insights, type Summary } from "@/lib/pulse";
 import { PopBox } from "@/components/Pop";
 import { Delta, Sk, Spark } from "@/components/ui";
-import { ORDER } from "./watchkit";
 
 type Key = "people" | "visits" | "leads" | "clicks";
 const META: Record<Key, { title: string; help: string; color: string; link: [string, string]; met?: string }> = {
@@ -97,50 +96,44 @@ function GoogleKpis() {
   );
 }
 
-/** The same big numbers, but from our own tracker: real people only, bots left out. Tap to open Watch. */
+/** Our own tracker in one card: people (bots left out), how many interacted, who took action, and the bot share, as one split bar.
+    "Online now" lives in the box at the top of Home, so it is not repeated here. Tap to open Watch. */
 function WatchKpis() {
   const f = useFilters();
   const days = daysFor(f.range);
   const params = useMemo(() => ({ days, site: f.site === "all" ? undefined : f.site }), [days, f.site]);
-  const liveParams = useMemo(() => ({ site: f.site === "all" ? undefined : f.site }), [f.site]);
   const { data: sum } = usePulse<Summary>("/v/summary", params, { poll: 60000 });
   const { data: ins } = usePulse<Insights>("/v/insights", params, { poll: 60000 });
-  const { data: live } = usePulse<Live>("/v/live", liveParams, { poll: 15000 });
-  const tiles = useMemo(() => {
-    if (!sum) return null;
-    const per = (st: (typeof ORDER)[number]) => {
-      const m = new Map<string, number>();
-      sum.daily.filter((d) => d.status === st).forEach((d) => m.set(d.day, d.n));
-      return [...new Set(sum.daily.map((d) => d.day))].sort().map((d) => m.get(d) ?? 0);
-    };
-    const c = ins?.compare;
-    const real = peopleOf(sum.status, "real");
-    const bot = peopleOf(sum.status, "bot");
-    return [
-      { k: "real", title: "Real people", value: real, prev: c?.prevReal ?? 0, spark: per("real"), color: "var(--good)" },
-      { k: "act", title: "Took action", value: c?.wins ?? 0, prev: c?.prevWins ?? 0, spark: (ins?.actedDaily ?? []).map((d) => d.n ?? 0), color: "var(--brand)" },
-      { k: "now", title: "Online now", value: live?.status.find((x) => x.status === "real")?.n ?? 0, prev: 0, spark: [] as number[], color: "var(--good)" },
-      { k: "bot", title: "Bots", value: bot, prev: c?.prevBots ?? 0, spark: per("bot"), color: "var(--bad)" },
-    ];
-  }, [sum, ins, live]);
+  if (!sum) return <div className="card !p-4"><Sk w={120} h={12} /><Sk w={80} h={28} className="mt-3" /><Sk w="100%" h={10} className="mt-4" /></div>;
+  const acted = peopleOf(sum.status, "real"), looked = peopleOf(sum.status, "unclear"), bot = peopleOf(sum.status, "bot");
+  const people = acted + looked, all = Math.max(1, people + bot), c = ins?.compare;
+  const parts = [
+    { k: "acted", label: "Interacted", v: acted, color: "var(--good)" },
+    { k: "looked", label: "Only looked", v: looked, color: "rgba(160,168,180,.55)" }, // neutral: not a warning
+    { k: "bot", label: "Bots", v: bot, color: "var(--bad)" },
+  ];
   return (
-    <section aria-label="From our own tracker">
-      <h2 className="m-0 mb-2 mt-1 px-1 text-[12.5px] font-semibold uppercase tracking-wider text-dim">Watch: real people</h2>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {!tiles
-          ? [0, 1, 2, 3].map((i) => <div key={i} className="card !p-3.5"><Sk w={60} h={12} /><Sk w={50} h={26} className="mt-2" /></div>)
-          : tiles.map((t) => (
-              <Link key={t.k} href="/watch/" className="card block !border-transparent !p-3.5" aria-label={`${t.title}: ${n(t.value)}. Open Watch`}>
-                <div className="text-[12.5px] text-mute">{t.title}</div>
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="text-[24px] font-semibold leading-none tracking-tight sm:text-[26px]">{n(t.value)}</span>
-                  {t.k !== "now" && <Delta show={f.cmp} cur={t.value} prev={t.prev} invert={t.k === "bot"} />}
-                </div>
-                {t.spark.length > 1 ? <Spark vals={t.spark} color={t.color} id={`wk-${t.k}`} /> : <div className="mt-2.5 h-[30px]" aria-hidden="true" />}
-              </Link>
-            ))}
+    <Link href="/watch/" className="card block !border-transparent !p-4" aria-label={`Real people: ${n(people)}, ${n(acted)} interacted, ${n(c?.wins ?? 0)} took action, ${n(bot)} bots. Open Watch`}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[12.5px] text-mute">Real people · our tracker</span>
+        <span className="text-[12px] text-dim">Open Watch</span>
       </div>
-    </section>
+      <div className="mt-1.5 flex items-end justify-between gap-3">
+        <div className="flex items-center gap-2"><span className="text-[28px] font-semibold leading-none tracking-tight">{n(people)}</span><Delta show={f.cmp} cur={people} prev={c?.prevReal ?? 0} /></div>
+        <div className="text-right"><div className="text-[20px] font-semibold leading-none tabular-nums">{n(c?.wins ?? 0)}</div><div className="mt-1 text-[11.5px] text-dim">took action</div></div>
+      </div>
+      <div className="mt-3 flex h-2.5 gap-[2px] overflow-hidden rounded-full" role="img" aria-label={parts.map((p) => `${p.label} ${p.v}`).join(", ")}>
+        {parts.filter((p) => p.v > 0).map((p) => <i key={p.k} title={`${p.label}: ${n(p.v)}`} className="block h-full first:rounded-l-full last:rounded-r-full" style={{ width: `${(100 * p.v) / all}%`, background: p.color }} />)}
+      </div>
+      <ul className="m-0 mt-2.5 grid list-none grid-cols-3 gap-2 p-0">
+        {parts.map((p) => (
+          <li key={p.k} className="min-w-0">
+            <span className="flex items-center gap-1.5 text-[11.5px] text-dim"><i className="h-2 w-2 flex-none rounded-full" style={{ background: p.color }} aria-hidden="true" /><span className="truncate">{p.label}</span></span>
+            <span className="mt-0.5 block font-mono text-[14px] font-semibold tabular-nums">{n(p.v)}</span>
+          </li>
+        ))}
+      </ul>
+    </Link>
   );
 }
 

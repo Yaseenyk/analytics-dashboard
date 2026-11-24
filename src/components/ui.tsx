@@ -166,6 +166,21 @@ export function Banner({ children }: { children: ReactNode }) {
   );
 }
 
+/** A card's explanation: the first sentence, with "More" for the rest, so the data stays near the top on a phone. */
+function Note({ text }: { text: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  if (typeof text !== "string") return <p className="sub">{text}</p>;
+  const cut = text.search(/[.!?](\s|$)/);
+  const first = cut > 0 && cut < text.length - 2 ? text.slice(0, cut + 1) : text;
+  if (open || first === text) return <p className="sub">{text}</p>;
+  return (
+    <p className="sub">
+      {first}{" "}
+      <button type="button" onClick={() => setOpen(true)} className="font-medium text-brand underline-offset-2 hover:underline">More</button>
+    </p>
+  );
+}
+
 export function Card({ title, note, extra, children, className = "", style, help }: { title?: string; note?: ReactNode; extra?: ReactNode; children: ReactNode; className?: string; style?: CSSProperties; help?: string }) {
   return (
     <section className={`card animate-fadein ${className}`} style={style}>
@@ -175,7 +190,7 @@ export function Card({ title, note, extra, children, className = "", style, help
           {extra}
         </div>
       )}
-      {note && <p className="sub">{note}</p>}
+      {note && <Note text={note} />}
       {children}
     </section>
   );

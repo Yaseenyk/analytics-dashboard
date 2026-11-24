@@ -55,8 +55,7 @@ export function GoalsCard({ g, all }: { g: Goals; all: boolean }) {
     <>
       <Card title="Goals">
         <p className="sub mt-1">
-          A real person contacted you (WhatsApp, email, phone, a form), downloaded a file, or went on to an app store, a
-          product site or GitHub. Last {g.days} days, your own visits left out.
+          Contacts, forms, downloads and clicks to your products · last {g.days} days
         </p>
         <dl className="mt-4 grid grid-cols-1 gap-x-4 sm:grid-cols-3">
           <Stat value={total} label="Goals reached" note={prevTotal ? `${change(total, prevTotal)} vs the ${g.days} days before` : "No earlier period to compare yet"} />

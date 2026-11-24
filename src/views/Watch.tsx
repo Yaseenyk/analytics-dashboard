@@ -8,7 +8,7 @@ import {
   PULSE_API, WHY_LABEL, daysFor, peopleOf, pulsePost, regionName, useKey, usePulse,
   type ClickMap, type FeedRow, type Goals, type Insights, type Journey, type Live, type Status, type Summary,
 } from "@/lib/pulse";
-import { Card, Sk } from "@/components/ui";
+import { Card, Icon, Sk } from "@/components/ui";
 import { AlertsCard, Broken, CrossCheck, Flow, Landing, PagesDeep, SourceQuality, When } from "./WatchDeep";
 import { GoalsCard } from "./WatchGoals";
 import { Badge, CLICK_LABEL, COLOR, KIND_LABEL, ORDER, Rows, ago, offset, pct, say, secs, site, when } from "./watchkit";
@@ -28,7 +28,7 @@ function Daily({ rows }: { rows: Summary["daily"] }) {
   if (!days.length) return null;
   const max = Math.max(...days.map(([, o]) => o.real + o.unclear + o.bot), 1);
   return (
-    <Card title="People per day" note="Green is a real person, amber did nothing, red is a bot. Each person counts once a day. Days are in Indian time.">
+    <Card title="People per day" note="Green: interacted · Grey: only looked · Red: bot · one count per person per day (Indian time)">
       <div className="mt-3 flex h-36 items-end gap-[3px]" role="img" aria-label="People per day, split into real people, no interaction and bots">
         {days.map(([d, o]) => (
           <div key={d} title={`${d}: ${o.real} real, ${o.unclear} no interaction, ${o.bot} bots`} className="flex h-full min-w-[3px] max-w-10 flex-1 flex-col-reverse overflow-hidden rounded-t">
@@ -357,11 +357,14 @@ export default function Watch() {
           <><Sk w="100%" h={84} /><Sk w="100%" h={84} /><Sk w="100%" h={84} /><Sk w="100%" h={84} /></>
         )}
       </div>
-      <p className="sub !mt-0 px-1">
+      <details className="group px-1 [&_summary::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[12.5px] font-medium text-mute">How these are counted<Icon name="chevron" className="h-3.5 w-3.5 transition-transform group-open:rotate-180" /></summary>
+      <p className="sub !mt-2">
         Our own tracker, not Google, for the last {days} days. <b className="font-medium text-mute">Real people</b> are every visitor without evidence of a bot, and each person counts once a day however many pages they open{c?.visits ? ` (${n(counts.real + counts.unclear)} ${counts.real + counts.unclear === 1 ? "person" : "people"} made ${n(c.visits)} visit${c.visits === 1 ? "" : "s"} and opened ${n(c.pages ?? 0)} page${c.pages === 1 ? "" : "s"})` : ""}. {sum ? `${n(counts.real)} of them touched, scrolled or typed; ${n(counts.unclear)} did not${sum.idle && counts.unclear ? ` (${n(sum.idle.left)} left within 2 seconds, ${n(sum.idle.stayed)} stayed and only looked)` : ""}. ` : ""}<b className="font-medium text-mute">Took action</b> is people who tapped something that counts. <b className="font-medium text-mute">Bots</b> showed evidence: a browser driven by software, a robot name, or a server network with no human action. Arrows compare with the {days} days before.
         {sum && real ? ` A real visitor stays ${secs(real.active)} on a page and reads ${real.scroll ?? 0}% of it.` : ""}
         {sum?.mine?.visits ? ` Your own ${n(sum.mine.visits)} visit${sum.mine.visits === 1 ? " is" : "s are"} left out.` : ""} Days are in Indian time.
       </p>
+      </details>
 
       {meFlash && <p role="status" className="m-0 rounded-xl bg-brand/10 px-4 py-3 text-[13.5px] text-ink">{meFlash === "on" ? "Done. This device is now left out on all 13 sites." : "Done. This device counts as a normal visitor again."}</p>}
       {keyStr && <Feed keyStr={keyStr} siteFilter={f.site} bots={counts.bot} />}

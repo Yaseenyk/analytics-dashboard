@@ -16,28 +16,6 @@ const age = (ms: number) => {
 /** Green when fresh, amber when old, red when nothing is saved. Live visitors go stale in minutes, reports in hours. */
 const dotOf = (saved: number | null, fastMs: number) => (!saved ? "bg-bad" : Date.now() - saved < fastMs ? "bg-good" : "bg-yellow-400");
 
-function Row({ name, saved, busy, fastMs = 6 * 3600e3, onRefresh }: { name: string; saved: number | null; busy: boolean; fastMs?: number; onRefresh: () => void }) {
-  return (
-    <li className="flex min-h-[44px] w-full min-w-0 items-center gap-3 rounded-lg border border-line bg-card px-3 py-1.5 sm:w-auto sm:min-w-[250px]">
-      <i className={`h-2 w-2 flex-none rounded-full ${dotOf(saved, fastMs)}`} aria-hidden="true" />
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[13px] font-medium leading-tight">{name}</div>
-        <div className="mt-0.5 text-[12px] leading-tight text-dim">{busy ? "Asking Google…" : saved ? `Saved ${age(saved)}` : "Not saved yet"}</div>
-      </div>
-      <button
-        type="button"
-        onClick={onRefresh}
-        disabled={busy}
-        aria-label={`Refresh ${name}`}
-        className="inline-flex h-8 flex-none items-center gap-1.5 rounded-md border border-line px-2.5 text-[12.5px] font-medium text-mute hover:border-line2 hover:text-ink disabled:opacity-60"
-      >
-        <Icon name="refresh" className={`h-3.5 w-3.5 ${busy ? "animate-spin" : ""}`} />
-        {busy ? "Wait" : "Refresh"}
-      </button>
-    </li>
-  );
-}
-
 /**
  * The one place to refresh data. One row per source this screen uses, each with its own Refresh button, so there is exactly
  * one button for each thing and nothing else on the screen refreshes. A refresh asks Google only for what this screen shows,
@@ -74,26 +52,47 @@ export default function SavedChips({ tab }: { tab: string }) {
   const liveAt = live?.generatedAt ? Date.parse(live.generatedAt) : null;
 
   const go = (which: "ga" | "gsc" | "live") => {
-    setBusy(which);
     const site = f.site === "all" ? undefined : f.site;
-    const p =
-      which === "ga" ? ensure(`ga-${f.range}.json`, true, needs, site) : which === "gsc" ? ensure(`gsc-${f.range}.json`, true, undefined, site) : ensure("live.json", true);
-    p.finally(() => setBusy(""));
+    return which === "ga" ? ensure(`ga-${f.range}.json`, true, needs, site) : which === "gsc" ? ensure(`gsc-${f.range}.json`, true, undefined, site) : ensure("live.json", true);
+  };
+  const sources = [
+    needs ? { k: "ga" as const, name: "Analytics", at: gaAt, fast: 6 * 3600e3 } : null,
+    wantsGsc ? { k: "gsc" as const, name: "Search Console", at: gscAt, fast: 6 * 3600e3 } : null,
+    wantsLive ? { k: "live" as const, name: "Live", at: liveAt, fast: 10 * 60e3 } : null,
+  ].filter(Boolean) as { k: "ga" | "gsc" | "live"; name: string; at: number | null; fast: number }[];
+  // One button refreshes everything this screen shows, one source after another (Google's quotas stay safe), for the picked site.
+  const refreshAll = async () => {
+    for (const x of sources) {
+      setBusy(x.k);
+      try { await go(x.k); } catch { /* the source shows its own state */ }
+    }
+    setBusy("");
   };
 
-  if (!needs && !wantsGsc && !wantsLive) {
+  if (!sources.length) {
     return null;
   }
+  const oldest = sources.every((x) => x.at) ? Math.min(...sources.map((x) => x.at as number)) : null;
   return (
-    <section aria-label="Data" className="mt-4">
-      <ul className="m-0 flex list-none flex-col gap-2 p-0 sm:flex-row sm:flex-wrap">
-        {needs && <Row name="Google Analytics" saved={gaAt} busy={busy === "ga"} onRefresh={() => go("ga")} />}
-        {wantsGsc && <Row name="Search Console" saved={gscAt} busy={busy === "gsc"} onRefresh={() => go("gsc")} />}
-        {wantsLive && <Row name="Live visitors" fastMs={10 * 60e3} saved={liveAt} busy={busy === "live"} onRefresh={() => go("live")} />}
+    <section aria-label="Data" className="mt-4 flex min-h-[44px] items-center gap-3 rounded-xl border border-line bg-card px-3 py-1.5">
+      <ul className="m-0 flex min-w-0 flex-1 list-none flex-wrap items-center gap-x-3 gap-y-1 p-0">
+        {sources.map((x) => (
+          <li key={x.k} className="flex items-center gap-1.5 text-[12px] text-mute" title={x.at ? `${x.name}: saved ${age(x.at)}` : `${x.name}: not saved yet`}>
+            <i className={`h-2 w-2 flex-none rounded-full ${dotOf(x.at, x.fast)}`} aria-hidden="true" />{x.name}
+          </li>
+        ))}
+        <li className="text-[12px] text-dim">{busy ? "Asking Google…" : oldest ? `· ${age(oldest)}` : "· not saved yet"}</li>
       </ul>
-      {f.site === "all" && (needs || wantsGsc) && (
-        <p className="m-0 mt-2 text-[12px] leading-snug text-dim">Tip: pick one site above to refresh just that site.</p>
-      )}
+      <button
+        type="button"
+        onClick={refreshAll}
+        disabled={!!busy}
+        aria-label={`Refresh ${sources.map((x) => x.name).join(", ")}${f.site === "all" ? "" : ` for ${f.site}`}`}
+        className="inline-flex h-8 flex-none items-center gap-1.5 rounded-md border border-line px-2.5 text-[12.5px] font-medium text-mute hover:border-line2 hover:text-ink disabled:opacity-60"
+      >
+        <Icon name="refresh" className={`h-3.5 w-3.5 ${busy ? "animate-spin" : ""}`} />
+        {busy ? "Wait" : "Refresh"}
+      </button>
     </section>
   );
 }

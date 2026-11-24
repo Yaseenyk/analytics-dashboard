@@ -65,32 +65,23 @@ function Summary() {
   });
   if (!v) return <SkText />;
   if (v.none) return null;
+  const top = v.src[0];
+  const chips: [string, string, string][] = [
+    ["New visitors", `${Math.min(100, pct(v.nu, v.usr)).toFixed(0)}%`, `of ${n(v.usr)} people`],
+    ["Top source", top ? `${pct(top.sessions, v.tot).toFixed(0)}%` : "–", top ? (top.name === "(not set)" ? "Unassigned" : top.name) : "none yet"],
+    ["From AI assistants", n(v.aiN), v.ai.length ? v.ai.slice(0, 2).map((x) => `${x.name} ${n(x.sessions)}`).join(", ") : "none yet"],
+    ["Sign-ups and forms", n(v.ev.generate_lead || 0), `${n(v.ev.whatsapp_click || 0)} WhatsApp taps`],
+  ];
   return (
-    <Card title="In plain words">
-      <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[13.5px] leading-relaxed text-mute marker:text-dim">
-        <li>
-          <b className="text-ink">{n(v.usr)}</b> {v.usr === 1 ? "person" : "people"} visited <b className="text-ink">{n(v.ses)}</b> {v.ses === 1 ? "time" : "times"}
-          {v.usr > 1 ? ` (${(v.ses / v.usr).toFixed(1)} visits each)` : ""}, last {v.days} days. <b className="text-ink">{Math.min(100, pct(v.nu, v.usr)).toFixed(0)}%</b> {v.usr === 1 ? "was" : "were"} new.
-        </li>
-        {v.src.length > 0 && (
-          <li>
-            Most came from{" "}
-            {v.src.slice(0, 3).map((x, i) => (
-              <span key={x.name}>{i ? ", " : ""}<b className="text-ink">{x.name === "(not set)" ? "Unassigned" : x.name}</b> ({pct(x.sessions, v.tot).toFixed(0)}%)</span>
-            ))}
-            .
-          </li>
-        )}
-        <li>
-          {v.aiN
-            ? <><b className="text-ink">{n(v.aiN)}</b> visits came from AI assistants ({v.ai.slice(0, 3).map((x) => `${x.name} ${n(x.sessions)}`).join(", ")}).</>
-            : "No visits from AI assistants such as ChatGPT or Perplexity yet."}
-        </li>
-        <li>
-          <b className="text-ink">{n(v.ev.generate_lead || 0)}</b> sign-ups and forms, <b className="text-ink">{n(v.ev.whatsapp_click || 0)}</b> WhatsApp taps, <b className="text-ink">{n(v.key)}</b> key events in all.
-        </li>
-      </ul>
-    </Card>
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {chips.map(([title, big, small]) => (
+        <div key={title} className="card !p-3.5">
+          <div className="truncate text-[12.5px] text-mute">{title}</div>
+          <div className="mt-1.5 text-[22px] font-semibold leading-none tracking-tight">{big}</div>
+          <div className="mt-1.5 truncate text-[11.5px] text-dim">{small}</div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -116,54 +107,42 @@ function VisitsChart() {
   );
 }
 
-function SiteCard({ host }: { host: string }) {
+/** Every site in one compact table: people (with a bar to compare), Google clicks and average position. A row filters to that site. */
+function Sites() {
   const f = useFilters();
   const ga = useGA(f.range).data;
   const gs = useGSC(f.range).data;
-  const live = useLive().data;
-  const t = rep(ga, "totals");
-  const rows = t.rows.filter((r) => r[ix(t, "hostName")] === host);
-  const nd0 = t.dims.length;
-  const m = (nm: string) => rows.reduce((s, r) => s + (+r[nd0 + t.mets.indexOf(nm)] || 0), 0);
-  const s = gs?.search?.[gscProperty(host)];
-  const lv = (live?.streams.rows ?? []).filter((r) => STREAMS[String(r[0])] === SITES[host]).reduce((a, r) => a + +r[1], 0);
-  const ready = !!ga && hasGA(ga);
-  const gOk = !!(s && s.ok && s.total);
-  const cell = (k: string, v: string | null) => (
-    <div className="min-w-0">
-      <small className="block text-[11px] text-dim">{k}</small>
-      {v === null ? <Sk w={60} h={14} className="mt-1" /> : <b className="text-[15px]">{v}</b>}
-    </div>
-  );
-  return (
-    <button type="button" onClick={() => f.setSite(host)} className="card animate-fadein text-left transition-colors">
-      <h3 className="m-0 text-[15px] font-semibold">{SITES[host]}</h3>
-      <div className="mb-3 font-mono text-[11.5px] text-dim">{host}</div>
-      <div className="grid grid-cols-3 gap-x-3 gap-y-2.5">
-        {cell("People", !ga ? null : ready ? n(m("activeUsers")) : "–")}
-        {cell("Visits", !ga ? null : ready ? n(m("sessions")) : "–")}
-        {cell("Online", live ? String(lv) : null)}
-        {cell("Clicks", !gs ? null : gOk ? n(s!.total![0]) : "–")}
-        {cell("Impr.", !gs ? null : gOk ? n(s!.total![1]) : "–")}
-        {cell("Position", !gs ? null : gOk ? String(s!.total![3]) : "–")}
-      </div>
-    </button>
-  );
-}
-
-function Sites() {
-  const f = useFilters();
   if (f.site !== "all") return null;
+  const t = rep(ga, "totals");
+  const hi = t.dims.length ? ix(t, "hostName") : -1;
+  const people = (host: string) => t.rows.filter((r) => r[hi] === host).reduce((a, r) => a + (+r[t.dims.length + t.mets.indexOf("activeUsers")] || 0), 0);
+  const rows = Object.keys(SITES).map((h) => {
+    const g = gs?.search?.[gscProperty(h)];
+    const ok = !!(g && g.ok && g.total);
+    return { h, people: ga && hasGA(ga) ? people(h) : null, clicks: ok ? +g!.total![0] : null, pos: ok && +g!.total![3] ? +g!.total![3] : null };
+  }).sort((a, b) => (b.people ?? -1) - (a.people ?? -1));
+  const max = Math.max(1, ...rows.map((r) => r.people ?? 0));
   return (
-    <div>
-      <div className="mb-2 flex items-baseline justify-between gap-2">
-        <h2 className="h2">Your sites</h2>
-        <span className="text-[12.5px] text-dim">Tap one to see only that site</span>
+    <Card title="Your sites" extra={<span className="text-[12px] text-dim">Tap a site to filter</span>}>
+      <div className="mt-2 grid grid-cols-[minmax(0,1fr)_52px_44px_40px] gap-x-2 border-b border-white/[.06] pb-1.5 text-[11.5px] text-dim">
+        <span>Site · people</span><span className="text-right">People</span><span className="text-right">Clicks</span><span className="text-right">Pos.</span>
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-        {Object.keys(SITES).map((h) => <SiteCard key={h} host={h} />)}
-      </div>
-    </div>
+      <ul className="m-0 list-none p-0">
+        {rows.map((r) => (
+          <li key={r.h}>
+            <button type="button" onClick={() => f.setSite(r.h)} className="grid w-full grid-cols-[minmax(0,1fr)_52px_44px_40px] items-center gap-x-2 border-b border-white/[.04] py-2 text-left last:border-0 active:bg-white/[.04]">
+              <span className="min-w-0">
+                <span className="block truncate text-[13.5px] font-medium">{SITES[r.h]}</span>
+                <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-white/5" aria-hidden="true"><i className="block h-full rounded-full bg-brand" style={{ width: `${r.people ? Math.max(3, (100 * r.people) / max) : 0}%` }} /></span>
+              </span>
+              <span className="text-right font-mono text-[13px] tabular-nums">{r.people === null ? "–" : n(r.people)}</span>
+              <span className="text-right font-mono text-[13px] tabular-nums text-mute">{r.clicks === null ? "–" : n(r.clicks)}</span>
+              <span className="text-right font-mono text-[13px] tabular-nums text-mute">{r.pos === null ? "–" : r.pos.toFixed(0)}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
 
@@ -218,8 +197,10 @@ export default function Overview() {
       <QuickBoxes />
       <GaBanner />
       <HomeKpis />
-      <NotIndexedLink />
-      <InsightLinks />
+      <div className="card !p-0 divide-y divide-white/[.06] overflow-hidden">
+        <NotIndexedLink />
+        <InsightLinks />
+      </div>
       <Summary />
       <VisitsChart />
       <div className={cols2}>
@@ -228,7 +209,7 @@ export default function Overview() {
           sourcesAgg(ga, site).forEach((x) => (cats[x.cat] = (cats[x.cat] || 0) + x.sessions));
           return Object.keys(cats).map((k) => [k, cats[k]] as [string, number]).sort((a, b) => b[1] - a[1]);
         }} />
-        <GaRank title="Top sources" max={6} note="Direct / unknown means the browser gave no source, for example a link opened in an app." build={(ga, site) => sourcesAgg(ga, site).map((x) => [x.name, x.sessions, `${n(x.sessions)} visits`])} />
+        <GaRank title="Top sources" max={6} build={(ga, site) => sourcesAgg(ga, site).map((x) => [x.name, x.sessions, `${n(x.sessions)} visits`])} />
       </div>
       <div className={cols2}>
         <GaRank title="Top pages" max={6} build={(ga, site) => group(rep(ga, "pages"), [1], site).map((x) => [x.k[0], x.m[0], `${n(x.m[0])} views`])} />

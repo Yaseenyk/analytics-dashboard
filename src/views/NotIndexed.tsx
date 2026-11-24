@@ -204,13 +204,13 @@ export default function NotIndexedLink() {
   const dropN = rows ? rows.filter((r) => r.flags.dropped).length : 0;
   const extra = sp ? [sp.waiting ? `${sp.waiting.toLocaleString("en-US")} new, not checked yet` : "", sp.onPurpose ? `${sp.onPurpose.toLocaleString("en-US")} noindex on purpose` : "", sp.failed ? `${sp.failed.toLocaleString("en-US")} Google did not answer for in the last check` : ""].filter(Boolean).join(" · ") : "";
   return (
-    <PopBox id="not-indexed" title="Not indexed" radius={20} className="card flex w-full items-center gap-3 !border-transparent !p-4" label={`Not indexed: ${rows?.length ?? 0} pages`} render={() => <Sheet site={f.site} />}>
-      <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-white/[.06] text-mute"><Icon name="health" className="h-5 w-5" /></span>
+    <PopBox id="not-indexed" title="Not indexed" radius={20} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-white/[.04]" label={`Not indexed: ${rows?.length ?? 0} pages. ${extra ? `Not counted: ${extra}.` : ""}`} render={() => <Sheet site={f.site} />}>
+      <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-white/[.06] text-mute"><Icon name="health" className="h-[18px] w-[18px]" /></span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[15px] font-semibold">Not indexed</span>
-        <span className="block text-[12.5px] text-dim">{rows ? (dropN ? `${dropN} dropped out of Google. ` : "") + (rows.length ? "Pages Google knows about but has not added." : "Every page Google has checked is in.") + (extra ? ` Not counted: ${extra}.` : "") : "Loading…"}</span>
+        <span className="block truncate text-[14.5px] font-semibold leading-tight">Not indexed</span>
+        <span className="mt-0.5 block truncate text-[12.5px] leading-tight text-dim">{rows ? (dropN ? `${dropN} dropped out of Google` : rows.length ? "Pages Google has not added" : "Every checked page is in") : "Loading…"}</span>
       </span>
-      <span className="text-[18px] font-semibold">{rows ? rows.length.toLocaleString("en-US") : "–"}</span>
+      <span className="w-14 flex-none text-right font-mono text-[16px] font-semibold tabular-nums">{rows ? rows.length.toLocaleString("en-US") : "–"}</span>
       <Icon name="chevron" className="h-4 w-4 flex-none -rotate-90 text-dim" />
     </PopBox>
   );

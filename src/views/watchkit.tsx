@@ -4,7 +4,8 @@ import { SITES } from "@/lib/config";
 import { n } from "@/lib/derive";
 import { STATUS_HELP, STATUS_ONE, type Status } from "@/lib/pulse";
 
-export const COLOR: Record<Status, string> = { real: "var(--good)", unclear: "var(--s3)", bot: "var(--bad)" };
+// unclear = real person who only looked: a neutral grey, not a warning colour
+export const COLOR: Record<Status, string> = { real: "var(--good)", unclear: "rgba(160,168,180,.55)", bot: "var(--bad)" };
 export const ORDER: Status[] = ["real", "unclear", "bot"];
 export const KIND_LABEL: Record<string, string> = { search: "Search engines", social: "Social and messaging", ai: "AI assistants", direct: "Direct or unknown", own: "Your other sites", internal: "Same site", email: "Email", paid: "Paid", other: "Other websites" };
 export const CLICK_LABEL: Record<string, string> = { link: "Link", out: "Leaves the site", btn: "Button", tab: "Tab", input: "Form field", mail: "Email link", tel: "Phone link", dl: "Download", goal: "Goal", other: "Not clickable" };
