@@ -580,6 +580,17 @@
       ],
       "detail": "A whole-site Lighthouse pass (mobile, simulated slow phone) found tool pages downloading 520-570 KB: 13 ID-card font files (about 200 KB) preloaded on every page that shows winners or share cards, and the tools page prefetching the code of twelve other pages (about 230 KB). Both are off now (the picture renderers load their fonts themselves before drawing, so downloads are unchanged). Print kits redrew its three preview canvases on every render; it now redraws only when the pages change. Idle-machine live results: tools 92 (299 KB, was 562 KB), groups 90 (372 KB, was 569 KB), brackets 90, round-robin 92, schedule 89, id-cards 93, poster 85, check-in 93.",
       "expect": "Faster first load and less mobile data on every tool page. Text in the poster and ID-card tools may show a fallback font for a moment before the real one arrives."
+    },
+    {
+      "id": "2026-11-25-esports-points-table-trust",
+      "date": "2026-11-25",
+      "title": "Esports: trust signals on every points-table page (who runs it, safe-to-use box, scoring rules, FAQ, Person schema)",
+      "kind": "content",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "All six points-table pages (incl. /pt-br/) now show 'Built and run by Yaseen Khatib' linked to the portfolio and LinkedIn, the real scoring rules from the code in static HTML, a code-checked Safe to use box, a 4-question FAQ with matching FAQPage, and Person (@id yk.streamerosai.com/#person) as author of the SoftwareApplication. Privacy fix found while checking: Pulse click labels and Clarity replays could carry team names; tool areas now masked and labels replaced. Prompted by ChatGPT saying it could not verify the operator or privacy. Commit ba7a1d2.",
+      "expect": "ChatGPT/AI answers about the calculator mention who runs it and that it is safe; re-ask after Google and Bing recrawl."
     }
   ]
 }
