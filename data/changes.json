@@ -289,6 +289,87 @@
       ],
       "detail": "streamerOS repo: the web demo is now its own Next.js app in demo/ (desktop src/ untouched). Static HTML has a plain-text intro instead of an empty body plus the default 404 fallback text; real 404 page; phone menu drawer, scrolling status badges, stacked Chat Archive/Media Kit/Sponsors, larger-screen note on the two editors. Fixed Aura Studio overlay previews that were 404 on the host. Commits 27e087d, d9c6a1b and the overlay fix.",
       "expect": "No ranking change; removes a broken-looking page from the AdSense review of the domain."
+    },
+    {
+      "id": "2026-11-24-translate-guard-speed",
+      "date": "2026-11-24",
+      "title": "All React sites: work under Google Translate, CSS inlined, faster first paint",
+      "kind": "tech",
+      "hosts": [
+        "streamerosai.com",
+        "yk.streamerosai.com",
+        "campus.streamerosai.com",
+        "solar.streamerosai.com",
+        "exams.streamerosai.com",
+        "esports.streamerosai.com",
+        "fitrank.streamerosai.com",
+        "sable.streamerosai.com",
+        "tools.streamerosai.com",
+        "calc.streamerosai.com",
+        "images.streamerosai.com",
+        "math.streamerosai.com"
+      ],
+      "detail": "Pulse showed script errors and rage clicks from visitors reading through Chrome's translation (Portuguese labels on an English site). Every Next site now has a translate guard before hydration, and changing numbers sit in their own elements so they keep updating when translated. CSS is inlined after build (no blocking stylesheet). Root blog posts: no Inter preload, no framer-motion on posts and glossary. Portfolio and campus: menu icon d=undefined console error fixed. FitRank notice calculator: hydration errors from a build-time date fixed. Commits: esports 6d50a8f, root 20b0de8, campus 03a82f4, fitrank 36538fe, solar 18a1956, exams 2a8ed6e, sable 4a4dbc4, sites-lab e8b80a0, portfolio Navbar fix.",
+      "expect": "Fewer script errors and dead/rage taps in Pulse; LCP down on slow phones (e.g. sable home 4.0 to 2.2 s, calc EMI 2.0 to 1.4 s under slow 4G)."
+    },
+    {
+      "id": "2026-11-24-ux-fixes",
+      "date": "2026-11-24",
+      "title": "Esports points table, root chat-overlay post and Sable first screen",
+      "kind": "content",
+      "hosts": [
+        "esports.streamerosai.com",
+        "streamerosai.com",
+        "sable.streamerosai.com"
+      ],
+      "detail": "Esports: the example-scale button now says what it did (people rage-clicked it because nothing visibly changed). Root: /blog/twitch-chat-overlay-obs (13 visits, 13 exits) got in-text links and a What to do next section with the live demo. Sable home (12% average scroll): tighter hero so the real app screen peeks above the fold, eyebrow says in private testing.",
+      "expect": "More next-page clicks from the chat overlay post; deeper scroll on Sable home."
+    },
+    {
+      "id": "2026-11-24-pulse-health",
+      "date": "2026-11-24",
+      "title": "Pulse records where visitors struggle; dashboard shows it",
+      "kind": "tech",
+      "hosts": [
+        "streamerosai.com",
+        "yk.streamerosai.com",
+        "campus.streamerosai.com",
+        "spotai.streamerosai.com",
+        "solar.streamerosai.com",
+        "exams.streamerosai.com",
+        "esports.streamerosai.com",
+        "fitrank.streamerosai.com",
+        "sable.streamerosai.com",
+        "tools.streamerosai.com",
+        "calc.streamerosai.com",
+        "images.streamerosai.com",
+        "math.streamerosai.com"
+      ],
+      "detail": "Pulse now records up to three script error messages per page, whether the page was translated and into which language, connection type, slowest tap response, layout jumps, dead taps by element, and the name of forms started but not sent. Load time ignores background tabs (they gave fake 30 s readings). React hydration errors on translated pages are filed as recovered noise, not alerts. Index check retries failed Google calls and keeps the last answer.",
+      "expect": "No ranking effect; better diagnosis."
+    },
+    {
+      "id": "2026-11-24-form-inbox",
+      "date": "2026-11-24",
+      "title": "Own form inbox on the dashboard; Esports Hub sign-ups and feedback",
+      "kind": "tech",
+      "hosts": [
+        "streamerosai.com",
+        "yk.streamerosai.com",
+        "campus.streamerosai.com",
+        "spotai.streamerosai.com",
+        "solar.streamerosai.com",
+        "exams.streamerosai.com",
+        "esports.streamerosai.com",
+        "fitrank.streamerosai.com",
+        "sable.streamerosai.com",
+        "tools.streamerosai.com",
+        "calc.streamerosai.com",
+        "images.streamerosai.com",
+        "math.streamerosai.com"
+      ],
+      "detail": "Forms post to the Pulse Worker's inbox (D1), shown on the dashboard Leads page with status, notes and source analysis; email is only a notice. Portfolio forms switched first; other sites being switched. Esports Hub sign-ups, confirmations, orgs and in-app feedback are read from the esports database. Gender, age and interests reports added to Audience (need Google signals on).",
+      "expect": "No lost enquiries when email fails; lead quality by channel."
     }
   ]
 }
