@@ -503,6 +503,28 @@
       ],
       "detail": "Four new indexable tool pages (/tools/sensitivity-converter/, /tools/team-name-generator/, /tools/prize-split/, /tools/rulebook/) and /tools/schedule/ upgraded with a day-by-day plan from a bracket. Converter cites community-measured yaw values with checked dates, no mobile conversion. Prize split is maths only, no currency. Share result now offers only 1080x1350 and 1080x1920 (square removed). Commits 794f154, 100056a, 090a6cb, faedd3c, 9f25bee, 2ee862e, f53e912.",
       "expect": "Impressions for sensitivity converter, team name generator and rulebook searches within 2-4 weeks; more shared result pictures."
+    },
+    {
+      "id": "2026-11-25-esports-switch-on",
+      "date": "2026-11-25",
+      "title": "Esports: owner switched on profiles, team pages, scrims, directory, match recap, screenshot reading, college calendar, trust score and the OBS overlay kit",
+      "kind": "feature",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Production flags set true ~01:35 IST: v3.profiles, v3.scrims, v3.directory, v3.recaps, v3.screenshots, v3.calendar, v3.trust, takedown.enforce (reports auto-hide user content). GitHub variable NEXT_PUBLIC_OVERLAY_KIT=1. v3.rooms stays off until ROOM_CREDENTIALS_KEY is set. Profiles, /tournaments/ (below 5 events) and the calendar stay noindex.",
+      "expect": "First organisers posting scrims and tournaments; watch sign-ups and reports in the Leads page."
+    },
+    {
+      "id": "2026-11-25-esports-tool-tracking",
+      "date": "2026-11-25",
+      "title": "Esports: the four new tools count completions (tool_complete)",
+      "kind": "tracking",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Sensitivity converter, team name generator, prize split and rulebook now send tool_complete; backend metrics list extended to 18 tools. Backend 986a7a8, frontend 43a9ec4. CI third-party check fixed for split flight-data URLs (d60610c).",
+      "expect": "Tool usage for the new tools visible on the dashboard."
     }
   ]
 }
