@@ -26,6 +26,22 @@ const change = (cur: number, prev: number) => (prev ? `${cur >= prev ? "+" : ""}
  * Goals: real people who contacted us (WhatsApp, email, phone, a form) or went on to the product (app store, a product
  * site, GitHub, a download). Read from the clicks the tracker already records, so no site had to change.
  */
+/** One headline number: a row on phones (number left, meaning right), a column from the sm breakpoint. */
+function Stat({ value, label, note }: { value: string | number; label: string; note: string }) {
+  return (
+    <div className="flex items-center gap-4 border-t border-white/10 py-3 first:border-t-0 sm:block sm:border-t-0 sm:py-0">
+      <dt className="min-w-0">
+        <span className="block text-[14px] font-semibold text-ink sm:text-[13px] sm:font-normal sm:text-mute">{label}</span>
+        <span className="block text-[12.5px] leading-snug text-dim sm:hidden">{note}</span>
+      </dt>
+      <dd className="order-first w-16 shrink-0 text-[28px] font-semibold leading-none tabular-nums text-ink sm:mt-1 sm:w-auto">
+        {value}
+        <span className="mt-1 hidden text-[12.5px] font-normal leading-snug text-dim sm:block">{note}</span>
+      </dd>
+    </div>
+  );
+}
+
 export function GoalsCard({ g, all }: { g: Goals; all: boolean }) {
   const total = g.types.reduce((s, t) => s + t.n, 0);
   const prevTotal = g.types.reduce((s, t) => s + t.prevN, 0);
@@ -39,14 +55,14 @@ export function GoalsCard({ g, all }: { g: Goals; all: boolean }) {
     <>
       <Card title="Goals">
         <p className="sub mt-1">
-          The moments that matter: a real person tapped WhatsApp, email or phone, sent a form, downloaded a file, clicked
-          through to an app store, a product site or GitHub. Last {g.days} days, real people only, your own visits left out.
+          A real person contacted you (WhatsApp, email, phone, a form), downloaded a file, or went on to an app store, a
+          product site or GitHub. Last {g.days} days, your own visits left out.
         </p>
-        <div className="mt-3 grid grid-cols-3 gap-3">
-          <div><p className="sub !mt-0">Goals reached</p><p className="text-2xl font-semibold tabular-nums">{total}</p><p className="sub !mt-0">{change(total, prevTotal)} vs the {g.days} days before</p></div>
-          <div><p className="sub !mt-0">People who reached one</p><p className="text-2xl font-semibold tabular-nums">{reached}</p><p className="sub !mt-0">of {people} real people</p></div>
-          <div><p className="sub !mt-0">Goal rate</p><p className="text-2xl font-semibold tabular-nums">{pct(reached, people)}%</p><p className="sub !mt-0">{people < FEW ? "too few people to judge yet" : "people who reached a goal"}</p></div>
-        </div>
+        <dl className="mt-4 grid grid-cols-1 gap-x-4 sm:grid-cols-3">
+          <Stat value={total} label="Goals reached" note={prevTotal ? `${change(total, prevTotal)} vs the ${g.days} days before` : "No earlier period to compare yet"} />
+          <Stat value={reached} label="People who reached one" note={`out of ${people} real people`} />
+          <Stat value={`${pct(reached, people)}%`} label="Goal rate" note={people < FEW ? "Too few people to judge yet" : "of real people reached a goal"} />
+        </dl>
         {total === 0 && <p className="sub mt-3">No goals yet in this period. Form sends are counted from 19 Nov 2026; the other goals come from clicks recorded since 17 Nov.</p>}
       </Card>
       {shown.length > 0 && (
