@@ -558,6 +558,17 @@
       ],
       "detail": "/calendar/ (list + month view, game/city filters, noindex and out of the sitemap below 5 upcoming events from verified organisations), /trust/ and /app/calendar/. Ratings only from players proven to have attended (checked-in pass or captain of a team with a verified result), one per player per event, 30-day window, score hidden below 5 ratings, organiser replies, staff moderation with audit. D1 migration 0080 (new tables only). Backend 05e58c6/3e2e05b, frontend ceebab2/911c97f/26dd769.",
       "expect": "Verified organisations start listing college events; trust scores appear once events finish."
+    },
+    {
+      "id": "2026-11-25-esports-guild-names-sens",
+      "date": "2026-11-25",
+      "title": "Esports: Free Fire guild name page and stylish names; sens converter + eDPI calculator",
+      "kind": "content",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "New indexable /tools/free-fire-guild-name/ (stylish variants with copy, no unverified game limit claimed). Team name generator gets game presets (Free Fire guild, BGMI team, Valorant/COD, clan) and a stylish option; blocklist applied after un-styling. Sensitivity converter retitled 'Sens converter and eDPI calculator', with an eDPI block and the real yaw maths. Chosen from treg keyword data (free fire guild name 18,100/mo India; stylish name free fire 40,500; sens converter 135,000/mo worldwide; edpi calculator 18,100). Commit ae001b1. treg spend $0.19 total.",
+      "expect": "Impressions for 'free fire guild name', 'stylish name free fire', 'sens converter' and 'edpi calculator' within 2-4 weeks."
     }
   ]
 }
