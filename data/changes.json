@@ -569,6 +569,17 @@
       ],
       "detail": "New indexable /tools/free-fire-guild-name/ (stylish variants with copy, no unverified game limit claimed). Team name generator gets game presets (Free Fire guild, BGMI team, Valorant/COD, clan) and a stylish option; blocklist applied after un-styling. Sensitivity converter retitled 'Sens converter and eDPI calculator', with an eDPI block and the real yaw maths. Chosen from treg keyword data (free fire guild name 18,100/mo India; stylish name free fire 40,500; sens converter 135,000/mo worldwide; edpi calculator 18,100). Commit ae001b1. treg spend $0.19 total.",
       "expect": "Impressions for 'free fire guild name', 'stylish name free fire', 'sens converter' and 'edpi calculator' within 2-4 weeks."
+    },
+    {
+      "id": "2026-11-25-esports-speed-fonts-prefetch",
+      "date": "2026-11-25",
+      "title": "Esports: tool pages stop preloading ID-card fonts and prefetching other tools; print kits previews redraw only on change",
+      "kind": "technical",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "A whole-site Lighthouse pass (mobile, simulated slow phone) found tool pages downloading 520-570 KB: 13 ID-card font files (about 200 KB) preloaded on every page that shows winners or share cards, and the tools page prefetching the code of twelve other pages (about 230 KB). Both are off now (the picture renderers load their fonts themselves before drawing, so downloads are unchanged). Print kits redrew its three preview canvases on every render; it now redraws only when the pages change. Idle-machine live results: tools 92 (299 KB, was 562 KB), groups 90 (372 KB, was 569 KB), brackets 90, round-robin 92, schedule 89, id-cards 93, poster 85, check-in 93.",
+      "expect": "Faster first load and less mobile data on every tool page. Text in the poster and ID-card tools may show a fallback font for a moment before the real one arrives."
     }
   ]
 }
