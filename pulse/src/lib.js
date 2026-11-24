@@ -40,7 +40,10 @@ const DASH_ORIGIN = /^https:\/\/analytics\.streamerosai\.com$|^http:\/\/(localho
 // ---- classification (pure, exported for tests) ----
 
 const BOT_UA = /(?<!cu)bot|crawl|spider|slurp|headless|phantom|lighthouse|pagespeed|gtmetrix|pingdom|uptime|monitor|facebookexternalhit|embedly|preview|scrape|fetch|curl|wget|python|requests|axios|go-http|java\/|okhttp|libwww|httpclient|node|undici|postman|insomnia|ahrefs|semrush|mj12|bytespider|ccbot|whatsapp\/|slackbot|discordbot|twitterbot|linkedinbot|telegrambot|vkshare/i;
-const DC_ORG = /amazon|aws|google (cloud|llc)|microsoft|azure|digitalocean|digital ocean|hetzner|ovh|linode|vultr|choopa|oracle|alibaba|tencent|contabo|leaseweb|scaleway|m247|datacamp|hosting|datacenter|data center|colocation|\bcloud\b|server|vps|dedicated|zenlayer|psychz|quadranet|frantech|buyvm|serverius|clouvider|netcup|hostinger|ionos|godaddy|rackspace|softlayer|ibm cloud|huawei cloud|equinix|gcore|selectel|timeweb|aeza|stark industries|datapacket|cdn77/i;
+const DC_ORG = /amazon|aws|google (cloud|llc)|microsoft|azure|digitalocean|digital ocean|hetzner|ovh|linode|vultr|choopa|oracle|alibaba|tencent|contabo|leaseweb|scaleway|m247|datacamp|hosting|datacenter|data center|colocation|\bcloud\b|server|vps|dedicated|zenlayer|psychz|quadranet|frantech|buyvm|serverius|clouvider|netcup|hostinger|ionos|godaddy|rackspace|softlayer|ibm cloud|huawei cloud|equinix|gcore|selectel|timeweb|aeza|stark industries|datapacket|cdn77|hostroyale|ultahost|logicweb|ipnetzone|ip pools|proxy|palo alto networks|internet archive|meta platforms/i;
+// 24 Nov 2026: added hosting, proxy and crawler networks seen in the last 30 days with no human action (HostRoyale, UltaHost,
+// LogicWeb, IPNetZone, IP pools, Palo Alto Networks scanners, the Internet Archive, Meta's link-preview crawler). A visit with a real
+// tap, key or scroll is still counted as a person whatever its network (see STATUS).
 const DC_ASN = new Set([16509, 14618, 15169, 396982, 8075, 14061, 24940, 16276, 63949, 20473, 31898, 45102, 132203, 51167, 12876, 60781, 28753, 9009, 212238]);
 
 export function uaInfo(ua) {

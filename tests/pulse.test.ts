@@ -74,6 +74,12 @@ describe("classification", () => {
   });
 
   it("recognises hosting networks but not home or phone networks", () => {
+    expect(isDatacenter("HostRoyale Technologies Pvt Ltd", 0)).toBe(true);
+    expect(isDatacenter("Meta Platforms Ireland Limited", 0)).toBe(true);
+    expect(isDatacenter("IP pools", 0)).toBe(true);
+    expect(isDatacenter("Verizon Business", 0)).toBe(false);
+    expect(isDatacenter("Orange S.A.", 0)).toBe(false);
+    expect(isDatacenter("FPT Telecom Company", 0)).toBe(false);
     expect(isDatacenter("Amazon.com, Inc.", 16509)).toBe(true);
     expect(isDatacenter("Hetzner Online GmbH", 24940)).toBe(true);
     expect(isDatacenter("Reliance Jio Infocomm Limited", 55836)).toBe(false);
