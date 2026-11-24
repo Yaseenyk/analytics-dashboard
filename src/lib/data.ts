@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { DEFAULT_API, gscProperty } from "./config";
 import type { ChangesFile } from "./changes";
-import type { AlertItem, BingFile, CrawlFile, GAFile, GSCFile, HealthFile, HistoryRow, Live, Meta, OptimizerFile, QueueFile, RankFile, SpeedFile, ClarityFile } from "./types";
+import type { AlertItem, BingFile, LinksFile, CrawlFile, GAFile, GSCFile, HealthFile, HistoryRow, Live, Meta, OptimizerFile, QueueFile, RankFile, SpeedFile, ClarityFile } from "./types";
 
 /**
  * One tiny store, one entry per data file. A block subscribes to just the file it needs, so when a slow
@@ -94,7 +94,7 @@ export function useStamp(): Stamp {
 /* What Refresh fetched live is kept in this browser, so reloading the page shows it instead of falling back to the copy
    published every 2 hours. The newer of the two (by generatedAt) wins; the saved copy expires after 12 hours. */
 const CACHE_PREFIX = "live-cache:";
-const cacheable = (file: string) => !/^(gsc|bing)-|^(optimizer|changes)\.json$|^live\.json$/.test(file) && !LIVE_FIRST.has(file);
+const cacheable = (file: string) => !/^(gsc|bing)-|^(optimizer|changes|links)\.json$|^live\.json$/.test(file) && !LIVE_FIRST.has(file);
 function readCache(file: string): { data: { generatedAt?: string }; at: number } | null {
   if (!cacheable(file)) return null;
   try {
@@ -145,7 +145,7 @@ export function ensure(file: string, force = false, only?: string[], site?: stri
   // Bing numbers come only from the published copy. GA4 and Search Console come from the Worker's saved copy (no Google call);
   // Refresh asks Google through the Worker (Search Console in parts, because 13 properties x 8 reports exceed one invocation's
   // 50-call limit) and the Worker merges the answer into the saved copy.
-  const staticOnly = /^bing-|^optimizer\.json$|^changes\.json$/.test(file);
+  const staticOnly = /^bing-|^optimizer\.json$|^changes\.json$|^links\.json$/.test(file);
   const snapped = !!base && SNAP.test(file);
   const holds = (x: unknown) => file === "live.json" ? !!(x as { generatedAt?: string } | null)?.generatedAt : /^ga-/.test(file) ? ((x as GAFile | null)?.reports?.totals?.rows?.length ?? 0) > 0 : Object.values((x as GSCFile | null)?.search ?? {}).some((v) => (v as { ok?: boolean }).ok);
   const applySaved = (j: unknown) => {
@@ -263,6 +263,7 @@ export const useMeta = () => useSource<Meta>("meta.json");
 export const useGA = (range: string) => useSource<GAFile>(`ga-${range}.json`);
 export const useGSC = (range: string) => useSource<GSCFile>(`gsc-${range}.json`);
 export const useBing = (range: string) => useSource<BingFile>(`bing-${range}.json`);
+export const useLinks = () => useSource<LinksFile>("links.json");
 export const useHealth = () => useSource<HealthFile>("health.json");
 export const useLive = () => useSource<Live>("live.json");
 export const useChanges = () => useSource<ChangesFile>("changes.json");

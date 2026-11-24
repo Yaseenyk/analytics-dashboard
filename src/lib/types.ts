@@ -69,6 +69,33 @@ export interface BingFile {
   error?: string | null;
 }
 
+/** Who links to the sites, from Bing Webmaster Tools (scripts/links.mjs). Rows: pages [url, links], domains [domain, links seen]. */
+export interface LinkSite {
+  status: "ok" | "error" | "skipped";
+  links?: number;
+  pagesWithLinks?: number;
+  partial?: boolean;
+  pages?: [string, number][];
+  domains?: [string, number][];
+  /** One example per domain: [linking URL, our page]. */
+  examples?: Record<string, [string, string]>;
+  error?: string;
+}
+export interface LinksFile {
+  generatedAt: string;
+  checkedAt?: string;
+  source: "bing";
+  error?: string | null;
+  limits?: { topPages: number; linkPages: number; countPages: number };
+  verified?: string[];
+  unverified?: string[];
+  sites: Record<string, LinkSite>;
+  since?: string | null;
+  /** New: [domain, linking URL, our page]; lost: domains. */
+  week?: Record<string, { since: string; new: [string, string, string][]; lost: string[] }>;
+  history?: { date: string; sites: Record<string, string[]> }[];
+}
+
 /** Index health: Google's URL Inspection results per site (refreshed daily) and Bing's latest crawl stats. */
 export interface HealthSite {
   property: string;

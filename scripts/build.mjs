@@ -7,6 +7,7 @@
 // No dependencies: Node 20+. Secret: GA_SERVICE_ACCOUNT_JSON. The files hold aggregate numbers only.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { buildLinksFile, fetchAllLinks } from './links.mjs';
 
 const PROPERTY = process.env.GA_PROPERTY_ID || '562159345';
 const RANGES = [
@@ -275,6 +276,7 @@ async function bingFetchAll() {
   if (!process.env.BING_API_KEY) return { raw: {}, error: 'BING_API_KEY is not set' };
   const list = await bingGet('GetUserSites');
   if (list.status !== 200) return { raw: {}, error: `Bing returned ${list.status}: ${list.detail || 'no detail'}` };
+  const sites = list.rows.filter((r) => r && r.Url);
   const raw = {}; const pause = (ms) => new Promise((r) => setTimeout(r, ms));
   for (const s of list.rows.filter((r) => r.IsVerified !== false && r.Url)) {
     let host; try { host = new URL(s.Url).hostname; } catch { continue; }
@@ -287,7 +289,7 @@ async function bingFetchAll() {
     const issues = await bingGet('GetCrawlIssues', { siteUrl: s.Url }); await pause(400);
     if (traffic.status === 200 || queries.status === 200) raw[host] = { url: s.Url, traffic: traffic.rows, queries: queries.rows, pages: pages.rows, crawl: crawl.rows, issues: issues.rows };
   }
-  return { raw, error: Object.keys(raw).length ? null : 'Bing listed no readable sites' };
+  return { raw, sites, error: Object.keys(raw).length ? null : 'Bing listed no readable sites' };
 }
 
 
@@ -419,6 +421,21 @@ if (bingCall) {
   const pub = await fetch(`${SITE}/data/health.json?x=${Date.now()}`, { signal: AbortSignal.timeout(20000) }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
   if (pub?.bing) bingKept = pub.bing;
   step('Bing: kept the published copy (no call on a push)');
+}
+
+// Who links to the sites (Bing's link reports, scripts/links.mjs). Same rule: only the daily or a manual run calls Bing, with a
+// fixed call budget; a push re-publishes the live copy. The history of linking domains travels inside the published file.
+{
+  const prevLinks = await grab(`${SITE}/data/links.json?x=${Date.now()}`);
+  if (bingCall) {
+    const fetched = bing.sites ? await fetchAllLinks(bingGet, bing.sites, () => new Promise((r) => setTimeout(r, 400))) : null;
+    const file = buildLinksFile({ fetched, prev: prevLinks, error: fetched ? null : bing.error });
+    write('links', file);
+    if (fetched?.stopped) errors.push(`Bing links: ${fetched.stopped}`);
+    step(`Bing links done (${fetched ? fetched.calls : 0} calls)`);
+  } else if (prevLinks) {
+    write('links', prevLinks);
+  }
 }
 
 // Index health is computed by its own daily job (scripts/health.mjs) and committed as data/health.json; this run

@@ -11,6 +11,7 @@ import { AreaChart } from "@/components/charts";
 import { DataTable } from "@/components/DataTable";
 import { Card, Delta, Empty, ErrorCard, Kpi, SkChart, SkKpi, SkTable } from "@/components/ui";
 import AllPages from "./AllPages";
+import Links from "./Links";
 import { grid4 } from "./kit";
 
 type Metric = "clicks" | "impr" | "ctr" | "pos";
@@ -193,6 +194,7 @@ export default function Search() {
   return (
     <>
       <GoogleSearch />
+      <Links />
       <AllPages />
     </>
   );

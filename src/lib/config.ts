@@ -103,7 +103,7 @@ export const TABS: Tab[] = [
   { id: "audience", href: "/audience/", title: "Audience", short: "Countries", icon: "audience", group: "visitors", filters: "all", what: "Which countries your visitors are in, and how they behave on the page." },
   { id: "leads", href: "/leads/", title: "Leads and clicks", short: "Leads", icon: "leads", group: "visitors", filters: "all", what: "People who took an action: WhatsApp, email, phone call, or a form." },
   { id: "live", href: "/live/", title: "Live now", short: "Live", icon: "live", group: "visitors", filters: "site", what: "Who is on your sites right now (the last 30 minutes)." },
-  { id: "search", href: "/search/", title: "Search Console", short: "Search Console", icon: "search", group: "visitors", filters: "all", what: "What people typed into Google before they found you." },
+  { id: "search", href: "/search/", title: "Search Console", short: "Search Console", icon: "search", group: "visitors", filters: "all", what: "What people typed into Google before they found you, and who links to you." },
   { id: "bing", href: "/bing/", title: "Bing", short: "Bing", icon: "search", group: "visitors", filters: "all", what: "The same numbers for Bing search." },
   { id: "clarity", href: "/clarity/", title: "Clarity", short: "Clarity", icon: "live", group: "visitors", filters: "site", what: "How people behave on your pages: scrolling, clicking, getting stuck." },
   { id: "rankings", href: "/rankings/", title: "Rankings", short: "Rankings", icon: "rankings", group: "visitors", filters: "all", what: "Where you show up on Google for the phrases you care about, and easy wins." },
