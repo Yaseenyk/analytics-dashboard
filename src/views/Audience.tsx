@@ -124,6 +124,37 @@ export default function Audience() {
             return group(r, [ix(r, "language")], site).map((g) => [place(g.k[0]), g.m[0], g.m[1]]);
           }}
         />
+        <GaTable
+          title="Gender" empty="Google has not shared this yet. It needs Google signals switched on (GA4 Admin, Data collection), and Google hides small groups, so it fills in as traffic grows."
+          cols={["Gender", "People", "Visits", "Leads and clicks"]}
+          bar={1}
+          fmt={[0, "n", "n", "n"]}
+          build={(ga, site) => {
+            const r = rep(ga, "gender");
+            return group(r, [ix(r, "userGender")], site).map((g) => [g.k[0] === "male" ? "Men" : g.k[0] === "female" ? "Women" : "Not known", g.m[0], g.m[1], g.m[2]]);
+          }}
+        />
+        <GaTable
+          title="Age group" empty="Google has not shared this yet. It needs Google signals switched on (GA4 Admin, Data collection), and Google hides small groups, so it fills in as traffic grows."
+          cols={["Age", "People", "Visits", "Leads and clicks"]}
+          bar={1}
+          fmt={[0, "n", "n", "n"]}
+          build={(ga, site) => {
+            const r = rep(ga, "age");
+            return group(r, [ix(r, "userAgeBracket")], site).map((g) => [g.k[0] === "unknown" ? "Not known" : g.k[0], g.m[0], g.m[1], g.m[2]]);
+          }}
+        />
+        <GaTable
+          title="Interests" empty="Google has not shared this yet. It needs Google signals switched on (GA4 Admin, Data collection), and Google hides small groups, so it fills in as traffic grows."
+          cols={["Interest", "People"]}
+          bar={1}
+          max={12}
+          fmt={[0, "n"]}
+          build={(ga, site) => {
+            const r = rep(ga, "interests");
+            return group(r, [ix(r, "brandingInterest")], site).filter((g) => g.k[0] && g.k[0] !== "(not set)").map((g) => [g.k[0], g.m[0]]);
+          }}
+        />
         <GaRank
           title="Day of week"
           max={7}

@@ -60,6 +60,12 @@ const PLAN = {
   os: { dims: ['hostName', 'operatingSystem'], mets: ['sessions', 'keyEvents'], limit: 150 },
   languages: { dims: ['hostName', 'language'], mets: ['sessions', 'keyEvents'], limit: 150 },
   newReturning: { dims: ['hostName', 'newVsReturning'], mets: ['sessions', 'activeUsers', 'keyEvents'] },
+  // Demographics: Google estimates gender, age group and interests only for people signed in to Google with ad
+  // personalisation on, and only once "Google signals" is switched on in GA4 Admin > Data collection. Small groups are
+  // withheld by Google (thresholding), so with low traffic these can stay empty.
+  gender: { dims: ['hostName', 'userGender'], mets: ['activeUsers', 'sessions', 'keyEvents'], limit: 100 },
+  age: { dims: ['hostName', 'userAgeBracket'], mets: ['activeUsers', 'sessions', 'keyEvents'], limit: 150 },
+  interests: { dims: ['hostName', 'brandingInterest'], mets: ['activeUsers'], limit: 200 },
   weekday: { dims: ['hostName', 'dayOfWeek'], mets: ['sessions', 'keyEvents'], limit: 100, order: [{ dimension: { dimensionName: 'dayOfWeek' } }] },
   hour: { dims: ['hostName', 'hour'], mets: ['sessions', 'keyEvents'], limit: 400, order: [{ dimension: { dimensionName: 'hour' } }] },
   events: { dims: ['hostName', 'eventName'], mets: ['eventCount', 'totalUsers', 'keyEvents'], limit: 600 },

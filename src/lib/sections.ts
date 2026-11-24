@@ -9,7 +9,7 @@ export const GA_NEEDS: Record<string, string[]> = {
   visitors: ["totals", "totalsPrev", "daily", "pages"],
   sources: ["channels", "sourceMedium", "campaigns", "campaignContent", "firstTouch", "referrers"],
   pages: ["pages", "landing", "landingSource", "keyEventsByPage"],
-  audience: ["totals", "countries", "cities", "devices", "browsers", "os", "languages", "newReturning", "weekday", "hour"],
+  audience: ["totals", "countries", "cities", "devices", "browsers", "os", "languages", "newReturning", "gender", "age", "interests", "weekday", "hour"],
   leads: ["totals", "events", "eventsFirstTouch", "ctaText", "forms", "keyEventsBySource", "keyEventsDaily", "leadsFirstTouch"],
   ads: ["adsCampaigns"],
 };
