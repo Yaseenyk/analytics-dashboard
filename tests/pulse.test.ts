@@ -280,6 +280,51 @@ describe("reads", () => {
     expect(clicks.n).toBe(1);
   });
 
+  it("keeps dashboard answers for four hours in the database, shared by every Worker instance, and recomputes after that", async () => {
+    const env = await seeded();
+    const a = await (await get(env, "/v/insights?days=7")).text();
+    env.DB.db.exec("DELETE FROM hits");
+    // a different Worker instance has an empty memory but sees the stored answer
+    const other = { DB: Object.assign(Object.create(env.DB), {}), PULSE_KEY: env.PULSE_KEY };
+    expect(await (await get(other, "/v/insights?days=7")).text()).toBe(a);
+    env.DB.db.exec("UPDATE rcache SET t = t - 3 * 3600 * 1000"); // 3 hours later: still the saved answer
+    expect(await (await get({ DB: Object.assign(Object.create(env.DB), {}), PULSE_KEY: env.PULSE_KEY }, "/v/insights?days=7")).text()).toBe(a);
+    env.DB.db.exec("UPDATE rcache SET t = t - 2 * 3600 * 1000"); // 5 hours old: computed again
+    const later = JSON.parse(await (await get({ DB: Object.assign(Object.create(env.DB), {}), PULSE_KEY: env.PULSE_KEY }, "/v/insights?days=7")).text());
+    expect(later.flows).toEqual([]);
+  });
+
+  it("Refresh (fresh=1) asks for new numbers, but a press right after another is served the saved answer", async () => {
+    const env = await seeded();
+    const nu = () => ({ DB: Object.assign(Object.create(env.DB), {}), PULSE_KEY: env.PULSE_KEY });
+    const first = JSON.parse(await (await get(nu(), "/v/summary?days=7&who=all")).text());
+    env.DB.db.exec("DELETE FROM hits");
+    // an ordinary read keeps showing the saved answer
+    expect(JSON.parse(await (await get(nu(), "/v/summary?days=7&who=all")).text())).toEqual(first);
+    // a press within a minute of the saved answer does not recompute (protects the database from a flood of presses)
+    expect(JSON.parse(await (await get(nu(), "/v/summary?days=7&who=all&fresh=1")).text())).toEqual(first);
+    // a press when the saved answer is older than a minute recomputes and replaces it
+    env.DB.db.exec("UPDATE rcache SET t = t - 120000");
+    const now = JSON.parse(await (await get(nu(), "/v/summary?days=7&who=all&fresh=1")).text());
+    expect(now.status).toEqual([]);
+    // fresh is not part of the saved key: the next ordinary read sees the new answer
+    expect(JSON.parse(await (await get(nu(), "/v/summary?days=7&who=all")).text())).toEqual(now);
+  });
+
+  it("finds the next page of each visit in one pass, ignoring reloads, bots and other visits", async () => {
+    const env = { DB: fakeD1(), PULSE_KEY: "open-sesame" };
+    const hit = (id: string, sid: string, path: string, ts: number, human = 1) =>
+      env.DB.db.exec(`INSERT INTO hits (id,sid,site,path,ts,last,ref_host,ref_path,ref_kind,country,device,browser,os,human,bot,dc,wd,me) VALUES ('${id}','${sid}','calc.streamerosai.com','${path}',${ts},${ts},'','','direct','IN','mobile','Chrome','Android',${human},0,0,0,0)`);
+    const t = Date.now() - 3600e3;
+    hit("a1", "s1", "/", t, 1); hit("a2", "s1", "/", t + 1000, 1); hit("a3", "s1", "/emi/", t + 2000, 1); hit("a4", "s1", "/sip/", t + 3000, 1);
+    hit("b1", "s2", "/", t, 1); hit("b2", "s2", "/emi/", t + 500, 1);
+    env.DB.db.exec("UPDATE hits SET bot=1, human=0 WHERE sid='s3'");
+    hit("c1", "s3", "/", t, 0); env.DB.db.exec("UPDATE hits SET bot=1 WHERE id='c1'"); hit("c2", "s3", "/emi/", t + 500, 0); env.DB.db.exec("UPDATE hits SET bot=1 WHERE id='c2'");
+    const j = await (await get(env, "/v/insights?days=7&site=calc.streamerosai.com")).json();
+    const key = (f: { from_path: string; to_path: string; n: number }) => `${f.from_path}>${f.to_path}:${f.n}`;
+    expect(j.flows.map(key).sort()).toEqual(["/>/emi/:2", "/emi/>/sip/:1"]); // the reload / > / is not a step; the bot's step is not counted
+  });
+
   it("keeps one-by-one views behind the key", async () => {
     const env = await seeded();
     expect((await get({ DB: env.DB }, "/v/feed")).status).toBe(503);

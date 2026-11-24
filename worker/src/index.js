@@ -3,6 +3,7 @@
 // from Google when the dashboard opens and cached for a few minutes. The Google service account key is a
 // Worker secret (GA_SERVICE_ACCOUNT_JSON); it is never sent to the browser. Aggregate numbers only.
 
+import { refreshSlot } from './slots.js';
 import { addAlerts, crawlStart, crawlStatus, crawlTick, ranksRun, recordHealth, saveQueue, watchRuns } from './insights.js';
 
 const PROPERTY = '562159345';
@@ -642,6 +643,13 @@ export default {
       const d = new Date(event.scheduledTime);
       const at = d.getUTCHours() * 100 + d.getUTCMinutes();
       if (at === 245) return crawlStart(env, 'schedule'); // only queues it: the index check, if still running, goes first
+      // Every 4 hours the saved Analytics and Search Console copies are refreshed by this cron, not by a button (see slots.js)
+      const slot = refreshSlot(d, gscParts());
+      if (slot && !(await env.DATA.get('health:state')) && !(await env.DATA.get('crawl:state'))) {
+        const r = await snapshot(slot.kind, slot.id, new URL(`https://saved.local/?refresh=1&part=${slot.part}`), env, {});
+        console.log(`4-hour refresh ${slot.kind} ${slot.id}${slot.kind === 'gsc' ? ' part ' + slot.part : ''}: ${r.status}`);
+        return;
+      }
       if (!(await env.DATA.get('health:state')) && !(await env.DATA.get('crawl:state'))) {
         if (at === 220) return ranksRun(env, gsc);
         if (at === 225) return watchRuns(env);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 /** Our own visit tracker (the `pulse` Worker). Aggregates are public; one-by-one views need the key. */
 export const PULSE_API = "https://pulse.yaseenyk.workers.dev";
@@ -90,11 +90,41 @@ export function useKey(): [string, (k: string) => void] {
 
 type Params = Record<string, string | number | undefined>;
 
-/** Fetch from pulse, optionally repeating. Skips the request while the tab is hidden, and while `enabled` is false. */
-export function usePulse<T>(path: string, params: Params, opts: { key?: string; poll?: number; enabled?: boolean } = {}) {
-  const { key, poll, enabled = true } = opts;
+// ---- visitor data: opening a screen makes NO request. It shows the last saved copy (kept in this browser); Refresh fetches ----
+// Every open tab used to poll the tracker every 10 to 60 seconds and used most of the free 5M database rows read a day. Now a screen
+// shows the copy saved in this browser the last time Refresh was pressed (components/PulseChip.tsx) and stays silent otherwise.
+const CACHE = "pulse-cache:v1:";
+type Saved<T> = { t: number; d: T };
+function readSaved<T>(id: string): Saved<T> | null {
+  try { const s = localStorage.getItem(CACHE + id); return s ? (JSON.parse(s) as Saved<T>) : null; } catch { return null; }
+}
+function writeSaved<T>(id: string, d: T) {
+  const v = JSON.stringify({ t: Date.now(), d });
+  try { localStorage.setItem(CACHE + id, v); } catch {
+    try { // storage full: drop the old copies and keep this one
+      Object.keys(localStorage).filter((k) => k.startsWith(CACHE)).forEach((k) => localStorage.removeItem(k));
+      localStorage.setItem(CACHE + id, v);
+    } catch { /* storage is blocked; the numbers still show for this visit */ }
+  }
+}
+let version = 0;
+let updatedAt = 0;
+const subs = new Set<() => void>();
+const sub = (f: () => void) => { subs.add(f); return () => { subs.delete(f); }; };
+const notify = () => subs.forEach((f) => f());
+/** Ask every visitor-data view on screen for fresh numbers (the Worker still protects the database from a flood of presses). */
+export function refreshPulse() { version++; notify(); }
+/** When the numbers on screen were fetched (the newest saved copy shown or fetched; 0 when nothing is saved yet). */
+export function usePulseUpdated(): number { return useSyncExternalStore(sub, () => updatedAt, () => 0); }
+const useVersion = () => useSyncExternalStore(sub, () => version, () => 0);
+
+/** Show the saved copy when the view opens; fetch (and save) only after Refresh is pressed while the view is open. */
+export function usePulse<T>(path: string, params: Params, opts: { key?: string; enabled?: boolean } = {}) {
+  const { key, enabled = true } = opts;
   const [data, setData] = useState<T | null>(null);
   const [err, setErr] = useState<"key" | "offline" | "server" | null>(null);
+  const ver = useVersion();
+  const mountVer = useRef(ver);
   const qs = useMemo(() => {
     const p = new URLSearchParams();
     Object.entries(params).forEach(([k, v]) => v !== undefined && v !== "" && p.set(k, String(v)));
@@ -103,25 +133,32 @@ export function usePulse<T>(path: string, params: Params, opts: { key?: string; 
 
   useEffect(() => {
     if (!enabled) { setData(null); return; }
+    const id = `${path}${qs ? `?${qs}` : ""}`;
+    if (ver === mountVer.current) { // opening or re-filtering: no request, show what was saved
+      const c = readSaved<T>(id);
+      setData(c ? c.d : null);
+      setErr(null);
+      if (c && c.t > updatedAt) { updatedAt = c.t; notify(); }
+      return;
+    }
     let dead = false;
-    let timer = 0;
-    const run = async () => {
-      if (!document.hidden) {
-        try {
-          const r = await fetch(`${PULSE_API}${path}${qs ? `?${qs}` : ""}`, { cache: "no-store", headers: key ? { Authorization: `Bearer ${key}` } : undefined });
-          if (dead) return;
-          if (r.status === 401) setErr("key");
-          else if (!r.ok) setErr("server");
-          else { setData((await r.json()) as T); setErr(null); }
-        } catch {
-          if (!dead) setErr("offline");
+    (async () => {
+      try {
+        const r = await fetch(`${PULSE_API}${path}?${qs}${qs ? "&" : ""}fresh=1`, { cache: "no-store", headers: key ? { Authorization: `Bearer ${key}` } : undefined });
+        if (dead) return;
+        if (r.status === 401) setErr("key");
+        else if (!r.ok) setErr("server");
+        else {
+          const d = (await r.json()) as T;
+          setData(d); setErr(null); writeSaved(id, d);
+          updatedAt = Date.now(); notify();
         }
+      } catch {
+        if (!dead) setErr("offline");
       }
-      if (!dead && poll) timer = window.setTimeout(run, poll);
-    };
-    run();
-    return () => { dead = true; window.clearTimeout(timer); };
-  }, [path, qs, key, poll, enabled]);
+    })();
+    return () => { dead = true; };
+  }, [path, qs, key, enabled, ver]);
 
   return { data, err };
 }

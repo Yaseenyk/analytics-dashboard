@@ -8,6 +8,7 @@ import { DEFAULT_RANGES, GROUPS, SITES, TABS, tabsOf } from "@/lib/config";
 import { useMeta, useStamp } from "@/lib/data";
 import { FiltersProvider, useFilters } from "@/lib/filters";
 import { GA_NEEDS, GSC_TABS } from "@/lib/sections";
+import PulseChip from "@/components/PulseChip";
 import SavedChips from "@/components/SavedChips";
 import Backdrop from "@/components/Backdrop";
 import { NotificationBell } from "@/views/Alerts";
@@ -16,6 +17,9 @@ import { HelpDot } from "./Term";
 import { PopBox, PopProvider } from "./Pop";
 
 const loadMotion = () => import("./motionFeatures").then((r) => r.default);
+
+/** Screens that show the tracker's own visitor numbers (they change only when the Refresh button is pressed). */
+const PULSE_TABS = new Set(["home", "watch", "live", "leads"]);
 
 export function Logo({ className = "h-9 w-9" }: { className?: string }) {
   const id = "lg" + useId().replace(/:/g, "");
@@ -152,6 +156,7 @@ function Header() {
       {tab.filters === "all" && <div className="mt-2 hidden truncate text-[12px] text-dim sm:block">{span}</div>}
       <Sections />
       {(GA_NEEDS[tab.id] || GSC_TABS.has(tab.id) || tab.id === "live") && <SavedChips tab={tab.id} />}
+      {PULSE_TABS.has(tab.id) && <PulseChip />}
       </div>
     </>
   );

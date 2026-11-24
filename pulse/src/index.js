@@ -11,21 +11,46 @@ import { TRACKER } from './tracker.js';
 // remembered briefly inside the Worker: one tab or ten, the database is asked once per window.
 // (Cache API is a no-op on workers.dev, so this is a plain per-isolate Map, one per database binding.)
 const MEMOS = new WeakMap();
-async function memo(env, key, ttlMs, fn) {
+async function memo(env, key, ttlMs, fn, fresh = false) {
   let m = MEMOS.get(env.DB);
   if (!m) MEMOS.set(env.DB, (m = new Map()));
   const now = Date.now();
   const hit = m.get(key);
-  if (hit && hit.exp > now) return hit.val;
+  // a Refresh press (fresh) replaces an answer older than 15 s; anything newer is served, so repeated presses cost one computation
+  if (hit && hit.exp > now && !(fresh && now - hit.at > 15000)) return hit.val;
   const val = await fn();
   if (m.size > 300) m.clear();
-  m.set(key, { exp: now + ttlMs, val });
+  m.set(key, { exp: now + ttlMs, val, at: now });
+  return val;
+}
+
+// The summary, insights and goals answers are also kept in the database for 4 hours (table rcache), so every Worker instance and every open tab shares one
+// computation. Insights alone runs about 19 queries over the whole period; without this, a few open dashboards used most of the free
+// 5M rows read a day. A cache problem never breaks a read: it just computes the answer again.
+const READY = new WeakSet();
+async function cacheTable(env) {
+  if (READY.has(env.DB)) return;
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS rcache (k TEXT PRIMARY KEY, v TEXT NOT NULL, t INTEGER NOT NULL)').run();
+  READY.add(env.DB);
+}
+async function stored(env, key, ttlMs, fn, fresh = false) {
+  const now = Date.now();
+  try {
+    await cacheTable(env);
+    const r = ((await env.DB.prepare('SELECT v, t FROM rcache WHERE k=?').bind(key).all()).results || [])[0];
+    if (r && now - r.t < (fresh ? 60000 : ttlMs)) return JSON.parse(r.v); // Refresh recomputes unless the saved answer is under a minute old
+  } catch (e) { console.error('cache read failed:', String((e && e.message) || e)); }
+  const val = await fn();
+  try {
+    await env.DB.prepare('INSERT INTO rcache (k,v,t) VALUES (?,?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v, t=excluded.t').bind(key, JSON.stringify(val), now).run();
+  } catch (e) { console.error('cache write failed:', String((e && e.message) || e)); }
   return val;
 }
 
 export default {
   async scheduled(event, env) {
     const cut = Date.now() - RETENTION_DAYS * 864e5;
+    await cacheTable(env); // the batch below also clears old cache rows, so the table must exist first
     // Bot visits are kept for one day (so the Watch page can still show them), then dropped, which keeps the table
     // small and the dashboard cheap to read. A visitor who ever showed a human sign is never touched.
     const botCut = Date.now() - 864e5;
@@ -34,6 +59,7 @@ export default {
       env.DB.prepare(`DELETE FROM clicks WHERE hid IN (${oldBots})`).bind(botCut),
       env.DB.prepare(`DELETE FROM hits WHERE id IN (${oldBots})`).bind(botCut),
       env.DB.prepare('DELETE FROM clicks WHERE ts<?').bind(cut),
+      env.DB.prepare('DELETE FROM rcache WHERE t<?').bind(Date.now() - 864e5),
       env.DB.prepare('DELETE FROM errs WHERE ts<?').bind(cut),
       // form messages are kept longer than visits: 24 months, spam 30 days
       env.DB.prepare('DELETE FROM leads WHERE ts<?').bind(Date.now() - LEAD_RETENTION_DAYS * 864e5),
@@ -99,6 +125,7 @@ export default {
       if (!authorised(req, env)) return json({ error: 'wrong key' }, ch, 401);
       try {
         MEMOS.delete(env.DB);
+        await env.DB.prepare('DELETE FROM rcache').run().catch(() => undefined); // a visit marked as mine changes every number
         return json(await markMine(env, await req.json()), ch);
       } catch (e) {
         console.error('mark failed:', String((e && e.message) || e));
@@ -108,17 +135,22 @@ export default {
 
     if (req.method === 'GET' && url.pathname.startsWith('/v/')) {
       const q = url.searchParams;
+      // ?fresh=1 comes from the dashboard's Refresh button; it is not part of the cache key
+      const fresh = q.get('fresh') === '1';
+      const kq = new URLSearchParams(q);
+      kq.delete('fresh');
+      const ks = kq.toString() ? '?' + kq.toString() : '';
       try {
-        if (url.pathname === '/v/summary') return json(await memo(env, url.search + '|summary', 60000, () => summary(env, q)), ch, 200, 'public, max-age=30');
-        if (url.pathname === '/v/insights') return json(await memo(env, url.search + '|insights', 60000, () => insights(env, q)), ch, 200, 'public, max-age=30');
-        if (url.pathname === '/v/goals') return json(await memo(env, url.search + '|goals', 60000, () => goals(env, q)), ch, 200, 'public, max-age=30');
-        if (url.pathname === '/v/live') return json(await memo(env, url.search + '|live', 8000, () => live(env, q)), ch);
+        if (url.pathname === '/v/summary') return json(await memo(env, ks + '|summary', 60000, () => stored(env, 'summary' + ks, 14400000, () => summary(env, q), fresh), fresh), ch, 200, 'public, max-age=30');
+        if (url.pathname === '/v/insights') return json(await memo(env, ks + '|insights', 60000, () => stored(env, 'insights' + ks, 14400000, () => insights(env, q), fresh), fresh), ch, 200, 'public, max-age=30');
+        if (url.pathname === '/v/goals') return json(await memo(env, ks + '|goals', 60000, () => stored(env, 'goals' + ks, 14400000, () => goals(env, q), fresh), fresh), ch, 200, 'public, max-age=30');
+        if (url.pathname === '/v/live') return json(await memo(env, ks + '|live', 8000, () => live(env, q), fresh), ch);
         if (['/v/feed', '/v/journey', '/v/clickmap'].includes(url.pathname)) {
           if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
           if (!authorised(req, env)) return json({ error: 'wrong key' }, ch, 401);
-          if (url.pathname === '/v/feed') return json(await memo(env, url.search + '|feed', 10000, () => feed(env, q)), ch);
-          if (url.pathname === '/v/journey') return json(await memo(env, url.search + '|journey', 30000, () => journey(env, q)), ch);
-          return json(await memo(env, url.search + '|clickmap', 30000, () => clickmap(env, q)), ch);
+          if (url.pathname === '/v/feed') return json(await memo(env, ks + '|feed', 10000, () => feed(env, q), fresh), ch);
+          if (url.pathname === '/v/journey') return json(await memo(env, ks + '|journey', 30000, () => journey(env, q), fresh), ch);
+          return json(await memo(env, ks + '|clickmap', 30000, () => clickmap(env, q), fresh), ch);
         }
       } catch (e) {
         console.error('read failed:', String((e && e.message) || e));

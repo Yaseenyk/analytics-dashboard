@@ -375,7 +375,7 @@ export async function insights(env, q) {
   const sa = site ? [site] : [];
   const real = PERSON; // people: everyone without bot evidence
   const notBot = `${STATUS}!='bot'`;
-  const realA = `(CASE WHEN a.wd=1 THEN 'bot' WHEN a.human=1 THEN 'real' WHEN a.bot=1 OR a.dc=1 THEN 'bot' ELSE 'unclear' END)!='bot'`;
+  const realFlow = `${STATUS}!='bot'`;
   // one row per person: their verdict, whether they tapped anything, how many visits and pages
   const person = (extra) => `SELECT ${extra}${PK} AS pk, ${AGG_STATUS} AS st, SUM(${HAS_WIN}) AS w, COUNT(DISTINCT sid) AS visits, COUNT(*) AS hits FROM hits`;
   const win = (lo, hi) => all(env, `SELECT COUNT(*) AS people, SUM(CASE WHEN st='real' THEN 1 ELSE 0 END) AS acted, SUM(CASE WHEN w>0 THEN 1 ELSE 0 END) AS wins, SUM(visits) AS visits, SUM(hits) AS pages FROM (${person('')} WHERE ts>=? AND ts<?${sq} GROUP BY pk) WHERE st!='bot'`, [lo, hi, ...sa]);
@@ -387,7 +387,8 @@ export async function insights(env, q) {
     all(env, `SELECT day, SUM(CASE WHEN w>0 THEN 1 ELSE 0 END) AS n FROM (${person(`${DAY} AS day, `)} WHERE ts>=?${sq} GROUP BY day, pk) WHERE st!='bot' GROUP BY day ORDER BY day`, [since, ...sa]),
     all(env, `SELECT ref_kind, ref_host, COUNT(*) AS visits, SUM(${HAS_WIN}) AS wins, ROUND(AVG(active),1) AS active FROM hits WHERE ts>=? AND ${real} AND ref_kind!='internal'${sq} GROUP BY ref_kind, ref_host ORDER BY visits DESC LIMIT 25`, [since, ...sa]),
     all(env, `SELECT site, path, COUNT(*) AS visits, SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM hits h2 WHERE h2.sid=hits.sid AND h2.ts<hits.ts) THEN 1 ELSE 0 END) AS entries, SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM hits h2 WHERE h2.sid=hits.sid AND h2.ts>hits.ts) THEN 1 ELSE 0 END) AS exits, SUM(${HAS_WIN}) AS wins, ROUND(AVG(scroll)) AS scroll, ROUND(AVG(active),1) AS active, ROUND(AVG(CASE WHEN lcp>0 THEN lcp END)) AS lcp FROM hits WHERE ts>=? AND ${real}${sq} GROUP BY site, path ORDER BY visits DESC LIMIT 40`, [since, ...sa]),
-    all(env, `SELECT a.site, a.path AS from_path, b.path AS to_path, COUNT(*) AS n FROM hits a JOIN hits b ON b.sid=a.sid AND b.ts>a.ts AND b.site=a.site AND b.path!=a.path WHERE a.ts>=? AND a.me=0 AND ${realA}${site ? ' AND a.site=?' : ''} AND NOT EXISTS (SELECT 1 FROM hits m WHERE m.sid=a.sid AND m.ts>a.ts AND m.ts<b.ts) GROUP BY a.site, a.path, b.path ORDER BY n DESC LIMIT 15`, [since, ...sa]),
+    // one pass over the period: each hit looks at the next hit of the same visit (LEAD), instead of joining the table to itself and re-checking every pair (that read about 32,000 rows to answer a question about 600)
+    all(env, `SELECT site, path AS from_path, np AS to_path, COUNT(*) AS n FROM (SELECT site, path, me, wd, human, bot, dc, LEAD(path) OVER w AS np, LEAD(site) OVER w AS ns FROM hits WHERE ts>=?${site ? ' AND site=?' : ''} WINDOW w AS (PARTITION BY sid ORDER BY ts, id)) WHERE me=0 AND ${realFlow} AND np IS NOT NULL AND np!=path AND ns=site GROUP BY site, path, np ORDER BY n DESC LIMIT 15`, [since, ...sa]),
     all(env, `SELECT COUNT(*) AS sessions, SUM(CASE WHEN p>1 THEN 1 ELSE 0 END) AS multi, SUM(CASE WHEN w>0 THEN 1 ELSE 0 END) AS won FROM (SELECT ${PK} AS pk, COUNT(*) AS p, SUM(${HAS_WIN}) AS w FROM hits WHERE ts>=? AND ${real}${sq} GROUP BY pk)`, [since, ...sa]),
     all(env, `SELECT CAST(strftime('%H', ts/1000+${IST}, 'unixepoch') AS INTEGER) AS hour, CAST(strftime('%w', ts/1000+${IST}, 'unixepoch') AS INTEGER) AS dow, COUNT(DISTINCT sid) AS n FROM hits WHERE ts>=? AND ${real}${sq} GROUP BY hour, dow`, [since, ...sa]),
     all(env, `SELECT site, path, ref_host, COUNT(*) AS n, MAX(ts) AS last FROM hits WHERE ts>=? AND st>=400 AND ${notBot}${sq} GROUP BY site, path, ref_host ORDER BY n DESC LIMIT 20`, [since, ...sa]),

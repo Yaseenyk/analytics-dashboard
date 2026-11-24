@@ -37,7 +37,7 @@ function usePulseVerdict() {
   const f = useFilters();
   const days = daysFor(f.range);
   const params = useMemo(() => ({ days, site: f.site === "all" ? undefined : f.site, who: "all" }), [days, f.site]);
-  const sum = usePulse<Summary>("/v/summary", params, { poll: 60000 }).data;
+  const sum = usePulse<Summary>("/v/summary", params).data;
   const by = (s: Status) => peopleOf(sum?.status, s);
   const total = by("real") + by("unclear") + by("bot");
   return { sum, total, real: by("real"), unclear: by("unclear"), bot: by("bot"), days };

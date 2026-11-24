@@ -110,7 +110,7 @@ function Feed({ keyStr, siteFilter, bots }: { keyStr: string; siteFilter: string
   const [open, setOpen] = useState("");
   const [bump, setBump] = useState(0); // asks for the list again straight after a visit is marked
   const params = useMemo(() => ({ limit: 60, site: siteFilter === "all" ? undefined : siteFilter, who: who === "all" ? undefined : who, r: bump || undefined }), [siteFilter, who, bump]);
-  const { data, err } = usePulse<FeedRow[]>("/v/feed", params, { key: keyStr, poll: 10000 });
+  const { data, err } = usePulse<FeedRow[]>("/v/feed", params, { key: keyStr });
   const rows = data && onlyAct ? data.filter((r) => (r.ndl ?? 0) + (r.nout ?? 0) > 0) : data;
   const chip = (on: boolean) => `min-h-10 shrink-0 rounded-full px-4 text-[13px] font-semibold ${on ? "bg-brand/15 text-brand" : "bg-white/[.05] text-mute"}`;
   const th = "whitespace-nowrap border-b border-line px-3 py-2 text-left text-[11.5px] font-medium text-dim";
@@ -294,11 +294,11 @@ export default function Watch() {
     try { on ? localStorage.setItem(ME_STORE, "1") : localStorage.removeItem(ME_STORE); } catch { /* storage can be blocked */ }
   };
   const params = useMemo(() => ({ days, site: f.site === "all" ? undefined : f.site }), [days, f.site]);
-  const { data: sum, err } = usePulse<Summary>("/v/summary", params, { poll: 60000 });
-  const { data: ins } = usePulse<Insights>("/v/insights", params, { poll: 60000 });
-  const { data: goals } = usePulse<Goals>("/v/goals", params, { poll: 60000 });
+  const { data: sum, err } = usePulse<Summary>("/v/summary", params);
+  const { data: ins } = usePulse<Insights>("/v/insights", params);
+  const { data: goals } = usePulse<Goals>("/v/goals", params);
   const liveParams = useMemo(() => ({ site: f.site === "all" ? undefined : f.site }), [f.site]);
-  const { data: live } = usePulse<Live>("/v/live", liveParams, { poll: 10000 });
+  const { data: live } = usePulse<Live>("/v/live", liveParams);
 
   // a link like /watch/?key=... unlocks this phone once, then the key is removed from the address bar
   useEffect(() => {

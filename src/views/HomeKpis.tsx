@@ -102,8 +102,8 @@ function WatchKpis() {
   const f = useFilters();
   const days = daysFor(f.range);
   const params = useMemo(() => ({ days, site: f.site === "all" ? undefined : f.site }), [days, f.site]);
-  const { data: sum } = usePulse<Summary>("/v/summary", params, { poll: 60000 });
-  const { data: ins } = usePulse<Insights>("/v/insights", params, { poll: 60000 });
+  const { data: sum } = usePulse<Summary>("/v/summary", params);
+  const { data: ins } = usePulse<Insights>("/v/insights", params);
   if (!sum) return <div className="card !p-4"><Sk w={120} h={12} /><Sk w={80} h={28} className="mt-3" /><Sk w="100%" h={10} className="mt-4" /></div>;
   const acted = peopleOf(sum.status, "real"), looked = peopleOf(sum.status, "unclear"), bot = peopleOf(sum.status, "bot");
   const people = acted + looked, all = Math.max(1, people + bot), c = ins?.compare;

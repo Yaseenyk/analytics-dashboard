@@ -108,3 +108,10 @@ CREATE TABLE IF NOT EXISTS leads (
 );
 CREATE INDEX IF NOT EXISTS leads_ts ON leads (ts);
 CREATE INDEX IF NOT EXISTS leads_site_ts ON leads (site, ts);
+
+-- Answers the dashboard asked for, kept for 5 minutes so open tabs share one computation (see src/index.js, stored()).
+CREATE TABLE IF NOT EXISTS rcache (
+  k TEXT PRIMARY KEY,
+  v TEXT NOT NULL,
+  t INTEGER NOT NULL
+);
