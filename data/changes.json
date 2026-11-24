@@ -470,6 +470,17 @@
       ],
       "detail": "Browser-source overlays (points table, top fraggers, team cards) fed live from the points-table tools in the same browser, OBS link carries settings after # only, setup guide. Behind NEXT_PUBLIC_OVERLAY_KIT, unset in production so the pages are not built or linked. Commit 679c62b.",
       "expect": "No visible change until switched on in February 2027."
+    },
+    {
+      "id": "2026-11-25-esports-page-speed",
+      "date": "2026-11-25",
+      "title": "Esports: page speed pass (Tag Manager and Clarity wait for first touch, one shared scroll-reveal observer, lazy honeycomb and animation code, no link prefetch in menu and footer, off-screen blocks skipped)",
+      "kind": "technical",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Real visitors on the home page averaged 4.0 s to main content (35 loads, 7 days). Changes: Google Tag Manager and Microsoft Clarity (about 230 KB, about 1.3 s of phone main-thread time) now load on the first scroll, tap or key press, or 4 s after load, and re-check the privacy rules (public pages only, Do Not Track, Global Privacy Control) at that moment; scroll reveals use one IntersectionObserver instead of one per block (no forced layouts, no per-block re-renders); the honeycomb canvas loads when the browser is idle; the framer-motion feature set is its own file; menu and footer links no longer prefetch other pages' code; below-the-fold home sections and the footer use content-visibility. Live Lighthouse (mobile, simulated slow phone, same method) before and after: score 44 to 85-87, total blocking time 3,070 ms to about 230 ms, largest paint 5.3 s to 3.1-3.4 s, page weight 632 KB to 345 KB. Footer test updated from 14 to 18 tiles (fixes the failing frontend CI).",
+      "expect": "Faster first interaction and lower bounce on phones. Google Analytics and Clarity no longer record visitors who leave within about 4 s without touching the page; the first-party Pulse tracker still does, so compare bounce in Pulse, not GA, across this date."
     }
   ]
 }
