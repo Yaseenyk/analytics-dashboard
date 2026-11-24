@@ -52,7 +52,8 @@ export function DataTable({ title, cols, rows, fmt = [], bar, sort, max = 10, no
   }
   const topVal = bar != null ? Math.max(1, ...shown.map((r) => +r[bar] || 0)) : 0;
   const vis = shown.slice(0, limit);
-  const showFilter = true;
+  // A filter box only helps when there is something to search through.
+  const showFilter = rows.length > 8;
   const showRows = rows.length > Math.min(max, 5);
   const wide = cols.length >= 6;
   const th = (i: number) => (col === i ? (dir > 0 ? "ascending" : "descending") : "none");

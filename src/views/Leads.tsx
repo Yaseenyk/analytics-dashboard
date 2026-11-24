@@ -7,7 +7,7 @@ import { classify, daily, dailyAll, group, label, n, rep, sum } from "@/lib/deri
 import { useFilters } from "@/lib/filters";
 import { Card, Kpi, Sk, SkCard, SkKpi } from "@/components/ui";
 import { GaArea, GaTable, WaitingGate, cols2, grid4, useGaMemo } from "./kit";
-import { FormInbox } from "./FormInbox";
+import { FormInbox, SectionHead } from "./FormInbox";
 import { EsportsCard } from "./EsportsCard";
 
 const DEFAULT_KEYS = ["whatsapp_click", "email_click", "phone_click", "generate_lead", "app_download", "template_download", "agreement_signed", "calculator_use"];
@@ -75,6 +75,7 @@ export default function Leads() {
     <>
     <FormInbox />
     <EsportsCard />
+    <SectionHead title="Clicks and leads from Google Analytics" sub="Taps on WhatsApp, email and phone, downloads and lead events, across all sites." />
     <WaitingGate>
       <EventKpis />
       <div className={cols2}>

@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { usePulse, useKey } from "@/lib/pulse";
 import { useFilters } from "@/lib/filters";
-import { Card, Kpi } from "@/components/ui";
+import { Card, Empty, Kpi } from "@/components/ui";
 import { DataTable } from "@/components/DataTable";
+import { cols2, grid4 } from "./kit";
+import { SectionHead } from "./FormInbox";
 
 interface EsportsFile {
   days: number;
@@ -16,67 +18,68 @@ interface EsportsFile {
   contacts: { id: string; created_at: string; name: string; email: string; message: string }[];
 }
 const DAYS: Record<string, number> = { "7d": 7, "28d": 28, "3m": 90, "6m": 182, "12m": 365, "16m": 486 };
+const note = (t: ReactNode) => <p className="mt-1 text-[12px] leading-snug text-dim">{t}</p>;
+const when = (d: Date) => d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
 
 /**
  * Esports Hub: sign-ups and what people send from inside the app, read from the app's own database. Same key as the
- * form inbox. Shows counts and feedback text only; no passwords, no sign-up email addresses.
+ * form inbox (which shows the unlock box). Counts and feedback text only; no passwords, no sign-up email addresses.
  */
 export function EsportsCard() {
   const f = useFilters();
   const [keyStr] = useKey();
   const params = useMemo(() => ({ days: DAYS[f.range] ?? 90 }), [f.range]);
   const { data, err } = usePulse<EsportsFile>("/v/esports", params, { key: keyStr, enabled: !!keyStr, poll: 120000 });
-  if (!keyStr || err === "key") return null; // the inbox above asks for the key
-  if (!data) return <Card title="Esports Hub sign-ups"><p className="sub mt-2">{err ? "Could not reach the esports numbers. It will retry." : "Loading…"}</p></Card>;
-  const u = data.users;
+  if (!keyStr || err === "key") return null;
+  const u = data?.users;
+  const items = [
+    ...(data?.feedback ?? []).map((x) => ({ id: x.id, at: new Date(x.created_at * 1000), tag: x.kind || "feedback", where: `${x.page_path}${x.signed_in ? " · signed in" : ""}`, text: x.message, contact: x.contact, email: "" })),
+    ...(data?.contacts ?? []).map((x) => ({ id: x.id, at: new Date(x.created_at), tag: "contact", where: x.name, text: x.message, contact: "", email: x.email })),
+  ].sort((a, b) => b.at.getTime() - a.at.getTime());
+
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Kpi id="es-signups" title="Esports sign-ups" value={u.total} note={`${data.inPeriod.n} in the last ${data.days} days`} />
-        <Kpi id="es-verified" title="Confirmed their email" value={u.verified} note={u.total ? `${Math.round((100 * u.verified) / u.total)}% of sign-ups` : undefined} />
-        <Kpi id="es-orgs" title="Organisations" value={data.counts.orgs} note={`${data.counts.teams} teams, ${data.counts.events} events`} />
-        <Kpi id="es-tourn" title="Tournaments" value={data.counts.tournaments} note={`${data.counts.registrations} registrations`} />
+      <SectionHead title="Esports Hub" sub="Sign-ups and feedback from inside the app, read from its own database." />
+      <div className={grid4}>
+        <Kpi id="es-signups" title="Sign-ups" value={u ? String(u.total) : "–"} note={note(data ? `${data.inPeriod.n} in the last ${data.days} days` : "loading")} />
+        <Kpi id="es-verified" title="Confirmed their email" value={u ? String(u.verified) : "–"} note={note(u && u.total ? `${Math.round((100 * u.verified) / u.total)}% of sign-ups` : "")} />
+        <Kpi id="es-orgs" title="Organisations" value={data ? String(data.counts.orgs) : "–"} note={note(data ? `${data.counts.teams} team${data.counts.teams === 1 ? "" : "s"} · ${data.counts.events} event${data.counts.events === 1 ? "" : "s"}` : "")} />
+        <Kpi id="es-tourn" title="Tournaments" value={data ? String(data.counts.tournaments) : "–"} note={note(data ? `${data.counts.registrations} registrations` : "")} />
       </div>
-      <DataTable
-        title="Esports sign-ups per day"
-        note={`New accounts on esports.streamerosai.com. Latest: ${u.last ? new Date(u.last).toLocaleString("en-IN") : "none yet"}. ${u.discord} linked Discord.`}
-        cols={["Day", "Sign-ups"]}
-        fmt={[0, "n"]}
-        bar={1}
-        max={14}
-        empty="No sign-ups in this period."
-        rows={[...data.daily].reverse().map((d) => [d.day, d.n])}
-      />
-      <Card title="Feedback sent from the esports app" note="The report button inside Esports Hub saves here, not to email. Newest first.">
-        {data.feedback.length || data.contacts.length ? (
-          <ul className="mt-2">
-            {data.feedback.map((x) => (
-              <li key={x.id} className="border-t border-white/10 py-3 text-[14px]">
-                <div className="flex flex-wrap items-baseline gap-x-3">
-                  <span className="text-[12px] font-semibold uppercase tracking-wide text-cyan">{x.kind}</span>
-                  <span className="text-[13px] text-mute">{x.page_path}{x.signed_in ? " · signed in" : ""}</span>
-                  <span className="ml-auto text-[12.5px] text-dim">{new Date(x.created_at * 1000).toLocaleString("en-IN")}</span>
-                </div>
-                <p className="mt-1 whitespace-pre-wrap text-ink">{x.message}</p>
-                <p className="mt-1 text-[12.5px] text-dim">{x.contact ? `Contact: ${x.contact}` : "No contact left, so it cannot be answered."}</p>
-              </li>
-            ))}
-            {data.contacts.map((x) => (
-              <li key={x.id} className="border-t border-white/10 py-3 text-[14px]">
-                <div className="flex flex-wrap items-baseline gap-x-3">
-                  <span className="text-[12px] font-semibold uppercase tracking-wide text-cyan">contact</span>
-                  <span className="text-[13px] text-mute">{x.name}</span>
-                  <span className="ml-auto text-[12.5px] text-dim">{x.created_at}</span>
-                </div>
-                <p className="mt-1 whitespace-pre-wrap text-ink">{x.message}</p>
-                {x.email && <p className="mt-1 text-[12.5px]"><a className="text-cyan underline" href={`mailto:${x.email}`}>{x.email}</a></p>}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="sub mt-2">No feedback in this period.</p>
-        )}
-      </Card>
+      <div className={cols2}>
+        <DataTable
+          title="Sign-ups per day"
+          note={u ? `Latest: ${u.last ? when(new Date(u.last)) : "none yet"}. ${u.discord} linked Discord.` : undefined}
+          cols={["Day", "Sign-ups"]}
+          fmt={[0, "n"]}
+          bar={1}
+          sort={0}
+          max={10}
+          empty={err ? "Could not reach the esports numbers. It will retry." : "No sign-ups in this period."}
+          rows={(data?.daily ?? []).map((d) => [d.day, d.n])}
+        />
+        <Card title="Feedback from the app" note="The report button inside Esports Hub saves here, never to email.">
+          {items.length ? (
+            <ul className="mt-2 divide-y divide-white/[.06]">
+              {items.map((x) => (
+                <li key={x.id} className="py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-brand/15 px-2 py-0.5 text-[11.5px] font-semibold uppercase tracking-wide text-brand">{x.tag}</span>
+                    <span className="truncate text-[12.5px] text-mute">{x.where}</span>
+                    <span className="ml-auto flex-none text-[12px] text-dim">{when(x.at)}</span>
+                  </div>
+                  <p className="mt-1.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink">{x.text}</p>
+                  <p className="mt-1 text-[12.5px] text-dim">
+                    {x.email ? <a className="text-brand underline" href={`mailto:${x.email}`}>{x.email}</a> : x.contact ? `Contact: ${x.contact}` : "No contact left, so it cannot be answered."}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <Empty msg={data ? "No feedback in this period." : "Loading…"} />
+          )}
+        </Card>
+      </div>
     </>
   );
 }
