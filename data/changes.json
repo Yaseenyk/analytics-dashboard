@@ -525,6 +525,17 @@
       ],
       "detail": "Sensitivity converter, team name generator, prize split and rulebook now send tool_complete; backend metrics list extended to 18 tools. Backend 986a7a8, frontend 43a9ec4. CI third-party check fixed for split flight-data URLs (d60610c).",
       "expect": "Tool usage for the new tools visible on the dashboard."
+    },
+    {
+      "id": "2026-11-25-esports-rooms-on",
+      "date": "2026-11-25",
+      "title": "Esports: room ID and password sender switched on",
+      "kind": "feature",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Owner set ROOM_CREDENTIALS_KEY on the production Worker; flag v3.rooms set true. Credentials encrypted, shown only to captains of confirmed teams from the reveal time, deleted 24h after start.",
+      "expect": "Organisers running custom-room matches stop pasting room IDs into WhatsApp groups."
     }
   ]
 }
