@@ -437,6 +437,17 @@
       ],
       "detail": "Search screen shows who links to each of the 13 sites from Bing's free link reports: linking domains, links, new and lost per week (daily snapshot at 03:11 UTC, quota-capped). First run: Bing reports 0 inbound links for every site. Commit eb2ef3b.",
       "expect": "A baseline to measure backlink building before the AdSense review."
+    },
+    {
+      "id": "2026-11-24-esports-cod-valorant-share",
+      "date": "2026-11-24",
+      "title": "Esports: COD Mobile and Valorant points tables, one-tap Share result with the site link",
+      "kind": "content",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "New /points-table/cod-mobile/ (placement + kills, example scale labelled as written for this page) and /points-table/valorant/ (league table: points, map difference, round difference, head-to-head). A Share result button under every points table, bracket, round robin, groups and Valorant result: phone share sheet or download, square or story, every image and message carries the tool page address. Commit d37012e.",
+      "expect": "More points-table searches (COD, Valorant) and shared result images bringing new organisers."
     }
   ]
 }
