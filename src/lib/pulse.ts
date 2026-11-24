@@ -184,3 +184,19 @@ export interface Goals {
   sources: { ref_kind: string; ref_host: string; people: number; n: number }[];
   recent: { site: string; path: string; g: GoalKey; label: string; href: string; ts: number }[];
 }
+
+/** /v/leads: every form sent on the sites (needs the key). */
+export type LeadStatus = "new" | "replied" | "won" | "lost" | "spam";
+export interface Lead {
+  id: string; ts: number; site: string; form: string; name: string; email: string; phone: string; message: string;
+  extra: Record<string, string>; path: string; landing: string; ref_host: string; ref_kind: string; utm_source: string; utm_campaign: string;
+  country: string; status: LeadStatus; note: string; updated: number;
+}
+export interface LeadsFile {
+  generatedAt: string; days: number; site: string; rows: Lead[];
+  bySite: { site: string; n: number; won: number }[];
+  byForm: { site: string; form: string; n: number }[];
+  bySource: { ref_kind: string; ref_host: string; n: number; won: number }[];
+  daily: { day: string; n: number }[];
+  byStatus: { status: LeadStatus; n: number }[];
+}

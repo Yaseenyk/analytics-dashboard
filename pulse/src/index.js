@@ -2,6 +2,7 @@
  * pulse Worker entry. A Worker module may export only its handler, so every helper lives in lib.js (and is tested there).
  * Routes are listed at the top of lib.js.
  */
+import { LEAD_RETENTION_DAYS, leadCors, listLeads, receiveLead, updateLead } from './leads.js';
 import { PK, RETENTION_DAYS, STATUS, authorised, clickmap, cors, feed, goals, ingest, insights, istDay, journey, json, live, markMine, meStep, summary } from './lib.js';
 import { TRACKER } from './tracker.js';
 
@@ -33,6 +34,9 @@ export default {
       env.DB.prepare(`DELETE FROM hits WHERE id IN (${oldBots})`).bind(botCut),
       env.DB.prepare('DELETE FROM clicks WHERE ts<?').bind(cut),
       env.DB.prepare('DELETE FROM errs WHERE ts<?').bind(cut),
+      // form messages are kept longer than visits: 24 months, spam 30 days
+      env.DB.prepare('DELETE FROM leads WHERE ts<?').bind(Date.now() - LEAD_RETENTION_DAYS * 864e5),
+      env.DB.prepare("DELETE FROM leads WHERE status='spam' AND updated<?").bind(Date.now() - 30 * 864e5),
       env.DB.prepare('DELETE FROM hits WHERE ts<?').bind(cut),
       // yesterday's salt goes, so yesterday's visitor codes can never be worked back to an address
       env.DB.prepare('DELETE FROM salts WHERE day<?').bind(istDay(Date.now())),
@@ -42,7 +46,33 @@ export default {
   async fetch(req, env) {
     const ch = cors(req);
     const url = new URL(req.url);
+    // Form inbox: public, but only from our own sites' pages.
+    if (url.pathname === '/lead') {
+      const lc = leadCors(req);
+      if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: lc.headers });
+      if (req.method !== 'POST') return new Response(null, { status: 405, headers: lc.headers });
+      if (!lc.headers['Access-Control-Allow-Origin']) return json({ ok: false, error: 'not one of our sites' }, lc.headers, 403);
+      try {
+        const r = await receiveLead(req, env, lc.host);
+        return json(r.body, lc.headers, r.status);
+      } catch (e) {
+        console.error('lead failed:', String((e && e.message) || e));
+        return json({ ok: false, error: 'could not save, please try again' }, lc.headers, 500);
+      }
+    }
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: ch });
+    if (url.pathname === '/v/leads' || url.pathname === '/v/leads/update') {
+      if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
+      if (!authorised(req, env)) return json({ error: 'wrong key' }, ch, 401);
+      try {
+        if (req.method === 'GET' && url.pathname === '/v/leads') return json(await listLeads(env, url.searchParams), ch);
+        if (req.method === 'POST' && url.pathname === '/v/leads/update') return json(await updateLead(env, await req.json()), ch);
+      } catch (e) {
+        console.error('leads read failed:', String((e && e.message) || e));
+        return json({ error: 'leads failed' }, ch, 500);
+      }
+      return new Response(null, { status: 405, headers: ch });
+    }
 
     if (url.pathname === '/p.js' && req.method === 'GET') {
       return new Response(TRACKER, { headers: { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600', 'Access-Control-Allow-Origin': '*' } });

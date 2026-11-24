@@ -24,6 +24,7 @@ function fakeD1() {
         bind(...a: unknown[]) { args = a; return st; },
         async all() { return { results: db.prepare(sql).all(...(args as never[])) }; },
         _run() { return db.prepare(sql).run(...(args as never[])); },
+        async run() { const r = db.prepare(sql).run(...(args as never[])); return { meta: { changes: Number(r.changes) } }; },
       };
       return st;
     },
@@ -533,5 +534,74 @@ describe("insights", () => {
     const r = await insights({ DB: fakeD1() }, qs({ site: "calc.streamerosai.com" }));
     expect(r.compare).toMatchObject({ real: 0, wins: 0 });
     expect(r.alerts).toEqual([]);
+  });
+});
+
+describe("form inbox", () => {
+  const KEY = "open-sesame";
+  const lead = (body: object, origin: string | null = "https://campus.streamerosai.com", ip = "10.9.9.9") => {
+    const headers: Record<string, string> = { "Content-Type": "application/json", "CF-Connecting-IP": ip };
+    if (origin) headers.Origin = origin;
+    const req = new Request("https://pulse.test/lead", { method: "POST", body: JSON.stringify(body), headers });
+    Object.defineProperty(req, "cf", { value: { country: "IN" } });
+    return req;
+  };
+  const get = (env: object, path: string, key?: string) =>
+    worker.fetch(new Request(`https://pulse.test${path}`, { headers: key ? { Authorization: `Bearer ${key}` } : {} }), env);
+
+  it("keeps a form from one of our sites, with the visit's source, and lists it only with the key", async () => {
+    const env = { DB: fakeD1(), PULSE_KEY: KEY };
+    // the visitor arrived from ChatGPT, then sent the enquiry form two pages later in the same tab
+    await ingest(post(msg({ s: "campus.streamerosai.com", i: "leadhit0001", u: "sesslead001", p: "/guides/bca/", r: "https://chatgpt.com/", hu: 1 }), { origin: "https://campus.streamerosai.com" }), env);
+    const r = await worker.fetch(lead({ site: "campus.streamerosai.com", form: "enquiry", name: "Asha", email: "Asha@Example.com", phone: "+91 98765 43210", message: "I need help with my MCA project", path: "/mentored/?x=1", sid: "sesslead001", extra: { degree: "MCA", tier: "Mentored" } }), env);
+    expect(r.status).toBe(200);
+    expect((await r.json()).ok).toBe(true);
+    expect(r.headers.get("Access-Control-Allow-Origin")).toBe("https://campus.streamerosai.com");
+
+    expect((await get(env, "/v/leads")).status).toBe(401);
+    const list = await (await get(env, "/v/leads", KEY)).json();
+    expect(list.rows).toHaveLength(1);
+    expect(list.rows[0]).toMatchObject({ site: "campus.streamerosai.com", form: "enquiry", name: "Asha", email: "asha@example.com", path: "/mentored/", landing: "/guides/bca/", ref_kind: "ai", ref_host: "chatgpt.com", country: "IN", status: "new" });
+    expect(list.rows[0].extra).toEqual({ degree: "MCA", tier: "Mentored" });
+    expect(list.bySite[0]).toMatchObject({ site: "campus.streamerosai.com", n: 1 });
+    expect(list.bySource[0]).toMatchObject({ ref_host: "chatgpt.com", n: 1 });
+  });
+
+  it("lets the owner mark a lead replied, won or spam, and leaves spam out of the breakdowns", async () => {
+    const env = { DB: fakeD1(), PULSE_KEY: KEY };
+    await worker.fetch(lead({ site: "campus.streamerosai.com", form: "enquiry", email: "a@b.co", message: "hi" }), env);
+    const id = (await (await get(env, "/v/leads", KEY)).json()).rows[0].id;
+    const upd = (body: object, key?: string) => worker.fetch(new Request("https://pulse.test/v/leads/update", { method: "POST", body: JSON.stringify(body), headers: key ? { Authorization: `Bearer ${key}` } : {} }), env);
+    expect((await upd({ id, status: "won" })).status).toBe(401);
+    expect(await (await upd({ id, status: "nonsense" }, KEY)).json()).toMatchObject({ ok: false });
+    expect(await (await upd({ id, status: "spam", note: "bot text" }, KEY)).json()).toMatchObject({ ok: true, changed: 1 });
+    const list = await (await get(env, "/v/leads", KEY)).json();
+    expect(list.rows[0]).toMatchObject({ status: "spam", note: "bot text" });
+    expect(list.bySite).toHaveLength(0);
+  });
+
+  it("refuses other websites, empty or broken forms, and floods; accepts a honeypot silently without saving", async () => {
+    const env = { DB: fakeD1(), PULSE_KEY: KEY };
+    let n = 0;
+    const one = (body: object, origin: string | null = "https://campus.streamerosai.com") => worker.fetch(lead(body, origin, `10.8.0.${++n}`), env);
+    expect((await one({ site: "campus.streamerosai.com", message: "x" }, "https://evil.example")).status).toBe(403);
+    expect((await one({ site: "campus.streamerosai.com", message: "x" }, null)).status).toBe(403);
+    // a site may only file forms for itself
+    expect((await one({ site: "solar.streamerosai.com", message: "x" })).status).toBe(400);
+    expect((await one({ site: "campus.streamerosai.com", name: "only a name" })).status).toBe(400);
+    expect((await one({ site: "campus.streamerosai.com", email: "not-an-email", message: "x" })).status).toBe(400);
+    expect((await one({ site: "campus.streamerosai.com", message: "x", website: "http://spam" })).status).toBe(200);
+    expect((await (await get(env, "/v/leads", KEY)).json()).rows).toHaveLength(0);
+    const codes: number[] = [];
+    for (let i = 0; i < 7; i++) codes.push((await worker.fetch(lead({ site: "campus.streamerosai.com", message: `m${i}` }, "https://campus.streamerosai.com", "10.7.7.7"), env)).status);
+    expect(codes.slice(0, 5).every((c) => c === 200)).toBe(true);
+    expect(codes[6]).toBe(429);
+  });
+
+  it("answers the browser's preflight for our sites only", async () => {
+    const env = { DB: fakeD1(), PULSE_KEY: KEY };
+    const pre = (origin: string) => worker.fetch(new Request("https://pulse.test/lead", { method: "OPTIONS", headers: { Origin: origin } }), env);
+    expect((await pre("https://yk.streamerosai.com")).headers.get("Access-Control-Allow-Origin")).toBe("https://yk.streamerosai.com");
+    expect((await pre("https://evil.example")).headers.get("Access-Control-Allow-Origin")).toBeNull();
   });
 });

@@ -7,6 +7,7 @@ import { classify, daily, dailyAll, group, label, n, rep, sum } from "@/lib/deri
 import { useFilters } from "@/lib/filters";
 import { Card, Kpi, Sk, SkCard, SkKpi } from "@/components/ui";
 import { GaArea, GaTable, WaitingGate, cols2, grid4, useGaMemo } from "./kit";
+import { FormInbox } from "./FormInbox";
 
 const DEFAULT_KEYS = ["whatsapp_click", "email_click", "phone_click", "generate_lead", "app_download", "template_download", "agreement_signed", "calculator_use"];
 
@@ -70,6 +71,8 @@ export default function Leads() {
   const [split, setSplit] = useState(false);
   const f = useFilters();
   return (
+    <>
+    <FormInbox />
     <WaitingGate>
       <EventKpis />
       <div className={cols2}>
@@ -127,5 +130,6 @@ export default function Leads() {
         <GaTable title="All events" cols={["Event", "Count", "People"]} bar={1} fmt={[0, "n", "n"]} build={(ga, site) => group(rep(ga, "events"), [1], site).map((g) => [g.k[0], g.m[0], g.m[1]])} />
       </div>
     </WaitingGate>
+    </>
   );
 }
