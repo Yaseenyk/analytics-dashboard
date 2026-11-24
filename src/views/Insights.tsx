@@ -54,14 +54,14 @@ function PulseVerdict() {
   const list = [...sites.entries()].sort((a, b) => b[1].real + b[1].unclear + b[1].bot - (a[1].real + a[1].unclear + a[1].bot));
   return (
     <div className="mb-6">
-      <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[28px] text-ink">{Math.round((100 * v.real) / v.total)}%</b> of {n(v.total)} visitors in the last {v.days} days were a real person, counted by our own tracker. {n(v.unclear)} did nothing a person would do and {n(v.bot)} were known bots.</p>
+      <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[28px] text-ink">{Math.round((100 * (v.real + v.unclear)) / v.total)}%</b> of {n(v.total)} visitors in the last {v.days} days were real people, counted by our own tracker: {n(v.real)} interacted and {n(v.unclear)} only looked or left quickly. {n(v.bot)} were known bots.</p>
       <p className="m-0 mt-2 text-[12.5px] leading-relaxed text-dim">{STATUS_LABEL.real}: {STATUS_HELP.real} Counting began on the day each site got the tracker, so this fills in over the next days.</p>
       <ul className="m-0 mt-3 list-none p-0">
         {list.map(([h, o]) => {
           const tt = o.real + o.unclear + o.bot;
           return (
             <li key={h} className="border-t border-white/[.06] py-3 first:border-t-0">
-              <div className="flex items-baseline justify-between gap-3"><span className="text-[15px] font-semibold">{SITES[h] ?? h}</span><span className="font-mono text-[13px] text-mute">{n(o.real)} real of {n(tt)}</span></div>
+              <div className="flex items-baseline justify-between gap-3"><span className="text-[15px] font-semibold">{SITES[h] ?? h}</span><span className="font-mono text-[13px] text-mute">{n(o.real + o.unclear)} real of {n(tt)}</span></div>
               <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-white/5" aria-hidden="true">
                 <i className="block h-full bg-good" style={{ width: `${(100 * o.real) / tt}%` }} /><i className="block h-full" style={{ width: `${(100 * o.unclear) / tt}%`, background: "var(--s3)" }} /><i className="block h-full bg-bad" style={{ width: `${(100 * o.bot) / tt}%` }} />
               </div>

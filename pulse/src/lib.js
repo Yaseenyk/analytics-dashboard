@@ -204,6 +204,10 @@ export async function ingest(req, env) {
     so a person is never called a bot only because of a word in the browser name or the network they are on.
     With no human action, a robot browser name or a hosting network is a bot; the rest is unclear. */
 export const STATUS = `(CASE WHEN wd=1 THEN 'bot' WHEN human=1 THEN 'real' WHEN bot=1 OR dc=1 THEN 'bot' ELSE 'unclear' END)`;
+/** A person: every visit without evidence of a bot. 'real' acted (tapped, scrolled, typed); 'unclear' is a person who did not
+    interact (left quickly or never touched the page). No interaction is not evidence of a bot, so both count as people
+    (owner's decision, 24 Nov 2026), and reports show how many of them interacted. */
+export const PERSON = `${STATUS}!='bot'`;
 /** Seconds a page was on screen. Rows from before 18 Nov 2026 have no count, so the gap between first and last message stands in. */
 const ON_SCREEN = `MAX(seen,(last-ts)/1000)`;
 /** Why a visit got its verdict: auto (automated browser), acted (human action), ua (says it is a robot), host (hosting network, no action),
@@ -228,7 +232,7 @@ const siteOf = (q) => (SITES.includes(q) ? q : '');
 export async function summary(env, q) {
   const days = num(q.get('days'), 28, 1, 90);
   const site = siteOf(q.get('site'));
-  const who = q.get('who') === 'all' ? '' : ` AND ${STATUS}='real'`;
+  const who = q.get('who') === 'all' ? '' : ` AND ${PERSON}`;
   const since = Date.now() - days * 864e5;
   const base = `FROM hits WHERE ts>=? AND me=0${site ? ' AND site=?' : ''}`;
   const a = site ? [since, site] : [since];
@@ -265,7 +269,7 @@ export async function live(env, q) {
   const [status, bySite, pages] = await Promise.all([
     all(env, `SELECT ${STATUS} AS status, COUNT(DISTINCT ${PK}) AS n ${base} GROUP BY status`, a),
     all(env, `SELECT site, ${STATUS} AS status, COUNT(DISTINCT ${PK}) AS n ${base} GROUP BY site, status`, a),
-    all(env, `SELECT site, path, COUNT(DISTINCT ${PK}) AS n ${base} AND ${STATUS}='real' GROUP BY site, path ORDER BY n DESC LIMIT 10`, a),
+    all(env, `SELECT site, path, COUNT(DISTINCT ${PK}) AS n ${base} AND ${PERSON} GROUP BY site, path ORDER BY n DESC LIMIT 10`, a),
   ]);
   return { generatedAt: new Date().toISOString(), windowSeconds: 40, status, bySite, pages };
 }
@@ -317,7 +321,7 @@ export async function clickmap(env, q) {
   if (!site || !path.startsWith('/')) return { visits: 0, clicks: [] };
   const since = Date.now() - num(q.get('days'), 28, 1, 90) * 864e5;
   const [v, clicks] = await Promise.all([
-    all(env, `SELECT COUNT(*) AS n FROM hits WHERE site=? AND path=? AND ts>=? AND me=0 AND ${STATUS}='real'`, [site, path, since]),
+    all(env, `SELECT COUNT(*) AS n FROM hits WHERE site=? AND path=? AND ts>=? AND me=0 AND ${PERSON}`, [site, path, since]),
     all(env, `SELECT kind, label, x, y, z FROM clicks WHERE site=? AND path=? AND ts>=? AND hid NOT IN (SELECT id FROM hits WHERE me=1) ORDER BY ts DESC LIMIT 600`, [site, path, since]),
   ]);
   return { visits: (v[0] && v[0].n) || 0, clicks };
@@ -369,18 +373,18 @@ export async function insights(env, q) {
   const prevSince = since - days * 864e5;
   const sq = ` AND me=0${site ? ' AND site=?' : ''}`; // the owner's own visits are out of every number
   const sa = site ? [site] : [];
-  const real = `${STATUS}='real'`;
+  const real = PERSON; // people: everyone without bot evidence
   const notBot = `${STATUS}!='bot'`;
-  const realA = `(CASE WHEN a.wd=1 THEN 'bot' WHEN a.human=1 THEN 'real' WHEN a.bot=1 OR a.dc=1 THEN 'bot' ELSE 'unclear' END)='real'`;
+  const realA = `(CASE WHEN a.wd=1 THEN 'bot' WHEN a.human=1 THEN 'real' WHEN a.bot=1 OR a.dc=1 THEN 'bot' ELSE 'unclear' END)!='bot'`;
   // one row per person: their verdict, whether they tapped anything, how many visits and pages
   const person = (extra) => `SELECT ${extra}${PK} AS pk, ${AGG_STATUS} AS st, SUM(${HAS_WIN}) AS w, COUNT(DISTINCT sid) AS visits, COUNT(*) AS hits FROM hits`;
-  const win = (lo, hi) => all(env, `SELECT COUNT(*) AS people, SUM(CASE WHEN w>0 THEN 1 ELSE 0 END) AS wins, SUM(visits) AS visits, SUM(hits) AS pages FROM (${person('')} WHERE ts>=? AND ts<?${sq} GROUP BY pk) WHERE st='real'`, [lo, hi, ...sa]);
+  const win = (lo, hi) => all(env, `SELECT COUNT(*) AS people, SUM(CASE WHEN st='real' THEN 1 ELSE 0 END) AS acted, SUM(CASE WHEN w>0 THEN 1 ELSE 0 END) AS wins, SUM(visits) AS visits, SUM(hits) AS pages FROM (${person('')} WHERE ts>=? AND ts<?${sq} GROUP BY pk) WHERE st!='bot'`, [lo, hi, ...sa]);
   const bots = (lo, hi) => all(env, `SELECT COUNT(DISTINCT ${PK}) AS n FROM hits WHERE ts>=? AND ts<? AND ${STATUS}='bot'${sq}`, [lo, hi, ...sa]);
   const pt = pacificOffset(now);
   const ptDay = `date(ts/1000${pt},'unixepoch')`;
   const [cur, prev, curBots, prevBots, actedDaily, sources, pages, flows, funnel, hours, broken, errors, speed, wins48, newSrc, botDay, botBase, fromGoogle, starts] = await Promise.all([
     win(since, now + 1), win(prevSince, since), bots(since, now + 1), bots(prevSince, since),
-    all(env, `SELECT day, SUM(CASE WHEN w>0 THEN 1 ELSE 0 END) AS n FROM (${person(`${DAY} AS day, `)} WHERE ts>=?${sq} GROUP BY day, pk) WHERE st='real' GROUP BY day ORDER BY day`, [since, ...sa]),
+    all(env, `SELECT day, SUM(CASE WHEN w>0 THEN 1 ELSE 0 END) AS n FROM (${person(`${DAY} AS day, `)} WHERE ts>=?${sq} GROUP BY day, pk) WHERE st!='bot' GROUP BY day ORDER BY day`, [since, ...sa]),
     all(env, `SELECT ref_kind, ref_host, COUNT(*) AS visits, SUM(${HAS_WIN}) AS wins, ROUND(AVG(active),1) AS active FROM hits WHERE ts>=? AND ${real} AND ref_kind!='internal'${sq} GROUP BY ref_kind, ref_host ORDER BY visits DESC LIMIT 25`, [since, ...sa]),
     all(env, `SELECT site, path, COUNT(*) AS visits, SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM hits h2 WHERE h2.sid=hits.sid AND h2.ts<hits.ts) THEN 1 ELSE 0 END) AS entries, SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM hits h2 WHERE h2.sid=hits.sid AND h2.ts>hits.ts) THEN 1 ELSE 0 END) AS exits, SUM(${HAS_WIN}) AS wins, ROUND(AVG(scroll)) AS scroll, ROUND(AVG(active),1) AS active, ROUND(AVG(CASE WHEN lcp>0 THEN lcp END)) AS lcp FROM hits WHERE ts>=? AND ${real}${sq} GROUP BY site, path ORDER BY visits DESC LIMIT 40`, [since, ...sa]),
     all(env, `SELECT a.site, a.path AS from_path, b.path AS to_path, COUNT(*) AS n FROM hits a JOIN hits b ON b.sid=a.sid AND b.ts>a.ts AND b.site=a.site AND b.path!=a.path WHERE a.ts>=? AND a.me=0 AND ${realA}${site ? ' AND a.site=?' : ''} AND NOT EXISTS (SELECT 1 FROM hits m WHERE m.sid=a.sid AND m.ts>a.ts AND m.ts<b.ts) GROUP BY a.site, a.path, b.path ORDER BY n DESC LIMIT 15`, [since, ...sa]),
@@ -394,7 +398,7 @@ export async function insights(env, q) {
     all(env, `SELECT COUNT(*) AS n FROM hits WHERE ts>=? AND ${STATUS}='bot'${sq}`, [now - 864e5, ...sa]),
     all(env, `SELECT COUNT(*) AS n FROM hits WHERE ts>=? AND ts<? AND ${STATUS}='bot'${sq}`, [now - 8 * 864e5, now - 864e5, ...sa]),
     // arrivals from Google per site and Pacific day, to hold against Search Console's clicks
-    all(env, `SELECT site, ${ptDay} AS day, SUM(CASE WHEN ${real} THEN 1 ELSE 0 END) AS real, SUM(CASE WHEN ${real} THEN 0 ELSE 1 END) AS idle FROM hits WHERE ts>=? AND ref_kind='search' AND ref_host LIKE '%google%' AND ${notBot}${sq} GROUP BY site, day ORDER BY day`, [since, ...sa]),
+    all(env, `SELECT site, ${ptDay} AS day, SUM(CASE WHEN ${STATUS}='real' THEN 1 ELSE 0 END) AS real, SUM(CASE WHEN ${STATUS}='real' THEN 0 ELSE 1 END) AS idle FROM hits WHERE ts>=? AND ref_kind='search' AND ref_host LIKE '%google%' AND ${notBot}${sq} GROUP BY site, day ORDER BY day`, [since, ...sa]),
     all(env, `SELECT site, MIN(${ptDay}) AS day FROM hits GROUP BY site`),
   ]);
   const cq = sq.replace('site', 'hits.site');
@@ -435,7 +439,7 @@ export async function insights(env, q) {
 
   return {
     generatedAt: new Date().toISOString(), days, site: site || 'all',
-    compare: { real: (cur[0] || {}).people || 0, wins: (cur[0] || {}).wins || 0, visits: (cur[0] || {}).visits || 0, pages: (cur[0] || {}).pages || 0, bots: (curBots[0] || {}).n || 0, prevReal: (prev[0] || {}).people || 0, prevWins: (prev[0] || {}).wins || 0, prevBots: (prevBots[0] || {}).n || 0 },
+    compare: { real: (cur[0] || {}).people || 0, acted: (cur[0] || {}).acted || 0, wins: (cur[0] || {}).wins || 0, visits: (cur[0] || {}).visits || 0, pages: (cur[0] || {}).pages || 0, bots: (curBots[0] || {}).n || 0, prevReal: (prev[0] || {}).people || 0, prevWins: (prev[0] || {}).wins || 0, prevBots: (prevBots[0] || {}).n || 0 },
     actedDaily, sources, pages, flows, funnel: funnel[0] || { sessions: 0, multi: 0, won: 0 }, hours, broken, errors, speed, alerts: alerts.slice(0, 20),
     health: { errorMsgs, translated: translatedRows, deadSpots, slowTaps, jumps, formsLeft, speedNet },
     // Search Console's day ends at midnight Pacific time; starts = the first day each site's tracker reported (a part day)
@@ -466,7 +470,7 @@ export async function goals(env, q) {
   const now = Date.now();
   const since = now - days * 864e5;
   const prevSince = since - days * 864e5;
-  const realH = `(CASE WHEN hits.wd=1 THEN 'bot' WHEN hits.human=1 THEN 'real' WHEN hits.bot=1 OR hits.dc=1 THEN 'bot' ELSE 'unclear' END)='real'`;
+  const realH = `(CASE WHEN hits.wd=1 THEN 'bot' WHEN hits.human=1 THEN 'real' WHEN hits.bot=1 OR hits.dc=1 THEN 'bot' ELSE 'unclear' END)!='bot'`;
   const pkH = `(CASE WHEN hits.vid!='' THEN hits.vid ELSE hits.sid END)`;
   const sq = site ? ' AND hits.site=?' : '';
   // every goal moment by a real person, the owner's own visits left out
@@ -478,7 +482,7 @@ export async function goals(env, q) {
     all(env, `SELECT g, COUNT(*) AS n, COUNT(DISTINCT pk) AS people FROM (${cur}) WHERE g IS NOT NULL GROUP BY g`, a),
     all(env, `SELECT g, COUNT(*) AS n, COUNT(DISTINCT pk) AS people FROM (${cur}) WHERE g IS NOT NULL GROUP BY g`, [prevSince, since, ...(site ? [site] : [])]),
     all(env, `SELECT site, g, COUNT(*) AS n FROM (${cur}) WHERE g IS NOT NULL GROUP BY site, g`, a),
-    all(env, `SELECT site, COUNT(DISTINCT ${PK}) AS n FROM hits WHERE ts>=? AND me=0 AND ${STATUS}='real'${site ? ' AND site=?' : ''} GROUP BY site`, [since, ...(site ? [site] : [])]),
+    all(env, `SELECT site, COUNT(DISTINCT ${PK}) AS n FROM hits WHERE ts>=? AND me=0 AND ${PERSON}${site ? ' AND site=?' : ''} GROUP BY site`, [since, ...(site ? [site] : [])]),
     all(env, `SELECT site, COUNT(DISTINCT pk) AS n FROM (${cur}) WHERE g IS NOT NULL GROUP BY site`, a),
     all(env, `SELECT date(ts/1000+${IST},'unixepoch') AS day, g, COUNT(*) AS n FROM (${cur}) WHERE g IS NOT NULL GROUP BY day, g ORDER BY day`, a),
     all(env, `SELECT site, path, g, COUNT(*) AS n FROM (${cur}) WHERE g IS NOT NULL GROUP BY site, path, g ORDER BY n DESC LIMIT 25`, a),

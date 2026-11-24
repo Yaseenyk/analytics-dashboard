@@ -28,11 +28,11 @@ const H = ({ children }: { children: React.ReactNode }) => <h3 className="m-0 mb
 
 /** Real people on the sites this moment, from our own tracker. */
 function PulsePart({ pulse, pn }: { pulse: Live; pn: (s: string) => number }) {
-  const real = pn("real");
-  const others = pn("unclear") + pn("bot");
+  const real = pn("real") + pn("unclear"); // people who did not interact are people too
+  const others = pn("bot");
   return (
     <div>
-      <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[28px] text-ink">{n(real)}</b> real {real === 1 ? "person is" : "people are"} on your sites right now. {others ? `${n(others)} more ${others === 1 ? "visit is" : "visits are"} bots or did nothing a person would do.` : "Nobody else is there."}</p>
+      <p className="m-0 text-[15px] leading-relaxed text-mute"><b className="text-[28px] text-ink">{n(real)}</b> real {real === 1 ? "person is" : "people are"} on your sites right now. {others ? `${n(others)} more ${others === 1 ? "visit is a bot" : "visits are bots"}.` : "No bots there."}</p>
       {pulse.pages.length > 0 && (
         <>
           <H>Pages real people are on</H>

@@ -240,11 +240,13 @@ describe("reads", () => {
     ]));
   });
 
-  it("lists referrers, pages and clicks for real visitors only by default", async () => {
+  it("lists referrers, pages and clicks for people (everyone but bots) by default", async () => {
     const env = await seeded();
     const j = await (await get(env, "/v/summary?days=7")).json();
     expect(j.who).toBe("real");
-    expect(j.kinds).toEqual([{ ref_kind: "search", n: 1 }]);
+    // the visitor who did not interact is a person too (owner's decision, 24 Nov 2026); bots stay out
+    expect(j.kinds).toEqual(expect.arrayContaining([{ ref_kind: "search", n: 1 }, { ref_kind: "direct", n: 1 }]));
+    expect(j.kinds).toHaveLength(2);
     expect(j.pages).toHaveLength(1);
     expect(j.clicks[0]).toMatchObject({ label: "SIP", href: "/sip-calculator/", n: 1 });
   });
@@ -292,7 +294,7 @@ describe("reads", () => {
     expect(jr.hits).toHaveLength(1);
     expect(jr.clicks[0]).toMatchObject({ label: "SIP", kind: "link" });
     const cm = await (await get(env, "/v/clickmap?site=calc.streamerosai.com&path=/emi-calculator/", "open-sesame")).json();
-    expect(cm.visits).toBe(1);
+    expect(cm.visits).toBe(2); // the person who interacted and the one who did not; bots left out
     expect(cm.clicks).toHaveLength(1);
   });
 

@@ -7,11 +7,12 @@ export const PULSE_API = "https://pulse.yaseenyk.workers.dev";
 const KEY_STORE = "pulse-key";
 
 export type Status = "real" | "unclear" | "bot";
-export const STATUS_LABEL: Record<Status, string> = { real: "Real people", unclear: "No interaction", bot: "Known bots" };
-export const STATUS_ONE: Record<Status, string> = { real: "Real", unclear: "No interaction", bot: "Bot" };
+// "unclear" is a real person who did not interact: no interaction is not evidence of a bot (owner's decision, 24 Nov 2026).
+export const STATUS_LABEL: Record<Status, string> = { real: "Real, interacted", unclear: "Real, no interaction", bot: "Known bots" };
+export const STATUS_ONE: Record<Status, string> = { real: "Real", unclear: "Real · no interaction", bot: "Bot" };
 export const STATUS_HELP: Record<Status, string> = {
   real: "A person scrolled, clicked, tapped or typed on the page.",
-  unclear: "The page loaded and nothing human happened: a very quick bounce, or a robot that does not move.",
+  unclear: "A visitor with no sign of being a bot who did not tap, scroll or type: they left quickly or only looked. Counted as a person.",
   bot: "A browser driven by software, or a robot name or server network with no human action on the page.",
 };
 

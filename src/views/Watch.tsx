@@ -98,7 +98,7 @@ type Who = Status | "people" | "all" | "me";
 const WHO: { id: Who; label: string }[] = [
   { id: "people", label: "People" },
   { id: "real", label: "Real people" },
-  { id: "unclear", label: "No interaction" },
+  { id: "unclear", label: "Real · no interaction" },
   { id: "bot", label: "Bots" },
   { id: "all", label: "Everyone" },
   { id: "me", label: "Mine" },
@@ -346,7 +346,7 @@ export default function Watch() {
       <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
         {sum ? (
           <>
-            {tile("Real people", n(counts.real), c ? vs(c.real, c.prevReal) : "no earlier data", COLOR.real, c ? tone(c.real, c.prevReal) : "")}
+            {tile("Real people", n(counts.real + counts.unclear), `${n(counts.real)} interacted`, COLOR.real, c ? tone(c.real, c.prevReal) : "")}
             {tile("Took action", n(c?.wins ?? 0), c ? vs(c.wins, c.prevWins) : "no earlier data", "var(--brand)", c ? tone(c.wins, c.prevWins) : "")}
             {tile("Online now", n(liveReal), "this minute", COLOR.real)}
             {tile("Bots", n(counts.bot), `${pct(counts.bot, total)}% of all visitors`, COLOR.bot)}
@@ -358,8 +358,7 @@ export default function Watch() {
         )}
       </div>
       <p className="sub !mt-0 px-1">
-        Our own tracker, not Google, for the last {days} days. <b className="font-medium text-mute">Real people</b> touched, scrolled or typed, and each person counts once a day however many pages they open{c?.visits ? ` (${n(counts.real)} ${counts.real === 1 ? "person" : "people"} made ${n(c.visits)} visit${c.visits === 1 ? "" : "s"} and opened ${n(c.pages ?? 0)} page${c.pages === 1 ? "" : "s"})` : ""}. <b className="font-medium text-mute">Took action</b> is real people who tapped something. <b className="font-medium text-mute">Bots</b> are robots that never touched the page
-        {sum ? `, and ${n(counts.unclear)} more ${counts.unclear === 1 ? "visitor" : "visitors"} did nothing${sum.idle && counts.unclear ? ` (${n(sum.idle.left)} left within 2 seconds, ${n(sum.idle.stayed)} stayed but never touched the page)` : ""}` : ""}. Arrows compare with the {days} days before.
+        Our own tracker, not Google, for the last {days} days. <b className="font-medium text-mute">Real people</b> are every visitor without evidence of a bot, and each person counts once a day however many pages they open{c?.visits ? ` (${n(counts.real + counts.unclear)} ${counts.real + counts.unclear === 1 ? "person" : "people"} made ${n(c.visits)} visit${c.visits === 1 ? "" : "s"} and opened ${n(c.pages ?? 0)} page${c.pages === 1 ? "" : "s"})` : ""}. {sum ? `${n(counts.real)} of them touched, scrolled or typed; ${n(counts.unclear)} did not${sum.idle && counts.unclear ? ` (${n(sum.idle.left)} left within 2 seconds, ${n(sum.idle.stayed)} stayed and only looked)` : ""}. ` : ""}<b className="font-medium text-mute">Took action</b> is people who tapped something that counts. <b className="font-medium text-mute">Bots</b> showed evidence: a browser driven by software, a robot name, or a server network with no human action. Arrows compare with the {days} days before.
         {sum && real ? ` A real visitor stays ${secs(real.active)} on a page and reads ${real.scroll ?? 0}% of it.` : ""}
         {sum?.mine?.visits ? ` Your own ${n(sum.mine.visits)} visit${sum.mine.visits === 1 ? " is" : "s are"} left out.` : ""} Days are in Indian time.
       </p>
