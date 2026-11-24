@@ -370,6 +370,40 @@
       ],
       "detail": "Forms post to the Pulse Worker's inbox (D1), shown on the dashboard Leads page with status, notes and source analysis; email is only a notice. Portfolio forms switched first; other sites being switched. Esports Hub sign-ups, confirmations, orgs and in-app feedback are read from the esports database. Gender, age and interests reports added to Audience (need Google signals on).",
       "expect": "No lost enquiries when email fails; lead quality by channel."
+    },
+    {
+      "id": "2026-11-24-forms-inbox-privacy",
+      "date": "2026-11-24",
+      "title": "All site forms save to the own inbox; privacy pages updated (inbox, Pulse data, Google signals)",
+      "kind": "content",
+      "hosts": [
+        "streamerosai.com",
+        "yk.streamerosai.com",
+        "campus.streamerosai.com",
+        "spotai.streamerosai.com",
+        "solar.streamerosai.com",
+        "exams.streamerosai.com",
+        "esports.streamerosai.com",
+        "fitrank.streamerosai.com",
+        "sable.streamerosai.com",
+        "tools.streamerosai.com",
+        "calc.streamerosai.com",
+        "images.streamerosai.com",
+        "math.streamerosai.com"
+      ],
+      "detail": "Forms switched to the Pulse form inbox (email only a notice): portfolio contact and solutions, root contact, pre-registration and profile (0ad608b), campus enquiry and agreement (346c3a7), solar second opinion (6036e80), fitrank (5eb6e80), sable early access and contact (02d67ae), spotai waitlist (ec70bb0). Privacy pages on all 13 sites now describe inbox storage (24 months, spam 30 days), the new Pulse technical data, and Google signals (switched on by the owner 24 Nov) with the My Ad Center opt-out. Solar's 12 translated privacy pages still carry the old wording (needs human translation). Campus privacy no longer claims template downloads send data.",
+      "expect": "No lost enquiries; privacy text matches what loads (AdSense readiness)."
+    },
+    {
+      "id": "2026-11-24-esports-pt-lighter",
+      "date": "2026-11-24",
+      "title": "Esports: points table built in the browser, 300 KB less JavaScript per page, Portuguese pages held back",
+      "kind": "tech",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Points-table tool is client-only (no lost first click on translated pages: 6 of 20 to 0 of 20 in simulation). The search index no longer ships with every page (start-up JS 488 KB to 153 KB on the points table). Brazilian Portuguese versions of the Free Fire points table and team-names guide at /pt-br/, noindex and out of the sitemap until a native reader approves (PT_BR_REVIEWED in src/lib/pt-br.ts). Commits 0c85935, 7aef15b.",
+      "expect": "Faster start on slow phones; Portuguese visitors can use the tool in their language once approved."
     }
   ]
 }
