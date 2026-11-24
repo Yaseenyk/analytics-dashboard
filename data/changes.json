@@ -547,6 +547,17 @@
       ],
       "detail": "The tracker database (site-pulse) was reading 4.8M of its 5M free rows a day because open dashboards polled it every 10 to 60 seconds and two flow queries joined the table to itself. Now: opening a screen makes no request and shows the copy saved in the browser; a new Refresh button for visitor numbers (home, watch, live, leads) fetches new numbers; the Worker keeps summary, insights and goals answers for 4 hours and the flow query is one pass. Analytics and Search Console are refreshed by the analytics Worker every 4 hours (00, 04, 08, 12, 16, 20 UTC, 7-day, 28-day and 3-month ranges); the Google Refresh button is gone.",
       "expect": "Tracker database reads fall to a small fraction of the free limit. Visitor numbers on screen are as old as the last Refresh press; Google numbers are at most about 4 hours old."
+    },
+    {
+      "id": "2026-11-25-esports-calendar-trust",
+      "date": "2026-11-25",
+      "title": "Esports: college esports calendar and proof-based organiser trust score (live, flags on)",
+      "kind": "feature",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "/calendar/ (list + month view, game/city filters, noindex and out of the sitemap below 5 upcoming events from verified organisations), /trust/ and /app/calendar/. Ratings only from players proven to have attended (checked-in pass or captain of a team with a verified result), one per player per event, 30-day window, score hidden below 5 ratings, organiser replies, staff moderation with audit. D1 migration 0080 (new tables only). Backend 05e58c6/3e2e05b, frontend ceebab2/911c97f/26dd769.",
+      "expect": "Verified organisations start listing college events; trust scores appear once events finish."
     }
   ]
 }
