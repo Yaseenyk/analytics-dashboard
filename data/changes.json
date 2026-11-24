@@ -492,6 +492,17 @@
       ],
       "detail": "Flags v3.rooms, v3.recaps, v3.screenshots, all off in production. Room ID/password encrypted (AES-GCM, Worker secret ROOM_CREDENTIALS_KEY, not yet set in production), shown only to captains of confirmed teams from the reveal time, audit log, purged 24h after start. Recap text from fixed templates using only entered results, picture via the share-card renderer. Screenshot results read with Tesseract on the device, every row must be confirmed before saving (server enforces). D1 migration 0070 (new tables only). Backend 0609839/b58021a, frontend 1390626/9fb7f90.",
       "expect": "No visible change until the owner switches the flags on (January 2027)."
+    },
+    {
+      "id": "2026-11-25-esports-new-tools-share-sizes",
+      "date": "2026-11-25",
+      "title": "Esports: sensitivity converter, team name/badge generator, slot and prize split, rulebook PDF, day-wise schedule; share pictures 4:5 and 9:16",
+      "kind": "content",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Four new indexable tool pages (/tools/sensitivity-converter/, /tools/team-name-generator/, /tools/prize-split/, /tools/rulebook/) and /tools/schedule/ upgraded with a day-by-day plan from a bracket. Converter cites community-measured yaw values with checked dates, no mobile conversion. Prize split is maths only, no currency. Share result now offers only 1080x1350 and 1080x1920 (square removed). Commits 794f154, 100056a, 090a6cb, faedd3c, 9f25bee, 2ee862e, f53e912.",
+      "expect": "Impressions for sensitivity converter, team name generator and rulebook searches within 2-4 weeks; more shared result pictures."
     }
   ]
 }
