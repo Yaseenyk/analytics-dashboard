@@ -13,6 +13,7 @@ import { AlertsCard, Broken, CrossCheck, Flow, Landing, PagesDeep, SourceQuality
 import { GoalsCard } from "./WatchGoals";
 import { Badge, CLICK_LABEL, COLOR, KIND_LABEL, ORDER, Rows, ago, offset, pct, say, secs, site, when } from "./watchkit";
 import { DataTable } from "@/components/DataTable";
+import { HealthCards } from "./WatchHealth";
 
 function Daily({ rows }: { rows: Summary["daily"] }) {
   const days = useMemo(() => {
@@ -374,6 +375,7 @@ export default function Watch() {
         <>
           <Daily rows={sum.daily} />
           {goals && <GoalsCard g={goals} all={all} />}
+          {ins && <HealthCards ins={ins} all={all} />}
           <DataTable
             title="Key moments: downloads, exits, contacts and goals"
             note="The biggest actions: a file downloaded, a link to another website, an email or phone tap, or a goal a page reported. Every other tap is in the list further down. Real people only."

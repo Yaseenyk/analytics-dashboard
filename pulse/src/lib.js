@@ -34,7 +34,7 @@ export const SITES = [
 ];
 export const RETENTION_DAYS = 90;
 const ID = /^[a-z0-9]{8,24}$/;
-const KINDS = new Set(['link', 'out', 'btn', 'tab', 'input', 'mail', 'tel', 'dl', 'goal', 'other']);
+const KINDS = new Set(['link', 'out', 'btn', 'tab', 'input', 'mail', 'tel', 'dl', 'goal', 'fab', 'other']);
 const DASH_ORIGIN = /^https:\/\/analytics\.streamerosai\.com$|^http:\/\/(localhost|127\.0\.0\.1):\d+$/;
 
 // ---- classification (pure, exported for tests) ----
@@ -111,15 +111,19 @@ export function clean(m) {
     site: m.s, id: m.i, sid: m.u, path: p, refHost, refPath, utmSource: us, utmMedium: um, utmCampaign: uc,
     w: int(m.w, 0, 2e4), h: int(m.h, 0, 2e4), lang: str(m.l, 12),
     human: m.hu ? 1 : 0, wd: m.wd ? 1 : 0, me: m.me ? 1 : 0, active: int(m.a, 0, 14400), seen: int(m.vs, 0, 14400), scroll: int(m.sc, 0, 100), nclicks: int(m.nc, 0, 1e6), err: int(m.er, 0, 20), st: int(m.st, 0, 999), lcp: int(m.lc, 0, 6e4), clicks,
+    tr: m.tr ? 1 : 0, tl: str(m.tl, 12), net: /^(slow-2g|2g|3g|4g)$/.test(String(m.nt || '')) ? String(m.nt) : '', inp: int(m.ip, 0, 6e4), cls: int(m.cl, 0, 1e5),
+    errs: (Array.isArray(m.em) ? m.em : []).slice(0, 3).map((x) => str(x, 160).replace(/https?:\/\/\S+/g, (u) => u.split(/[?#]/)[0])).filter(Boolean),
   };
 }
 
-const UPSERT = `INSERT INTO hits (id,sid,site,path,ts,last,ref_host,ref_path,ref_kind,utm_source,utm_medium,utm_campaign,country,device,browser,os,w,h,lang,org,asn,human,bot,dc,wd,scroll,active,clicks,st,lcp,err,vid,me,seen)
-VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,COALESCE((SELECT x.vid FROM hits x WHERE x.sid=? AND x.vid!='' ORDER BY x.ts LIMIT 1),?),?,?)
+const UPSERT = `INSERT INTO hits (id,sid,site,path,ts,last,ref_host,ref_path,ref_kind,utm_source,utm_medium,utm_campaign,country,device,browser,os,w,h,lang,org,asn,human,bot,dc,wd,scroll,active,clicks,st,lcp,err,vid,me,seen,tr,tl,net,inp,cls)
+VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,COALESCE((SELECT x.vid FROM hits x WHERE x.sid=? AND x.vid!='' ORDER BY x.ts LIMIT 1),?),?,?,?,?,?,?,?)
 ON CONFLICT(id) DO UPDATE SET last=excluded.last, human=MAX(hits.human,excluded.human), wd=MAX(hits.wd,excluded.wd),
   scroll=MAX(hits.scroll,excluded.scroll), active=MAX(hits.active,excluded.active), clicks=MAX(hits.clicks,excluded.clicks),
   st=MAX(hits.st,excluded.st), lcp=MAX(hits.lcp,excluded.lcp), err=MAX(hits.err,excluded.err),
-  me=MAX(hits.me,excluded.me), seen=MAX(hits.seen,excluded.seen)
+  me=MAX(hits.me,excluded.me), seen=MAX(hits.seen,excluded.seen), tr=MAX(hits.tr,excluded.tr),
+  tl=CASE WHEN excluded.tl!='' THEN excluded.tl ELSE hits.tl END, net=CASE WHEN excluded.net!='' THEN excluded.net ELSE hits.net END,
+  inp=MAX(hits.inp,excluded.inp), cls=MAX(hits.cls,excluded.cls)
 WHERE hits.site=excluded.site AND hits.sid=excluded.sid`;
 const CLICK = `INSERT OR IGNORE INTO clicks (hid,n,ts,site,path,kind,label,href,x,y,sec,z)
 SELECT ?,?,hits.ts+?,hits.site,hits.path,?,?,?,?,?,?,? FROM hits WHERE hits.id=?`;
@@ -182,10 +186,11 @@ export async function ingest(req, env) {
   const stmts = [
     env.DB.prepare(UPSERT).bind(c.id, c.sid, c.site, c.path, now, now, c.refHost || c.utmSource.toLowerCase(), c.refPath, kind, c.utmSource, c.utmMedium, c.utmCampaign,
       String(cf.country || '').slice(0, 2), ua.device, ua.browser, ua.os, c.w, c.h, c.lang, org, Number(cf.asn) || 0,
-      c.human, ua.bot ? 1 : 0, dc, c.wd, c.scroll, c.active, c.nclicks, c.st, c.lcp, c.err, c.sid, vid, c.me, c.seen),
+      c.human, ua.bot ? 1 : 0, dc, c.wd, c.scroll, c.active, c.nclicks, c.st, c.lcp, c.err, c.sid, vid, c.me, c.seen, c.tr, c.tl, c.net, c.inp, c.cls),
     // a marked device also claims what the same visitor did earlier today, before the mark reached this site
     ...(c.me ? [env.DB.prepare(`UPDATE hits SET me=1 WHERE me=0 AND (sid=? OR (vid!='' AND vid=?))`).bind(c.sid, vid)] : []),
     ...c.clicks.map((k) => env.DB.prepare(CLICK).bind(c.id, k.n, k.t, k.k, k.l, k.h, k.x, k.y, k.g, k.z, c.id)),
+    ...c.errs.map((m) => env.DB.prepare('INSERT INTO errs (hid,ts,site,path,msg,tr) VALUES (?,?,?,?,?,?)').bind(c.id, now, c.site, c.path, m, c.tr)),
   ];
   await env.DB.batch(stmts);
 }
@@ -235,7 +240,7 @@ export async function summary(env, q) {
     all(env, `SELECT country, COUNT(DISTINCT ${PK}) AS n ${base}${who} AND country!='' GROUP BY country ORDER BY n DESC LIMIT 12`, a),
     all(env, `SELECT device, browser, COUNT(DISTINCT ${PK}) AS n ${base}${who} GROUP BY device, browser ORDER BY n DESC LIMIT 12`, a),
     all(env, `SELECT day, status, COUNT(*) AS n FROM (SELECT ${DAY} AS day, ${PK} AS pk, ${AGG_STATUS} AS status ${base} GROUP BY day, pk) GROUP BY day, status ORDER BY day`, a),
-    all(env, `SELECT c.site, c.kind, c.label, c.href, COUNT(*) AS n, SUM(c.z) AS rage ${cbase} AND c.kind!='other' GROUP BY c.site, c.kind, c.label, c.href ORDER BY n DESC LIMIT 25`, a),
+    all(env, `SELECT c.site, c.kind, c.label, c.href, COUNT(*) AS n, SUM(c.z) AS rage ${cbase} AND c.kind NOT IN ('other','fab') GROUP BY c.site, c.kind, c.label, c.href ORDER BY n DESC LIMIT 25`, a),
     all(env, `SELECT SUM(CASE WHEN c.kind='other' THEN 1 ELSE 0 END) AS dead, SUM(c.z) AS rage, COUNT(*) AS total ${cbase}`, a),
     all(env, `SELECT c.site, c.path, c.kind, c.label, c.href, COUNT(*) AS n, MAX(c.ts) AS last ${cbase} AND c.kind IN ('dl','out','mail','tel','goal') GROUP BY c.site, c.path, c.kind, c.label, c.href ORDER BY last DESC LIMIT 40`, a),
     all(env, `SELECT org, ${WHY} AS why, COUNT(*) AS n, MAX(active) AS active, SUM(clicks) AS clicks ${base} AND ${STATUS}='bot' GROUP BY org, why ORDER BY n DESC LIMIT 12`, a),
@@ -344,7 +349,8 @@ export const json = (body, ch, status = 200, cache = 'no-store') =>
 // ---- insights: what people did, which sources and pages lead to it, what is broken ----
 
 /** Every action counts: any tap on a link, button, tab, form field, download, email, phone or goal. Taps on nothing do not. */
-export const WIN = `(c.kind!='other')`;
+/** A form started and left unsent ('fab') is a sign of trouble, not a win. */
+export const WIN = `(c.kind NOT IN ('other','fab'))`;
 /** The moments worth an alert on their own: a file, a contact, WhatsApp, or a goal a page named. */
 export const KEY_WIN = `(c.kind IN ('dl','mail','tel','goal') OR (c.kind='out' AND (c.href LIKE 'wa.me%' OR c.href LIKE '%whatsapp%')))`;
 const HAS_WIN = `EXISTS (SELECT 1 FROM clicks c WHERE c.hid=hits.id AND ${WIN})`;
@@ -385,6 +391,23 @@ export async function insights(env, q) {
     all(env, `SELECT site, ${ptDay} AS day, SUM(CASE WHEN ${real} THEN 1 ELSE 0 END) AS real, SUM(CASE WHEN ${real} THEN 0 ELSE 1 END) AS idle FROM hits WHERE ts>=? AND ref_kind='search' AND ref_host LIKE '%google%' AND ${notBot}${sq} GROUP BY site, day ORDER BY day`, [since, ...sa]),
     all(env, `SELECT site, MIN(${ptDay}) AS day FROM hits GROUP BY site`),
   ]);
+  const cq = sq.replace('site', 'hits.site');
+  const [errorMsgs, translatedRows, deadSpots, slowTaps, jumps, formsLeft, speedNet] = await Promise.all([
+    // the actual script error messages, and how many happened on a translated page
+    all(env, `SELECT site, path, msg, COUNT(*) AS n, SUM(tr) AS translated, MAX(ts) AS last FROM errs WHERE ts>=?${site ? ' AND site=?' : ''} GROUP BY site, path, msg ORDER BY n DESC LIMIT 20`, [since, ...sa]),
+    // visits read through the browser's translation, by target language, and how many of them hit a script error
+    all(env, `SELECT site, tl, COUNT(*) AS visits, SUM(CASE WHEN err>0 THEN 1 ELSE 0 END) AS errored FROM hits WHERE ts>=? AND tr=1 AND ${notBot}${sq} GROUP BY site, tl ORDER BY visits DESC LIMIT 15`, [since, ...sa]),
+    // taps on things that do nothing, by page and element, from real people
+    all(env, `SELECT hits.site, hits.path, c.label, c.sec, COUNT(*) AS n FROM clicks c JOIN hits ON hits.id=c.hid WHERE c.ts>=? AND c.kind='other' AND ${real}${cq} GROUP BY hits.site, hits.path, c.label, c.sec ORDER BY n DESC LIMIT 15`, [since, ...sa]),
+    // pages where a tap or key took 200 ms or more to show a response
+    all(env, `SELECT site, path, COUNT(*) AS n, MAX(inp) AS worst, ROUND(AVG(inp)) AS avg FROM hits WHERE ts>=? AND inp>=200 AND ${notBot}${sq} GROUP BY site, path ORDER BY worst DESC LIMIT 10`, [since, ...sa]),
+    // pages whose layout jumped (CLS 0.1 or more)
+    all(env, `SELECT site, path, COUNT(*) AS n, ROUND(AVG(cls)) AS cls FROM hits WHERE ts>=? AND cls>=100 AND ${notBot}${sq} GROUP BY site, path ORDER BY cls DESC LIMIT 10`, [since, ...sa]),
+    // forms people started and left without sending, next to how often each was sent
+    all(env, `SELECT hits.site, hits.path, c.label AS form, COUNT(*) AS left_unsent, (SELECT COUNT(*) FROM clicks g WHERE g.site=hits.site AND g.kind='goal' AND g.label='form:'||c.label AND g.ts>=?) AS sent FROM clicks c JOIN hits ON hits.id=c.hid WHERE c.ts>=? AND c.kind='fab' AND ${notBot}${cq} GROUP BY hits.site, hits.path, c.label ORDER BY left_unsent DESC LIMIT 10`, [since, since, ...sa]),
+    // load time by connection type, so a slow network is not mistaken for a slow page
+    all(env, `SELECT net, COUNT(*) AS n, ROUND(AVG(lcp)) AS lcp FROM hits WHERE ts>=? AND lcp>0 AND net!='' AND ${notBot}${sq} GROUP BY net ORDER BY n DESC`, [since, ...sa]),
+  ]);
 
   const alerts = [];
   wins48.forEach((w) => alerts.push({ id: `win-${w.ts}`, level: 'good', ts: w.ts, site: w.site, title: w.kind === 'dl' ? `A real person downloaded ${w.href || w.label}` : w.kind === 'mail' ? 'A real person tapped an email link' : w.kind === 'tel' ? 'A real person tapped a phone link' : w.kind === 'goal' ? `Goal reached: ${w.label}` : 'A real person tapped WhatsApp', detail: w.path }));
@@ -394,12 +417,14 @@ export async function insights(env, q) {
   if (today >= 20 && today > 3 * Math.max(baseDaily, 1)) alerts.push({ id: `bots-${istDay(now)}`, level: 'warn', ts: now, site: '', title: `Bot traffic is high today: ${today} visits (usual ${Math.round(baseDaily)} a day)`, detail: 'Not real people. Nothing to fix unless numbers elsewhere look wrong.' });
   broken.filter((b) => b.last >= now - 48 * 36e5).forEach((b) => alerts.push({ id: `404-${b.site}${b.path}`, level: 'bad', ts: b.last, site: b.site, title: `Someone reached a broken page (${b.path})`, detail: b.ref_host ? `They came from ${b.ref_host}` : 'Typed or bookmarked address' }));
   errors.filter((e) => e.last >= now - 48 * 36e5).forEach((e) => alerts.push({ id: `js-${e.site}${e.path}`, level: 'warn', ts: e.last, site: e.site, title: `A script error happened on ${e.path}`, detail: `${e.errors} error${e.errors === 1 ? '' : 's'} in ${e.visits} visit${e.visits === 1 ? '' : 's'}` }));
+  errorMsgs.filter((e) => e.last >= now - 48 * 36e5 && e.translated === e.n).slice(0, 3).forEach((e) => alerts.push({ id: `tr-${e.site}${e.path}`, level: 'warn', ts: e.last, site: e.site, title: `Script errors on a translated page: ${e.path}`, detail: `The visitor's browser was translating the page. ${e.msg}` }));
   alerts.sort((a, b) => b.ts - a.ts);
 
   return {
     generatedAt: new Date().toISOString(), days, site: site || 'all',
     compare: { real: (cur[0] || {}).people || 0, wins: (cur[0] || {}).wins || 0, visits: (cur[0] || {}).visits || 0, pages: (cur[0] || {}).pages || 0, bots: (curBots[0] || {}).n || 0, prevReal: (prev[0] || {}).people || 0, prevWins: (prev[0] || {}).wins || 0, prevBots: (prevBots[0] || {}).n || 0 },
     actedDaily, sources, pages, flows, funnel: funnel[0] || { sessions: 0, multi: 0, won: 0 }, hours, broken, errors, speed, alerts: alerts.slice(0, 20),
+    health: { errorMsgs, translated: translatedRows, deadSpots, slowTaps, jumps, formsLeft, speedNet },
     // Search Console's day ends at midnight Pacific time; starts = the first day each site's tracker reported (a part day)
     google: { rows: fromGoogle, starts },
   };

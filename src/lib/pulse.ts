@@ -158,6 +158,16 @@ export interface Insights {
   errors: { site: string; path: string; errors: number; visits: number; last: number }[];
   speed: { site: string; path: string; n: number; lcp: number }[];
   alerts: { id: string; level: "good" | "warn" | "bad"; ts: number; site: string; title: string; detail: string }[];
+  /** Where visitors struggle (added 24 Nov 2026; older visits have none of these). */
+  health?: {
+    errorMsgs: { site: string; path: string; msg: string; n: number; translated: number; last: number }[];
+    translated: { site: string; tl: string; visits: number; errored: number }[];
+    deadSpots: { site: string; path: string; label: string; sec: string; n: number }[];
+    slowTaps: { site: string; path: string; n: number; worst: number; avg: number }[];
+    jumps: { site: string; path: string; n: number; cls: number }[];
+    formsLeft: { site: string; path: string; form: string; left_unsent: number; sent: number }[];
+    speedNet: { net: string; n: number; lcp: number }[];
+  };
   /** Arrivals from Google per site and Pacific day (Search Console's day), and the first, partial day each site reported. */
   google?: { rows: { site: string; day: string; real: number; idle: number }[]; starts: { site: string; day: string }[] };
 }

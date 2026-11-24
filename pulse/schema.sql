@@ -33,7 +33,12 @@ CREATE TABLE IF NOT EXISTS hits (
   err         INTEGER NOT NULL DEFAULT 0,
   vid         TEXT NOT NULL DEFAULT '',
   me          INTEGER NOT NULL DEFAULT 0,
-  seen        INTEGER NOT NULL DEFAULT 0
+  seen        INTEGER NOT NULL DEFAULT 0,
+  tr          INTEGER NOT NULL DEFAULT 0,
+  tl          TEXT NOT NULL DEFAULT '',
+  net         TEXT NOT NULL DEFAULT '',
+  inp         INTEGER NOT NULL DEFAULT 0,
+  cls         INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS hits_ts ON hits (ts);
 CREATE INDEX IF NOT EXISTS hits_last ON hits (last);
@@ -65,3 +70,14 @@ CREATE TABLE IF NOT EXISTS clicks (
 );
 CREATE INDEX IF NOT EXISTS clicks_ts ON clicks (ts);
 CREATE INDEX IF NOT EXISTS clicks_page ON clicks (site, path, ts);
+
+-- Script errors with their message: up to three per page view. Code messages only, never anything a visitor typed.
+CREATE TABLE IF NOT EXISTS errs (
+  hid  TEXT NOT NULL,
+  ts   INTEGER NOT NULL,
+  site TEXT NOT NULL,
+  path TEXT NOT NULL,
+  msg  TEXT NOT NULL,
+  tr   INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS errs_ts ON errs (ts);

@@ -32,6 +32,7 @@ export default {
       env.DB.prepare(`DELETE FROM clicks WHERE hid IN (${oldBots})`).bind(botCut),
       env.DB.prepare(`DELETE FROM hits WHERE id IN (${oldBots})`).bind(botCut),
       env.DB.prepare('DELETE FROM clicks WHERE ts<?').bind(cut),
+      env.DB.prepare('DELETE FROM errs WHERE ts<?').bind(cut),
       env.DB.prepare('DELETE FROM hits WHERE ts<?').bind(cut),
       // yesterday's salt goes, so yesterday's visitor codes can never be worked back to an address
       env.DB.prepare('DELETE FROM salts WHERE day<?').bind(istDay(Date.now())),

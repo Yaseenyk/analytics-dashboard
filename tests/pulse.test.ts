@@ -430,7 +430,8 @@ describe("counting people, not page views", () => {
 describe("the browser script", () => {
   it("is valid JavaScript and small", () => {
     expect(() => new Function(TRACKER)).not.toThrow();
-    expect(TRACKER.length).toBeLessThan(11000);
+    // 13,500: room for the health measurements added 24 Nov 2026 (error messages, translation, taps, layout jumps, forms)
+    expect(TRACKER.length).toBeLessThan(13500);
     expect(TRACKER).toMatch(/addEventListener\('submit'/);
   });
 
@@ -455,7 +456,9 @@ describe("the browser script", () => {
   });
 
   it("holds the privacy rules in code: no cookies, no stored id, no typed text", () => {
-    expect(TRACKER).not.toMatch(/document\.cookie|\.value\b/);
+    // The one allowed .value: a layout-shift entry's size (a number the browser measures), named shift.value. Nothing else.
+    expect(TRACKER.match(/shift\.value/g)).toHaveLength(1);
+    expect(TRACKER.replace("shift.value", "")).not.toMatch(/document\.cookie|\.value\b/);
     // the only thing ever kept in the browser beyond the tab is the owner's yes/no "this is my device" flag
     const stored = [...TRACKER.matchAll(/localStorage\.(\w+)\('([^']+)'/g)].map((m) => m[2]);
     expect(stored.length).toBeGreaterThan(0);
@@ -505,6 +508,25 @@ describe("insights", () => {
     expect(titles).toMatch(/downloaded guide\.pdf/);
     expect(titles).toMatch(/Goal reached: calc_done/);
     expect(titles).toMatch(/broken page \(\/gone\/\)/);
+  });
+
+  it("reports health details: error messages, translated visits, dead taps, slow taps, layout jumps, forms left unsent", async () => {
+    const env = await seed();
+    // a Brazilian visitor reading through Google Translate hits two script errors and taps on plain text
+    await ingest(post(msg({ i: "hit0000005a", u: "sesseeeeeee", p: "/points/", hu: 1, a: 60, er: 2, tr: 1, tl: "pt", nt: "3g", ip: 640, cl: 250,
+      em: ["Failed to execute 'removeChild' on 'Node' @app.js:12", "Failed to execute 'removeChild' on 'Node' @app.js:12"],
+      c: [{ n: 1, t: 500, k: "other", l: "span", h: "", x: 40, y: 300, g: "main#table", z: 0 }, { n: 2, t: 900, k: "fab", l: "signup", h: "", x: 0, y: 0, g: "", z: 0 }] })), env);
+    const r = await insights(env, qs());
+    expect(r.health.errorMsgs[0]).toMatchObject({ path: "/points/", n: 2, translated: 2 });
+    expect(r.health.errorMsgs[0].msg).toMatch(/removeChild/);
+    expect(r.health.translated[0]).toMatchObject({ tl: "pt", visits: 1, errored: 1 });
+    expect(r.health.deadSpots[0]).toMatchObject({ path: "/points/", label: "span", sec: "main#table", n: 1 });
+    expect(r.health.slowTaps[0]).toMatchObject({ path: "/points/", worst: 640 });
+    expect(r.health.jumps[0]).toMatchObject({ path: "/points/", cls: 250 });
+    expect(r.health.formsLeft[0]).toMatchObject({ form: "signup", left_unsent: 1, sent: 0 });
+    expect(r.alerts.map((a: { title: string }) => a.title).join(" | ")).toMatch(/translated page: \/points\//);
+    // a form left unsent is not a win
+    expect(r.compare.wins).toBe(1);
   });
 
   it("filters by site and never throws on an empty database", async () => {

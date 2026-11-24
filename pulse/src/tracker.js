@@ -8,7 +8,10 @@
  * What it sends, and what it never sends:
  *  - Sends: the page path (no query string), where the visitor came from, three utm values, screen size, language,
  *    scroll depth, seconds on screen, seconds of real activity, whether a real person acted (human), and for each
- *    click the kind of thing clicked, its label, its position and the page section.
+ *    click the kind of thing clicked, its label, its position and the page section. Also technical health: up to three
+ *    script error messages per page (the message, script file name and line), whether the browser translated the page
+ *    (and into which language), the connection type (4g, 3g...), load time only when the tab was visible, the slowest
+ *    response to a tap, layout jumps, and the name of a form that was started but not sent (never what was in it).
  *  - Goals: a WhatsApp, email, phone, download, app-store, product-site or GitHub tap is read from the click kinds; a form
  *    sent adds a goal named after the form (never its fields); a page can name its own with data-pulse-goal or pulse('name').
  *  - Never: input or textarea values, anything typed, cookies, a stored id (the tab id lives in sessionStorage and
@@ -48,10 +51,19 @@ export const TRACKER = String.raw`(function () {
   try { sid = sessionStorage.getItem('_ps'); if (!sid) { sid = rid(); sessionStorage.setItem('_ps', sid); } } catch (e) { sid = rid(); }
 
   var firstId = '', h = null, dirty = false, lastAct = 0, moves = 0, lastClicks = [], seq = 0, first = true, lcpMs = 0, nav = 0;
+  // Load time counts only while the tab is visible: a page opened in a background tab would otherwise report the wait.
+  var hid0 = d.visibilityState === 'hidden' ? 0 : 1e12, clsV = 0, forms = {};
   try { var nv = performance.getEntriesByType('navigation')[0]; nav = (nv && nv.responseStatus) || 0; } catch (e) {}
   try {
-    new PerformanceObserver(function (l) { var e = l.getEntries(); if (e.length) lcpMs = Math.round(e[e.length - 1].startTime); }).observe({ type: 'largest-contentful-paint', buffered: true });
+    new PerformanceObserver(function (l) { var e = l.getEntries(), x = e[e.length - 1]; if (x && x.startTime < hid0) lcpMs = Math.round(x.startTime); }).observe({ type: 'largest-contentful-paint', buffered: true });
   } catch (e) {}
+  try {
+    new PerformanceObserver(function (l) { l.getEntries().forEach(function (shift) { if (!shift.hadRecentInput) clsV += shift.value; }); }).observe({ type: 'layout-shift', buffered: true });
+  } catch (e) {}
+  try {
+    new PerformanceObserver(function (l) { l.getEntries().forEach(function (x) { if (h && x.interactionId && x.duration > h.ip) { h.ip = Math.round(x.duration); dirty = true; } }); }).observe({ type: 'event', durationThreshold: 40, buffered: true });
+  } catch (e) {}
+  function translated() { return /translated-(ltr|rtl)/.test(d.documentElement.className || '') ? 1 : 0; }
   function tabHuman() { try { return !n.webdriver && sessionStorage.getItem('_ph') === '1'; } catch (e) { return false; } }
 
   function utm() {
@@ -63,7 +75,7 @@ export const TRACKER = String.raw`(function () {
   function start(path, ref) {
     h = null;
     for (var i = 0; i < exclude.length; i++) if (path.indexOf(exclude[i]) === 0) return;
-    h = { i: rid(), p: path.slice(0, 120), t0: Date.now(), r: (ref || '').slice(0, 200), m: utm(), hu: tabHuman() ? 1 : 0, a: 0, v: 0, sc: 0, nc: 0, er: 0, st: first ? nav : 0, q: [] };
+    h = { i: rid(), p: path.slice(0, 120), t0: Date.now(), r: (ref || '').slice(0, 200), m: utm(), hu: tabHuman() ? 1 : 0, a: 0, v: 0, sc: 0, nc: 0, er: 0, st: first ? nav : 0, q: [], em: [], ip: 0 };
     first = false;
     moves = 0; lastClicks = []; seq = 0; dirty = true;
     setTimeout(function () { if (h && h.i === cur) send(); }, 2000);
@@ -75,8 +87,12 @@ export const TRACKER = String.raw`(function () {
     var o = {
       v: 1, s: site, i: h.i, u: sid, p: h.p, r: h.r, m: h.m,
       w: w.innerWidth || 0, h: w.innerHeight || 0, l: (n.language || '').slice(0, 12),
-      hu: h.hu, a: h.a, vs: h.v, sc: h.sc, nc: h.nc, er: h.er, st: h.st, lc: h.i === firstId ? lcpMs : 0, c: h.q.splice(0, 30)
+      hu: h.hu, a: h.a, vs: h.v, sc: h.sc, nc: h.nc, er: h.er, st: h.st, lc: h.i === firstId ? lcpMs : 0, c: h.q.splice(0, 30),
+      ip: h.ip, cl: h.i === firstId ? Math.round(clsV * 1000) : 0, em: h.em.splice(0, 3)
     };
+    var cn = n.connection;
+    if (cn && cn.effectiveType) o.nt = String(cn.effectiveType).slice(0, 8);
+    if (translated()) { o.tr = 1; o.tl = (d.documentElement.lang || '').slice(0, 12); }
     if (n.webdriver) o.wd = 1;
     if (mine) o.me = 1;
     return JSON.stringify(o);
@@ -201,30 +217,47 @@ export const TRACKER = String.raw`(function () {
     dirty = true; send();
   }
   w.pulse = function (name) { goal(name); };
+  function formName(f) {
+    var a = (f.getAttribute('action') || '').split(/[?#]/)[0].split('/').filter(Boolean).pop();
+    return f.getAttribute('data-pulse-form') || f.getAttribute('name') || f.id || a || 'form';
+  }
   d.addEventListener('submit', function (e) {
-    var f = e.target, a;
+    var f = e.target;
     if (!e.isTrusted || !f || !f.getAttribute) return;
-    a = (f.getAttribute('action') || '').split(/[?#]/)[0].split('/').filter(Boolean).pop();
-    goal('form:' + (f.getAttribute('data-pulse-form') || f.getAttribute('name') || f.id || a || 'form'));
+    forms[formName(f)] = 2;
+    goal('form:' + formName(f));
   }, true);
+  // A form someone started typing in: its name only. Reported when they leave the page without sending it.
+  d.addEventListener('focusin', function (e) {
+    var t = e.target, f = t && t.closest && t.closest('form');
+    if (h && e.isTrusted && f && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && !forms[formName(f)]) forms[formName(f)] = 1;
+  }, true);
+  function abandoned() {
+    for (var k in forms) if (forms[k] === 1 && h && h.q.length < 30) { forms[k] = 3; h.q.push({ n: ++seq, t: Date.now() - h.t0, k: 'fab', l: k.slice(0, 40), h: '', x: 0, y: 0, g: '', z: 0 }); dirty = true; }
+  }
   d.addEventListener('click', function (e) {
     if (!e.isTrusted || !e.target || !e.target.closest) return;
     var g = e.target.closest('[data-pulse-goal]');
     if (g) goal(g.getAttribute('data-pulse-goal'));
   }, true);
-  w.addEventListener('error', function () { if (h && h.er < 20) { h.er++; dirty = true; } });
-  w.addEventListener('unhandledrejection', function () { if (h && h.er < 20) { h.er++; dirty = true; } });
+  function oops(m, f, ln) {
+    if (!h || h.er >= 20) return;
+    h.er++; dirty = true;
+    if (h.er <= 3) h.em.push((String(m || 'error').slice(0, 110) + ' @' + String(f || '').split(/[?#]/)[0].split('/').pop().slice(0, 40) + ':' + (ln || 0)).slice(0, 160));
+  }
+  w.addEventListener('error', function (e) { oops(e.message, e.filename, e.lineno); });
+  w.addEventListener('unhandledrejection', function (e) { var r = e.reason; oops('promise: ' + ((r && r.message) || r), '', 0); });
   d.addEventListener('click', onClick, true);
 
   function flush() { if (h && (dirty || h.q.length)) send(); }
-  d.addEventListener('visibilitychange', function () { if (d.visibilityState === 'hidden') flush(); });
-  w.addEventListener('pagehide', flush);
+  d.addEventListener('visibilitychange', function () { if (d.visibilityState === 'hidden') { if (hid0 === 1e12) hid0 = performance.now(); flush(); } });
+  w.addEventListener('pagehide', function () { abandoned(); flush(); });
 
   var prevPath = location.pathname;
   function route() {
     var p = location.pathname;
     if (p === prevPath) return;
-    flush();
+    abandoned(); flush(); forms = {};
     var from = location.origin + prevPath;
     prevPath = p;
     start(p, from);
