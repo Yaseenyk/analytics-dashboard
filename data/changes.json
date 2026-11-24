@@ -448,6 +448,28 @@
       ],
       "detail": "New /points-table/cod-mobile/ (placement + kills, example scale labelled as written for this page) and /points-table/valorant/ (league table: points, map difference, round difference, head-to-head). A Share result button under every points table, bracket, round robin, groups and Valorant result: phone share sheet or download, square or story, every image and message carries the tool page address. Commit d37012e.",
       "expect": "More points-table searches (COD, Valorant) and shared result images bringing new organisers."
+    },
+    {
+      "id": "2026-11-24-esports-v3-profiles-scrims-directory",
+      "date": "2026-11-24",
+      "title": "Esports: player profiles, team pages, scrim finder and manager, tournament directory (built, flags OFF)",
+      "kind": "feature",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Behind new flags v3.profiles, v3.scrims, v3.directory, all off in production (endpoints answer 404). Profiles and certificates only from verified results, private by default, 18+ and consent for public. Scrim board with slots, waitlist backfill (30-minute accept window) and recurring daily scrims. /tournaments/ stays noindex below 5 upcoming public tournaments. D1 migrations 0056-0057 (new tables only). Backend 7d5586a, frontend cbf154f.",
+      "expect": "No visible change until the owner switches a flag on (Jan-Mar 2027)."
+    },
+    {
+      "id": "2026-11-24-esports-obs-overlay-kit",
+      "date": "2026-11-24",
+      "title": "Esports: live OBS overlay kit with streamerOS 'coming February 2027' card (built, flag OFF)",
+      "kind": "feature",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Browser-source overlays (points table, top fraggers, team cards) fed live from the points-table tools in the same browser, OBS link carries settings after # only, setup guide. Behind NEXT_PUBLIC_OVERLAY_KIT, unset in production so the pages are not built or linked. Commit 679c62b.",
+      "expect": "No visible change until switched on in February 2027."
     }
   ]
 }
