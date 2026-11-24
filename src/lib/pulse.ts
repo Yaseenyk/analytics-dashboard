@@ -160,7 +160,8 @@ export interface Insights {
   alerts: { id: string; level: "good" | "warn" | "bad"; ts: number; site: string; title: string; detail: string }[];
   /** Where visitors struggle (added 24 Nov 2026; older visits have none of these). */
   health?: {
-    errorMsgs: { site: string; path: string; msg: string; n: number; translated: number; last: number }[];
+    /** hydration: a React recoverable hydration error; noise: it only happened on translated pages (React rebuilt the page). */
+    errorMsgs: { site: string; path: string; msg: string; n: number; translated: number; last: number; hydration?: number; noise?: number }[];
     translated: { site: string; tl: string; visits: number; errored: number }[];
     deadSpots: { site: string; path: string; label: string; sec: string; n: number }[];
     slowTaps: { site: string; path: string; n: number; worst: number; avg: number }[];

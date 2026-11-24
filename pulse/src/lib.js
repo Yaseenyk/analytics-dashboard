@@ -355,6 +355,9 @@ export const WIN = `(c.kind NOT IN ('other','fab'))`;
 export const KEY_WIN = `(c.kind IN ('dl','mail','tel','goal') OR (c.kind='out' AND (c.href LIKE 'wa.me%' OR c.href LIKE '%whatsapp%')))`;
 const HAS_WIN = `EXISTS (SELECT 1 FROM clicks c WHERE c.hid=hits.id AND ${WIN})`;
 
+/** A React recoverable hydration error, as the minified message names it. */
+export const HYDRATION = `(msg LIKE '%React error #418%' OR msg LIKE '%React error #423%' OR msg LIKE '%React error #425%' OR msg LIKE '%Hydration failed%' OR msg LIKE '%did not match%')`;
+
 export async function insights(env, q) {
   const days = num(q.get('days'), 28, 1, 90);
   const site = siteOf(q.get('site'));
@@ -392,9 +395,11 @@ export async function insights(env, q) {
     all(env, `SELECT site, MIN(${ptDay}) AS day FROM hits GROUP BY site`),
   ]);
   const cq = sq.replace('site', 'hits.site');
+  // React's recoverable hydration errors (#418 text mismatch, #423 recovered, #425 text differs): on a page the browser
+  // was translating they mean "translation changed the text before React started; React rebuilt the page", not a bug.
   const [errorMsgs, translatedRows, deadSpots, slowTaps, jumps, formsLeft, speedNet] = await Promise.all([
     // the actual script error messages, and how many happened on a translated page
-    all(env, `SELECT site, path, msg, COUNT(*) AS n, SUM(tr) AS translated, MAX(ts) AS last FROM errs WHERE ts>=?${site ? ' AND site=?' : ''} GROUP BY site, path, msg ORDER BY n DESC LIMIT 20`, [since, ...sa]),
+    all(env, `SELECT site, path, msg, COUNT(*) AS n, SUM(tr) AS translated, MAX(ts) AS last, (CASE WHEN ${HYDRATION} THEN 1 ELSE 0 END) AS hydration FROM errs WHERE ts>=?${site ? ' AND site=?' : ''} GROUP BY site, path, msg ORDER BY n DESC LIMIT 20`, [since, ...sa]),
     // visits read through the browser's translation, by target language, and how many of them hit a script error
     all(env, `SELECT site, tl, COUNT(*) AS visits, SUM(CASE WHEN err>0 THEN 1 ELSE 0 END) AS errored FROM hits WHERE ts>=? AND tr=1 AND ${notBot}${sq} GROUP BY site, tl ORDER BY visits DESC LIMIT 15`, [since, ...sa]),
     // taps on things that do nothing, by page and element, from real people
@@ -416,8 +421,13 @@ export async function insights(env, q) {
   const today = (botDay[0] && botDay[0].n) || 0;
   if (today >= 20 && today > 3 * Math.max(baseDaily, 1)) alerts.push({ id: `bots-${istDay(now)}`, level: 'warn', ts: now, site: '', title: `Bot traffic is high today: ${today} visits (usual ${Math.round(baseDaily)} a day)`, detail: 'Not real people. Nothing to fix unless numbers elsewhere look wrong.' });
   broken.filter((b) => b.last >= now - 48 * 36e5).forEach((b) => alerts.push({ id: `404-${b.site}${b.path}`, level: 'bad', ts: b.last, site: b.site, title: `Someone reached a broken page (${b.path})`, detail: b.ref_host ? `They came from ${b.ref_host}` : 'Typed or bookmarked address' }));
-  errors.filter((e) => e.last >= now - 48 * 36e5).forEach((e) => alerts.push({ id: `js-${e.site}${e.path}`, level: 'warn', ts: e.last, site: e.site, title: `A script error happened on ${e.path}`, detail: `${e.errors} error${e.errors === 1 ? '' : 's'} in ${e.visits} visit${e.visits === 1 ? '' : 's'}` }));
-  errorMsgs.filter((e) => e.last >= now - 48 * 36e5 && e.translated === e.n).slice(0, 3).forEach((e) => alerts.push({ id: `tr-${e.site}${e.path}`, level: 'warn', ts: e.last, site: e.site, title: `Script errors on a translated page: ${e.path}`, detail: `The visitor's browser was translating the page. ${e.msg}` }));
+  // a page whose only recent error messages are translation hydration noise does not get a "script error" alert
+  const noisy = new Set(errorMsgs.filter((e) => e.hydration && e.translated === e.n).map((e) => `${e.site}${e.path}`));
+  const realErr = new Set(errorMsgs.filter((e) => !(e.hydration && e.translated === e.n)).map((e) => `${e.site}${e.path}`));
+  errorMsgs.forEach((e) => { e.noise = e.hydration && e.translated === e.n ? 1 : 0; });
+  errors.forEach((e) => { e.noise = noisy.has(`${e.site}${e.path}`) && !realErr.has(`${e.site}${e.path}`) ? 1 : 0; });
+  errors.filter((e) => e.last >= now - 48 * 36e5 && !e.noise).forEach((e) => alerts.push({ id: `js-${e.site}${e.path}`, level: 'warn', ts: e.last, site: e.site, title: `A script error happened on ${e.path}`, detail: `${e.errors} error${e.errors === 1 ? '' : 's'} in ${e.visits} visit${e.visits === 1 ? '' : 's'}` }));
+  errorMsgs.filter((e) => e.last >= now - 48 * 36e5 && e.translated === e.n && !e.hydration).slice(0, 3).forEach((e) => alerts.push({ id: `tr-${e.site}${e.path}`, level: 'warn', ts: e.last, site: e.site, title: `Script errors on a translated page: ${e.path}`, detail: `The visitor's browser was translating the page. ${e.msg}` }));
   alerts.sort((a, b) => b.ts - a.ts);
 
   return {

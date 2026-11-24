@@ -22,13 +22,13 @@ export function HealthCards({ ins, all }: { ins: Insights; all: boolean }) {
     <>
       <DataTable
         title="Script errors, with the message"
-        note={`What broke, where, and whether the visitor's browser was translating the page (a common cause on React sites). ${SINCE}`}
+        note={`What broke, where, and whether the visitor's browser was translating the page. "Translation, page recovered" means the browser translated the text before the page finished starting, and React rebuilt it: the page kept working, and it raises no alert. ${SINCE}`}
         cols={["Error", "Times", "Where", "Translated", "Last"]}
         fmt={[0, "n", 0, 0, 0]}
         bar={1}
         max={8}
         empty="No script errors recorded since the message tracking started."
-        rows={h.errorMsgs.map((e) => [e.msg, e.n, where(all, e.site, e.path), e.translated ? `${e.translated} of ${e.n}` : "no", ago(e.last)])}
+        rows={h.errorMsgs.map((e) => [e.noise ? `Translation, page recovered (${e.msg.replace(/;.*$/, "")})` : e.msg, e.n, where(all, e.site, e.path), e.translated ? `${e.translated} of ${e.n}` : "no", ago(e.last)])}
       />
       <DataTable
         title="Taps on things that do nothing"

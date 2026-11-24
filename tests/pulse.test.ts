@@ -530,6 +530,21 @@ describe("insights", () => {
     expect(r.compare.wins).toBe(1);
   });
 
+  it("files React hydration errors on translated pages as recovered noise, without a script-error alert", async () => {
+    const env = { DB: fakeD1() };
+    await ingest(post(msg({ i: "hydr0000001", u: "sesshydr001", p: "/points/", hu: 1, er: 2, tr: 1, tl: "pt",
+      em: ["Minified React error #418; visit https://react.dev/errors/418?args[]=x @main.js:1", "Minified React error #423; visit https://react.dev/errors/423 @main.js:1"] })), env);
+    await ingest(post(msg({ i: "real0000err", u: "sessrealerr", p: "/emi-calculator/", hu: 1, er: 1, em: ["TypeError: x is undefined @app.js:9"] })), env);
+    const r = await insights(env, new URLSearchParams({ days: "28" }));
+    const hy = r.health.errorMsgs.filter((e: { path: string }) => e.path === "/points/");
+    expect(hy.every((e: { noise: number; hydration: number }) => e.noise === 1 && e.hydration === 1)).toBe(true);
+    expect(hy[0].msg).not.toMatch(/args/); // query strings are stripped from URLs in messages
+    expect(r.errors.find((e: { path: string }) => e.path === "/points/").noise).toBe(1);
+    const titles = r.alerts.map((a: { title: string }) => a.title).join(" | ");
+    expect(titles).not.toMatch(/\/points\//);
+    expect(titles).toMatch(/script error happened on \/emi-calculator\//);
+  });
+
   it("filters by site and never throws on an empty database", async () => {
     const r = await insights({ DB: fakeD1() }, qs({ site: "calc.streamerosai.com" }));
     expect(r.compare).toMatchObject({ real: 0, wins: 0 });
