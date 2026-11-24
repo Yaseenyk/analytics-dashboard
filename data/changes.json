@@ -404,6 +404,28 @@
       ],
       "detail": "Points-table tool is client-only (no lost first click on translated pages: 6 of 20 to 0 of 20 in simulation). The search index no longer ships with every page (start-up JS 488 KB to 153 KB on the points table). Brazilian Portuguese versions of the Free Fire points table and team-names guide at /pt-br/, noindex and out of the sitemap until a native reader approves (PT_BR_REVIEWED in src/lib/pt-br.ts). Commits 0c85935, 7aef15b.",
       "expect": "Faster start on slow phones; Portuguese visitors can use the tool in their language once approved."
+    },
+    {
+      "id": "2026-11-24-pt-br-indexed",
+      "date": "2026-11-24",
+      "title": "Esports: Portuguese Free Fire pages opened to search",
+      "kind": "content",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Owner confirmed a native Brazilian Portuguese reader approved /pt-br/points-table/free-fire/ and /pt-br/guides/free-fire-team-names-ideas/; PT_BR_REVIEWED on, index,follow, in the sitemap with hreflang to English (commit 277b532).",
+      "expect": "Portuguese search impressions for Free Fire points table queries."
+    },
+    {
+      "id": "2026-11-24-solar-privacy-mt",
+      "date": "2026-11-24",
+      "title": "Solar: 12 translated privacy pages updated by marked machine translation",
+      "kind": "content",
+      "hosts": [
+        "solar.streamerosai.com"
+      ],
+      "detail": "Owner decided the privacy paragraphs (form inbox, analytics incl. Pulse data and Google signals) may be machine-translated with a visible notice linking to the English page (commit e075fd5). One-off exception to the no-machine-translation rule, recorded in docs/adsense-changes-2026-11-19.md; native review should follow, then remove mtNote.",
+      "expect": "Privacy text in every language matches what loads."
     }
   ]
 }
