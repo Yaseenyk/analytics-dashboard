@@ -2,7 +2,7 @@
  * pulse Worker entry. A Worker module may export only its handler, so every helper lives in lib.js (and is tested there).
  * Routes are listed at the top of lib.js.
  */
-import { PRECOMPUTE_JOBS, cacheKey, cacheTable, getStored, precomputeJob, stored } from './cache.js';
+import { cacheKey, cacheTable, stored } from './cache.js';
 import { esportsStats } from './esports.js';
 import { LEAD_RETENTION_DAYS, leadCors, listLeads, receiveLead, updateLead } from './leads.js';
 import { PK, RETENTION_DAYS, STATUS, authorised, clickmap, cors, feed, goals, ingest, insights, istDay, journey, json, live, markMine, meStep, summary } from './lib.js';
@@ -27,17 +27,6 @@ async function memo(env, key, ttlMs, fn, fresh = false) {
 
 export default {
   async scheduled(event, env) {
-    // One cron tick every 4 minutes (the free plan allows only a few cron triggers, so this Worker has just this one). Most ticks do nothing:
-    //  - hours 0, 4, 8, 12, 16, 20 UTC: tick n computes and stores the dashboard's standard answer n (cache.js), so opening the dashboard never has to
-    //  - minute 16 of every hour: the clean-up below (old bot visits, old rows)
-    const at = new Date(event.scheduledTime ?? Date.now());
-    const minute = at.getUTCMinutes();
-    if (at.getUTCHours() % 4 === 0 && minute < PRECOMPUTE_JOBS.length * 4) {
-      const key = await precomputeJob(env, Math.floor(minute / 4)).catch((e) => { console.error('precompute failed:', String((e && e.message) || e)); return null; });
-      if (key) console.log('4-hour answer stored:', key);
-      return;
-    }
-    if (minute !== 16) return;
     const cut = Date.now() - RETENTION_DAYS * 864e5;
     await cacheTable(env); // the batch below also clears old cache rows, so the table must exist first
     // Bot visits are kept for one day (so the Watch page can still show them), then dropped, which keeps the table
@@ -124,26 +113,20 @@ export default {
 
     if (req.method === 'GET' && url.pathname.startsWith('/v/')) {
       const q = url.searchParams;
-      // ?fresh=1 comes from the dashboard's Refresh button; ?cached=1 asks only for the answer already stored (never computes)
+      // ?fresh=1 asks for new numbers even if a saved answer is under 5 minutes old (but not under a minute old)
       const fresh = q.get('fresh') === '1';
-      const cached = q.get('cached') === '1';
       const kq = new URLSearchParams(q);
       kq.delete('fresh');
-      kq.delete('cached');
       kq.sort();
       const ks = kq.toString() ? '?' + kq.toString() : '';
-      const FOUR_H = 14400000;
+      // Answers are kept briefly so a page load always calls the tracker but a few open tabs share one computation (the live count 10 s, the rest 5 min)
+      const TTL = { '/v/summary': 300000, '/v/insights': 300000, '/v/goals': 300000, '/v/live': 10000 };
       const SAVED = { '/v/summary': summary, '/v/insights': insights, '/v/goals': goals, '/v/live': live };
       try {
         if (SAVED[url.pathname]) {
           const key = cacheKey(url.pathname, ks);
-          if (cached) {
-            const r = await getStored(env, key);
-            if (!r) return new Response(null, { status: 204, headers: ch });
-            return new Response(r.v, { status: 200, headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Cached-At': String(r.t), 'Access-Control-Expose-Headers': 'X-Cached-At' } });
-          }
           const fn = SAVED[url.pathname];
-          return json(await memo(env, ks + '|' + url.pathname, 8000, () => stored(env, key, FOUR_H, () => fn(env, q), fresh), fresh), ch, 200, 'public, max-age=30');
+          return json(await memo(env, ks + '|' + url.pathname, 8000, () => stored(env, key, TTL[url.pathname], () => fn(env, q), fresh), fresh), ch, 200, 'public, max-age=30');
         }
         if (['/v/feed', '/v/journey', '/v/clickmap'].includes(url.pathname)) {
           if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);

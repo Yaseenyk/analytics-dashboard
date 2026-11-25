@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 /** Our own visit tracker (the `pulse` Worker). Aggregates are public; one-by-one views need the key. */
 export const PULSE_API = "https://pulse.yaseenyk.workers.dev";
@@ -90,54 +90,12 @@ export function useKey(): [string, (k: string) => void] {
 
 type Params = Record<string, string | number | undefined>;
 
-// ---- visitor data: opening a screen makes NO request. It shows the last saved copy (kept in this browser); Refresh fetches ----
-// Every open tab used to poll the tracker every 10 to 60 seconds and used most of the free 5M database rows read a day. Now a screen
-// shows the copy saved in this browser the last time Refresh was pressed (components/PulseChip.tsx) and stays silent otherwise.
-const CACHE = "pulse-cache:v1:";
-type Saved<T> = { t: number; d: T };
-function readSaved<T>(id: string): Saved<T> | null {
-  try { const s = localStorage.getItem(CACHE + id); return s ? (JSON.parse(s) as Saved<T>) : null; } catch { return null; }
-}
-function writeSaved<T>(id: string, d: T, t = Date.now()) {
-  const v = JSON.stringify({ t, d });
-  try { localStorage.setItem(CACHE + id, v); } catch {
-    try { // storage full: drop the old copies and keep this one
-      Object.keys(localStorage).filter((k) => k.startsWith(CACHE)).forEach((k) => localStorage.removeItem(k));
-      localStorage.setItem(CACHE + id, v);
-    } catch { /* storage is blocked; the numbers still show for this visit */ }
-  }
-}
-let version = 0;
-let updatedAt = 0;
-const subs = new Set<() => void>();
-const sub = (f: () => void) => { subs.add(f); return () => { subs.delete(f); }; };
-const notify = () => subs.forEach((f) => f());
-/** Ask every visitor-data view on screen for fresh numbers (the Worker still protects the database from a flood of presses). */
-export function refreshPulse() { version++; notify(); }
-/** When the numbers on screen were fetched (the newest saved copy shown or fetched; 0 when nothing is saved yet). */
-export function usePulseUpdated(): number { return useSyncExternalStore(sub, () => updatedAt, () => 0); }
-const useVersion = () => useSyncExternalStore(sub, () => version, () => 0);
-
-/** The answers the Worker computes by itself every 4 hours (and stores), so a screen with no copy of its own can open with numbers. */
-const STORED_BY_WORKER = new Set(["/v/summary", "/v/insights", "/v/goals", "/v/live"]);
-const FOUR_HOURS = 4 * 3600e3;
-
-/**
- * Opening a screen shows the copy saved in this browser. When there is none (a first visit, a new browser or filter) or it is older than
- * 4 hours, it asks the Worker once for the answer the Worker stored on its own schedule (one stored row, nothing is computed). Refresh,
- * pressed while the view is open, asks for new numbers. Nothing else makes a request: no timers.
- *
- * firstLoad is for views the Worker cannot store ahead (they need the key, or a visit or page someone just picked, such as the one-by-one
- * list, a visit's steps, a page's click map, the leads inbox): with no copy, or one older than 4 hours, they load once when they open,
- * because opening them is itself the person asking. After that they wait for Refresh like the rest.
- */
-export function usePulse<T>(path: string, params: Params, opts: { key?: string; enabled?: boolean; firstLoad?: boolean } = {}) {
-  const { key, enabled = true, firstLoad = false } = opts;
+/** Fetch from pulse every time a screen opens (a page load or reload, or a filter change), and repeat when `poll` is set. Skips the request while the tab is hidden, and while `enabled` is false. */
+export function usePulse<T>(path: string, params: Params, opts: { key?: string; poll?: number; enabled?: boolean } = {}) {
+  const { key, poll, enabled = true } = opts;
   const [data, setData] = useState<T | null>(null);
   const [err, setErr] = useState<"key" | "offline" | "server" | null>(null);
   const [detail, setDetail] = useState("");
-  const ver = useVersion();
-  const handled = useRef(ver); // the Refresh presses already acted on; opening or re-filtering is not a press
   const qs = useMemo(() => {
     const p = new URLSearchParams();
     Object.entries(params).forEach(([k, v]) => v !== undefined && v !== "" && p.set(k, String(v)));
@@ -146,59 +104,29 @@ export function usePulse<T>(path: string, params: Params, opts: { key?: string; 
 
   useEffect(() => {
     if (!enabled) { setData(null); return; }
-    const id = `${path}${qs ? `?${qs}` : ""}`;
-    const pressed = ver !== handled.current;
-    handled.current = ver;
-    const headers = key ? { Authorization: `Bearer ${key}` } : undefined;
     let dead = false;
-    const show = (d: T, t: number) => { setData(d); setErr(null); if (t > updatedAt) { updatedAt = t; notify(); } };
-
-    const load = (fresh: boolean) => {
-      (async () => {
+    let timer = 0;
+    const run = async () => {
+      if (!document.hidden) {
         try {
-          const q = fresh ? `${qs}${qs ? "&" : ""}fresh=1` : qs;
-          const r = await fetch(`${PULSE_API}${path}${q ? `?${q}` : ""}`, { cache: "no-store", headers });
+          const r = await fetch(`${PULSE_API}${path}${qs ? `?${qs}` : ""}`, { cache: "no-store", headers: key ? { Authorization: `Bearer ${key}` } : undefined });
           if (dead) return;
           if (r.status === 401) { setErr("key"); setDetail(""); }
           else if (!r.ok) { setErr("server"); setDetail(`The tracker answered HTTP ${r.status}`); }
           else {
             let d: T;
             try { d = (await r.json()) as T; } catch { if (!dead) { setErr("server"); setDetail("The tracker's answer was not readable"); } return; }
-            const t = Date.now();
-            setDetail("");
-            show(d, t); writeSaved(id, d, t);
+            setData(d); setErr(null); setDetail("");
           }
         } catch (e) {
           if (!dead) { setErr("offline"); setDetail(String((e as { message?: string })?.message ?? e)); }
         }
-      })();
-    };
-
-    if (!pressed) {
-      const c = readSaved<T>(id);
-      if (c) show(c.d, c.t); else { setData(null); setErr(null); }
-      if (c && Date.now() - c.t < FOUR_HOURS) return; // a copy under 4 hours old: stay silent
-      if (!STORED_BY_WORKER.has(path)) { // nothing stored by the Worker for this one
-        if (firstLoad) load(false);
-        return () => { dead = true; };
       }
-      (async () => {
-        try {
-          const r = await fetch(`${PULSE_API}${path}?${qs}${qs ? "&" : ""}cached=1`, { cache: "no-store", headers });
-          if (dead || r.status !== 200) return; // 204: nothing stored yet
-          const t = Number(r.headers.get("X-Cached-At")) || Date.now();
-          if (c && t <= c.t) return;
-          const d = (await r.json()) as T;
-          if (dead) return;
-          show(d, t); writeSaved(id, d, t);
-        } catch { /* offline: the saved copy, if any, stays on screen */ }
-      })();
-      return () => { dead = true; };
-    }
-
-    load(true);
-    return () => { dead = true; };
-  }, [path, qs, key, enabled, ver]);
+      if (!dead && poll) timer = window.setTimeout(run, poll);
+    };
+    run();
+    return () => { dead = true; window.clearTimeout(timer); };
+  }, [path, qs, key, poll, enabled]);
 
   return { data, err, detail };
 }

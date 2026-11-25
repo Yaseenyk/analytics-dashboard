@@ -1,10 +1,8 @@
 /**
- * Saved answers for the dashboard (table rcache). The free D1 plan allows 5M rows read a day, so the dashboard never asks the
- * database to compute on open: a Worker cron computes the standard answers every 4 hours and stores them here, and a screen with no
- * copy of its own reads the stored one (one row). A Refresh press recomputes. Not a Worker entry file, so it may export helpers.
+ * Saved answers for the dashboard (table rcache). The free D1 plan allows 5M rows read a day, so an answer just computed is kept for a few
+ * minutes and shared by every tab and Worker instance: a page load still calls the tracker, but only the first call in a window computes.
+ * Not a Worker entry file, so it may export helpers.
  */
-import { goals, insights, live, summary } from './lib.js';
-
 const READY = new WeakSet();
 
 export async function cacheTable(env) {
@@ -13,11 +11,10 @@ export async function cacheTable(env) {
   READY.add(env.DB);
 }
 
-/** One key for one question however the parameters were ordered or what else rode along (fresh, cached). */
+/** One key for one question however the parameters were ordered or what else rode along (fresh). */
 export function cacheKey(name, search) {
   const q = new URLSearchParams(search);
   q.delete('fresh');
-  q.delete('cached');
   q.sort();
   const s = q.toString();
   return name + (s ? '?' + s : '');
@@ -52,28 +49,4 @@ export async function stored(env, key, ttlMs, fn, fresh = false) {
   const val = await fn();
   await putStored(env, key, val, now);
   return val;
-}
-
-/**
- * What the dashboard asks for when it opens (all sites, 28 and 7 days), computed on a schedule so opening it never has to. Each job is one
- * cron tick (a Worker invocation may make only so many database calls), which is why they are a list and not one function.
- */
-export const PRECOMPUTE_DAYS = [28, 7];
-export const PRECOMPUTE_JOBS = [
-  ...PRECOMPUTE_DAYS.flatMap((days) => [
-    { name: '/v/summary', params: { days }, fn: summary },
-    { name: '/v/summary', params: { days, who: 'all' }, fn: summary },
-    { name: '/v/insights', params: { days }, fn: insights },
-    { name: '/v/goals', params: { days }, fn: goals },
-  ]),
-  { name: '/v/live', params: {}, fn: live },
-];
-
-export async function precomputeJob(env, i) {
-  const job = PRECOMPUTE_JOBS[i];
-  if (!job) return null;
-  const q = new URLSearchParams(Object.entries(job.params).map(([k, v]) => [k, String(v)]));
-  const key = cacheKey(job.name, q.toString());
-  await putStored(env, key, await job.fn(env, q));
-  return key;
 }

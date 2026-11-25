@@ -48,7 +48,7 @@ function PulsePart({ pulse, pn }: { pulse: Live; pn: (s: string) => number }) {
 function OnlineSheet({ site }: { site: string }) {
   const l = useLive().data;
   const params = useMemo(() => ({ site: site === "all" ? undefined : site }), [site]);
-  const pulse = usePulse<Live>("/v/live", params).data;
+  const pulse = usePulse<Live>("/v/live", params, { poll: 10000 }).data;
   const pn = (st: string) => pulse?.status.find((x) => x.status === st)?.n ?? 0;
   if (!l && !pulse) return <p className="sub">Loading…</p>;
   if (!l) return <PulsePart pulse={pulse!} pn={pn} />;
@@ -147,7 +147,7 @@ export default function QuickBoxes() {
   const health = useHealth().data;
   const crawl = useCrawl().data;
   const alerts = useAlerts().data;
-  const pulseNow = usePulse<Live>("/v/live", useMemo(() => ({ site: f.site === "all" ? undefined : f.site }), [f.site])).data;
+  const pulseNow = usePulse<Live>("/v/live", useMemo(() => ({ site: f.site === "all" ? undefined : f.site }), [f.site]), { poll: 10000 }).data;
   const realNow = pulseNow?.status.find((x) => x.status === "real")?.n ?? 0;
   const otherNow = (pulseNow?.status ?? []).filter((x) => x.status !== "real").reduce((a, x) => a + x.n, 0);
   const online = useMemo(() => (live?.streams.rows ?? []).filter((r) => f.site === "all" || STREAMS[String(r[0])] === SITES[f.site]).reduce((a, r) => a + (+r[1] || 0), 0), [live, f.site]);

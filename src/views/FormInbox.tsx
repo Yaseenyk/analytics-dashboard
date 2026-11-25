@@ -142,7 +142,7 @@ export function FormInbox() {
   const [show, setShow] = useState<LeadStatus | "open">("open");
   const [openId, setOpenId] = useState("");
   const params = useMemo(() => ({ days: DAYS[f.range] ?? 365, site: f.site === "all" ? "" : f.site, b: bump }), [f.range, f.site, bump]);
-  const { data, err } = usePulse<LeadsFile>("/v/leads", params, { key: keyStr, enabled: !!keyStr, firstLoad: true });
+  const { data, err } = usePulse<LeadsFile>("/v/leads", params, { key: keyStr, enabled: !!keyStr, poll: 60000 });
 
   if (!keyStr || err === "key") return <Locked setKey={setKey} wrong={err === "key"} />;
   const count = (s: LeadStatus) => data?.byStatus.find((x) => x.status === s)?.n ?? 0;

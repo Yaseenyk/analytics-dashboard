@@ -44,7 +44,7 @@ function Daily({ rows }: { rows: Summary["daily"] }) {
 
 function Journeys({ row, keyStr, onMarked }: { row: FeedRow; keyStr: string; onMarked: () => void }) {
   const params = useMemo(() => ({ sid: row.sid }), [row.sid]);
-  const { data, err } = usePulse<Journey>("/v/journey", params, { key: keyStr, firstLoad: true });
+  const { data, err } = usePulse<Journey>("/v/journey", params, { key: keyStr });
   const [busy, setBusy] = useState(false);
   if (!data) return err ? <p className="sub m-3 text-bad">{err === "key" ? "That key was not accepted." : "Could not load this visit’s steps. Press Refresh to try again."}</p> : <Sk w={200} h={14} className="m-3" />;
   const mark = async () => {
@@ -111,7 +111,7 @@ function Feed({ keyStr, siteFilter, bots }: { keyStr: string; siteFilter: string
   const [open, setOpen] = useState("");
   const [bump, setBump] = useState(0); // asks for the list again straight after a visit is marked
   const params = useMemo(() => ({ limit: 60, site: siteFilter === "all" ? undefined : siteFilter, who: who === "all" ? undefined : who, r: bump || undefined }), [siteFilter, who, bump]);
-  const { data, err, detail } = usePulse<FeedRow[]>("/v/feed", params, { key: keyStr, firstLoad: true });
+  const { data, err, detail } = usePulse<FeedRow[]>("/v/feed", params, { key: keyStr, poll: 10000 });
   const rows = data && onlyAct ? data.filter((r) => (r.ndl ?? 0) + (r.nout ?? 0) > 0) : data;
   const chip = (on: boolean) => `min-h-10 shrink-0 rounded-full px-4 text-[13px] font-semibold ${on ? "bg-brand/15 text-brand" : "bg-white/[.05] text-mute"}`;
   const th = "whitespace-nowrap border-b border-line px-3 py-2 text-left text-[11.5px] font-medium text-dim";
@@ -183,7 +183,7 @@ function ClickMapCard({ keyStr, pages, days }: { keyStr: string; pages: Summary[
   const [pick, setPick] = useState("");
   const [s, p] = pick.split("|");
   const params = useMemo(() => ({ site: s, path: p, days }), [s, p, days]);
-  const { data } = usePulse<ClickMap>("/v/clickmap", params, { key: keyStr, enabled: !!pick, firstLoad: true });
+  const { data } = usePulse<ClickMap>("/v/clickmap", params, { key: keyStr, enabled: !!pick });
   const deepest = Math.max(0, ...(data?.clicks.map((c) => c.y) ?? [0]));
   const maxY = Math.max(800, Math.ceil((deepest * 1.1) / 100) * 100);
   const top = useMemo(() => {
@@ -297,11 +297,11 @@ export default function Watch() {
     try { on ? localStorage.setItem(ME_STORE, "1") : localStorage.removeItem(ME_STORE); } catch { /* storage can be blocked */ }
   };
   const params = useMemo(() => ({ days, site: f.site === "all" ? undefined : f.site }), [days, f.site]);
-  const { data: sum, err } = usePulse<Summary>("/v/summary", params);
-  const { data: ins } = usePulse<Insights>("/v/insights", params);
-  const { data: goals } = usePulse<Goals>("/v/goals", params);
+  const { data: sum, err } = usePulse<Summary>("/v/summary", params, { poll: 60000 });
+  const { data: ins } = usePulse<Insights>("/v/insights", params, { poll: 60000 });
+  const { data: goals } = usePulse<Goals>("/v/goals", params, { poll: 60000 });
   const liveParams = useMemo(() => ({ site: f.site === "all" ? undefined : f.site }), [f.site]);
-  const { data: live } = usePulse<Live>("/v/live", liveParams);
+  const { data: live } = usePulse<Live>("/v/live", liveParams, { poll: 10000 });
 
   // a link like /watch/?key=... unlocks this phone once, then the key is removed from the address bar
   useEffect(() => {
