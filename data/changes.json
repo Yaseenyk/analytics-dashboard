@@ -624,6 +624,17 @@
       ],
       "detail": "After the no-polling change a first visit (or a new browser or filter) showed 'nothing saved yet' until Refresh was pressed. The tracker Worker now computes and stores the standard answers (summary, summary with all visitors, insights and goals for 28 and 7 days, and live) at hours 0, 4, 8, 12, 16 and 20 UTC, one job per 4-minute cron tick (the free plan allows only one cron trigger for this Worker). A screen with no copy of its own, or one older than 4 hours, asks once for the stored answer (?cached=1: one row read, never computes). Refresh still recomputes.",
       "expect": "Screens open with numbers that are at most about 4 hours old. A site or range with no stored answer still waits for Refresh."
+    },
+    {
+      "id": "esports-admin-dashboard",
+      "date": "2026-11-25",
+      "title": "Esports: staff admin dashboard switched on, org approvals, ratings in export",
+      "kind": "feature",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Owner account made staff; admin.enabled on. Console (door /admin/?in, TOTP every time) gains Home counts, Organisations approve/revoke (new orgs work unverified; approval only gates calendar, college pages and the verified mark), Users with masked emails and audited reveal, Content hide/restore for scrims, LFT, directory, calendar, ratings and results, Feedback inbox, all switches listed. New staff sign-in: continue with site session, Google button, show-password, forgot-password link. Ratings added to /me/export. Trust rules kept at 5 ratings minimum and 30-day window, shown on /trust/. pt-BR trust strings marked native-reviewed. Migrations 0070/0080 recorded. GTM container checked: GA4 only. Backend 7a134d7, 1ba01eb; frontend d2e94f4, 5a5308a.",
+      "expect": "No visitor-facing change except /trust/ rules text; owner can moderate and approve orgs."
     }
   ]
 }
