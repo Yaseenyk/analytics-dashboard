@@ -657,6 +657,28 @@
       ],
       "detail": "Player card studio at /app/player-card/ with a QR that opens /p/?k=<128-bit token> (resettable, noindex, no-referrer, uniform not-found, rate-limited). Public player page shows only fields the player turned on (12 show/hide switches), verified stats labelled, achievements labelled as player-added, report button. Indexable /players/<slug>/ static pages only when the player opts in to Google, is public, 18+, consented, not moderated and has real content; ProfilePage JSON-LD, max 10 new per week. Migration 0081. Backend 3170649, acc9ae3, c79c6cd; frontend 0defcab.",
       "expect": "Player sign-ups via shared cards; a few strong player pages indexed over weeks; no thin pages."
+    },
+    {
+      "id": "esports-b2c-batch-1",
+      "date": "2026-11-25",
+      "title": "Esports: player tools batch (name styles, reaction, tap speed, crosshair, scrim planner, alerts, LFT matching) + AI-SEO batch 2",
+      "kind": "feature",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Targets from treg research (free fire nickname ~823K/mo India, ff name style 368K, bgmi name style 60.5K, nick ff 74K Brazil, reaction time test 368K worldwide, valorant crosshair codes 60.5K). New pages: /tools/free-fire-name-style/, /tools/bgmi-name-style/, /tools/reaction-time-test/, /tools/tap-speed-test/, /tools/valorant-crosshair/, /tools/scrim-time-planner/ (+ /squad/ share page), tournament alerts (/app/alerts/, double opt-in, 25/day cap), LFT request-to-join with contacts after accept; flags v3.planner, v3.alerts, v3.lft_match on. Player tools row on home and /tools/. SEO: 13 AI crawlers named in robots.txt, /about/ facts block, /compare/free-fire-tournament-hosting-sites/ with dated competitor facts, IndexNow matcher. Commit 019a648.",
+      "expect": "Impressions for name-style queries in India within 2-4 weeks; Portuguese nick queries in Brazil; first planner and alert sign-ups."
+    },
+    {
+      "id": "esports-ptbr-tools-approved",
+      "date": "2026-11-25",
+      "title": "Esports: three Portuguese player tool pages approved and indexable",
+      "kind": "seo",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Owner confirmed a native Brazilian Portuguese reader approved /pt-br/tools/nick-free-fire/, /pt-br/tools/conversor-de-sensibilidade/, /pt-br/tools/nome-de-guilda-free-fire/. Now index,follow, in the sitemap, hreflang paired with their English pages, listed in llms.txt. Commit 42b6894.",
+      "expect": "Brazil impressions for nick ff / gerador de nick / conversor de sensibilidade / nome de guilda."
     }
   ]
 }
