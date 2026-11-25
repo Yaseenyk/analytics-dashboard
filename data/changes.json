@@ -635,6 +635,17 @@
       ],
       "detail": "Owner account made staff; admin.enabled on. Console (door /admin/?in, TOTP every time) gains Home counts, Organisations approve/revoke (new orgs work unverified; approval only gates calendar, college pages and the verified mark), Users with masked emails and audited reveal, Content hide/restore for scrims, LFT, directory, calendar, ratings and results, Feedback inbox, all switches listed. New staff sign-in: continue with site session, Google button, show-password, forgot-password link. Ratings added to /me/export. Trust rules kept at 5 ratings minimum and 30-day window, shown on /trust/. pt-BR trust strings marked native-reviewed. Migrations 0070/0080 recorded. GTM container checked: GA4 only. Backend 7a134d7, 1ba01eb; frontend d2e94f4, 5a5308a.",
       "expect": "No visitor-facing change except /trust/ rules text; owner can moderate and approve orgs."
+    },
+    {
+      "id": "esports-seo-early-fixes",
+      "date": "2026-11-25",
+      "title": "Esports: AI-SEO early fixes (titles, llms files, schema, hreflang, team-name retitle)",
+      "kind": "seo",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "From a treg-backed audit: llms.txt rewritten to cover player tools, pt-BR pages and comparisons, new /llms-full.txt built from page data; 51 indexable titles over 60 chars cut to 0; tools SoftwareApplication get @id, publisher and author, Person referenced by @id only, Organization gets sameAs and is in the pt layout; 404 has one robots tag; pt-BR guide no longer points hreflang at a merged noindex English guide; /tools/team-name-generator/ retitled to BGMI/clan names so it stops competing with the guild page. Commit fc65ba1, CI green.",
+      "expect": "More AI-assistant citations for player tools; team-name and guild pages each ranking for their own terms; fewer title rewrites in Google."
     }
   ]
 }
