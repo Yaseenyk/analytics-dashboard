@@ -591,6 +591,17 @@
       ],
       "detail": "All six points-table pages (incl. /pt-br/) now show 'Built and run by Yaseen Khatib' linked to the portfolio and LinkedIn, the real scoring rules from the code in static HTML, a code-checked Safe to use box, a 4-question FAQ with matching FAQPage, and Person (@id yk.streamerosai.com/#person) as author of the SoftwareApplication. Privacy fix found while checking: Pulse click labels and Clarity replays could carry team names; tool areas now masked and labels replaced. Prompted by ChatGPT saying it could not verify the operator or privacy. Commit ba7a1d2.",
       "expect": "ChatGPT/AI answers about the calculator mention who runs it and that it is safe; re-ask after Google and Bing recrawl."
+    },
+    {
+      "id": "esports-ux-review-fixes",
+      "date": "2026-11-25",
+      "title": "Esports: UI/UX review fixes on the new screens (29 items)",
+      "kind": "ux",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "A UX reviewer screenshotted every new screen and ranked 29 problems; 27 fixed fully, 2 partly. Main ones: sign-in keeps ?id= on recap/screenshot links, feedback bubble hides while typing on phones, one share block per result, one primary button per view, 2-sentence intros above tools (SEO text moved below, not removed), first-visit XP toast waits for first tap, story share cards keep Instagram safe zones, overlay kit two columns with labelled example preview, rooms Copy buttons, screenshot results Confirm all clean rows, /tools/ grouped by event stage. Commits 86fe49a..aa8a9ba, CI green.",
+      "expect": "Fewer dead taps and rage clicks on tool pages in Pulse; more share-picture downloads; no change in LCP."
     }
   ]
 }
