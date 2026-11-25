@@ -273,7 +273,7 @@ describe("reads", () => {
     const env = await seeded();
     const old = Date.now() - 2 * 864e5;
     env.DB.db.exec(`UPDATE hits SET ts=${old}, last=${old}`);
-    await worker.scheduled({}, env);
+    await worker.scheduled({ scheduledTime: Date.UTC(2026, 10, 25, 9, 16) }, env);
     const left = env.DB.db.prepare("SELECT sid FROM hits ORDER BY sid").all().map((r) => String(r.sid));
     expect(left).toEqual(["sessreal001", "sessunclr01"]);
     const clicks = env.DB.db.prepare("SELECT COUNT(*) AS n FROM clicks").get() as { n: number };
@@ -323,6 +323,39 @@ describe("reads", () => {
     const j = await (await get(env, "/v/insights?days=7&site=calc.streamerosai.com")).json();
     const key = (f: { from_path: string; to_path: string; n: number }) => `${f.from_path}>${f.to_path}:${f.n}`;
     expect(j.flows.map(key).sort()).toEqual(["/>/emi/:2", "/emi/>/sip/:1"]); // the reload / > / is not a step; the bot's step is not counted
+  });
+
+  it("gives a screen with no copy of its own the stored answer without computing, and 204 when there is none", async () => {
+    const env = await seeded();
+    const nu = () => ({ DB: Object.assign(Object.create(env.DB), {}), PULSE_KEY: env.PULSE_KEY });
+    const none = await get(nu(), "/v/summary?days=28&cached=1");
+    expect(none.status).toBe(204);
+    const rows = env.DB.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name='rcache'").get() as { n: number };
+    expect(rows.n).toBe(1); // asking never stored anything
+    expect(env.DB.db.prepare("SELECT COUNT(*) AS n FROM rcache").get()).toEqual({ n: 0 });
+  });
+
+  it("computes the standard answers on a 4-hour schedule, one job per tick, and serves them whatever order the parameters come in", async () => {
+    const env = await seeded();
+    const nu = () => ({ DB: Object.assign(Object.create(env.DB), {}), PULSE_KEY: env.PULSE_KEY });
+    const tick = (minute: number) => worker.scheduled({ cron: "*/4 * * * *", scheduledTime: Date.UTC(2026, 10, 25, 8, minute) }, env);
+    await tick(0); // job 0: summary, 28 days
+    await tick(4); // job 1: summary, 28 days, all visitors
+    await tick(8); // job 2: insights, 28 days
+    await tick(52); // past the last job: nothing happens
+    await worker.scheduled({ cron: "*/4 * * * *", scheduledTime: Date.UTC(2026, 10, 25, 9, 4) }, env); // not a 4-hour hour: nothing is computed
+    const a = await get(nu(), "/v/summary?days=28&cached=1");
+    expect(a.status).toBe(200);
+    expect(Number(a.headers.get("X-Cached-At"))).toBeGreaterThan(Date.now() - 60000);
+    expect((await a.json()).status.length).toBeGreaterThan(0);
+    expect((await get(nu(), "/v/summary?who=all&days=28&cached=1")).status).toBe(200); // same question, other order
+    expect((await get(nu(), "/v/insights?days=28&cached=1")).status).toBe(200);
+    expect((await get(nu(), "/v/goals?days=28&cached=1")).status).toBe(204); // its tick has not run yet
+    expect((await get(nu(), "/v/summary?days=7&cached=1")).status).toBe(204);
+    // opening the dashboard did not recompute: the stored answer is still the one from the schedule
+    env.DB.db.exec("DELETE FROM hits");
+    const again = await get(nu(), "/v/summary?days=28&cached=1");
+    expect((await again.json()).status.length).toBeGreaterThan(0);
   });
 
   it("keeps one-by-one views behind the key", async () => {

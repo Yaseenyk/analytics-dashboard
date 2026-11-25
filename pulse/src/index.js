@@ -2,6 +2,7 @@
  * pulse Worker entry. A Worker module may export only its handler, so every helper lives in lib.js (and is tested there).
  * Routes are listed at the top of lib.js.
  */
+import { PRECOMPUTE_JOBS, cacheKey, cacheTable, getStored, precomputeJob, stored } from './cache.js';
 import { esportsStats } from './esports.js';
 import { LEAD_RETENTION_DAYS, leadCors, listLeads, receiveLead, updateLead } from './leads.js';
 import { PK, RETENTION_DAYS, STATUS, authorised, clickmap, cors, feed, goals, ingest, insights, istDay, journey, json, live, markMine, meStep, summary } from './lib.js';
@@ -24,31 +25,19 @@ async function memo(env, key, ttlMs, fn, fresh = false) {
   return val;
 }
 
-// The summary, insights and goals answers are also kept in the database for 4 hours (table rcache), so every Worker instance and every open tab shares one
-// computation. Insights alone runs about 19 queries over the whole period; without this, a few open dashboards used most of the free
-// 5M rows read a day. A cache problem never breaks a read: it just computes the answer again.
-const READY = new WeakSet();
-async function cacheTable(env) {
-  if (READY.has(env.DB)) return;
-  await env.DB.prepare('CREATE TABLE IF NOT EXISTS rcache (k TEXT PRIMARY KEY, v TEXT NOT NULL, t INTEGER NOT NULL)').run();
-  READY.add(env.DB);
-}
-async function stored(env, key, ttlMs, fn, fresh = false) {
-  const now = Date.now();
-  try {
-    await cacheTable(env);
-    const r = ((await env.DB.prepare('SELECT v, t FROM rcache WHERE k=?').bind(key).all()).results || [])[0];
-    if (r && now - r.t < (fresh ? 60000 : ttlMs)) return JSON.parse(r.v); // Refresh recomputes unless the saved answer is under a minute old
-  } catch (e) { console.error('cache read failed:', String((e && e.message) || e)); }
-  const val = await fn();
-  try {
-    await env.DB.prepare('INSERT INTO rcache (k,v,t) VALUES (?,?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v, t=excluded.t').bind(key, JSON.stringify(val), now).run();
-  } catch (e) { console.error('cache write failed:', String((e && e.message) || e)); }
-  return val;
-}
-
 export default {
   async scheduled(event, env) {
+    // One cron tick every 4 minutes (the free plan allows only a few cron triggers, so this Worker has just this one). Most ticks do nothing:
+    //  - hours 0, 4, 8, 12, 16, 20 UTC: tick n computes and stores the dashboard's standard answer n (cache.js), so opening the dashboard never has to
+    //  - minute 16 of every hour: the clean-up below (old bot visits, old rows)
+    const at = new Date(event.scheduledTime ?? Date.now());
+    const minute = at.getUTCMinutes();
+    if (at.getUTCHours() % 4 === 0 && minute < PRECOMPUTE_JOBS.length * 4) {
+      const key = await precomputeJob(env, Math.floor(minute / 4)).catch((e) => { console.error('precompute failed:', String((e && e.message) || e)); return null; });
+      if (key) console.log('4-hour answer stored:', key);
+      return;
+    }
+    if (minute !== 16) return;
     const cut = Date.now() - RETENTION_DAYS * 864e5;
     await cacheTable(env); // the batch below also clears old cache rows, so the table must exist first
     // Bot visits are kept for one day (so the Watch page can still show them), then dropped, which keeps the table
@@ -59,7 +48,7 @@ export default {
       env.DB.prepare(`DELETE FROM clicks WHERE hid IN (${oldBots})`).bind(botCut),
       env.DB.prepare(`DELETE FROM hits WHERE id IN (${oldBots})`).bind(botCut),
       env.DB.prepare('DELETE FROM clicks WHERE ts<?').bind(cut),
-      env.DB.prepare('DELETE FROM rcache WHERE t<?').bind(Date.now() - 864e5),
+      env.DB.prepare('DELETE FROM rcache WHERE t<?').bind(Date.now() - 2 * 864e5),
       env.DB.prepare('DELETE FROM errs WHERE ts<?').bind(cut),
       // form messages are kept longer than visits: 24 months, spam 30 days
       env.DB.prepare('DELETE FROM leads WHERE ts<?').bind(Date.now() - LEAD_RETENTION_DAYS * 864e5),
@@ -135,16 +124,27 @@ export default {
 
     if (req.method === 'GET' && url.pathname.startsWith('/v/')) {
       const q = url.searchParams;
-      // ?fresh=1 comes from the dashboard's Refresh button; it is not part of the cache key
+      // ?fresh=1 comes from the dashboard's Refresh button; ?cached=1 asks only for the answer already stored (never computes)
       const fresh = q.get('fresh') === '1';
+      const cached = q.get('cached') === '1';
       const kq = new URLSearchParams(q);
       kq.delete('fresh');
+      kq.delete('cached');
+      kq.sort();
       const ks = kq.toString() ? '?' + kq.toString() : '';
+      const FOUR_H = 14400000;
+      const SAVED = { '/v/summary': summary, '/v/insights': insights, '/v/goals': goals, '/v/live': live };
       try {
-        if (url.pathname === '/v/summary') return json(await memo(env, ks + '|summary', 60000, () => stored(env, 'summary' + ks, 14400000, () => summary(env, q), fresh), fresh), ch, 200, 'public, max-age=30');
-        if (url.pathname === '/v/insights') return json(await memo(env, ks + '|insights', 60000, () => stored(env, 'insights' + ks, 14400000, () => insights(env, q), fresh), fresh), ch, 200, 'public, max-age=30');
-        if (url.pathname === '/v/goals') return json(await memo(env, ks + '|goals', 60000, () => stored(env, 'goals' + ks, 14400000, () => goals(env, q), fresh), fresh), ch, 200, 'public, max-age=30');
-        if (url.pathname === '/v/live') return json(await memo(env, ks + '|live', 8000, () => live(env, q), fresh), ch);
+        if (SAVED[url.pathname]) {
+          const key = cacheKey(url.pathname, ks);
+          if (cached) {
+            const r = await getStored(env, key);
+            if (!r) return new Response(null, { status: 204, headers: ch });
+            return new Response(r.v, { status: 200, headers: { ...ch, 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Cached-At': String(r.t), 'Access-Control-Expose-Headers': 'X-Cached-At' } });
+          }
+          const fn = SAVED[url.pathname];
+          return json(await memo(env, ks + '|' + url.pathname, 8000, () => stored(env, key, FOUR_H, () => fn(env, q), fresh), fresh), ch, 200, 'public, max-age=30');
+        }
         if (['/v/feed', '/v/journey', '/v/clickmap'].includes(url.pathname)) {
           if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
           if (!authorised(req, env)) return json({ error: 'wrong key' }, ch, 401);

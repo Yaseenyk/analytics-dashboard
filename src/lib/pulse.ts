@@ -98,8 +98,8 @@ type Saved<T> = { t: number; d: T };
 function readSaved<T>(id: string): Saved<T> | null {
   try { const s = localStorage.getItem(CACHE + id); return s ? (JSON.parse(s) as Saved<T>) : null; } catch { return null; }
 }
-function writeSaved<T>(id: string, d: T) {
-  const v = JSON.stringify({ t: Date.now(), d });
+function writeSaved<T>(id: string, d: T, t = Date.now()) {
+  const v = JSON.stringify({ t, d });
   try { localStorage.setItem(CACHE + id, v); } catch {
     try { // storage full: drop the old copies and keep this one
       Object.keys(localStorage).filter((k) => k.startsWith(CACHE)).forEach((k) => localStorage.removeItem(k));
@@ -118,13 +118,21 @@ export function refreshPulse() { version++; notify(); }
 export function usePulseUpdated(): number { return useSyncExternalStore(sub, () => updatedAt, () => 0); }
 const useVersion = () => useSyncExternalStore(sub, () => version, () => 0);
 
-/** Show the saved copy when the view opens; fetch (and save) only after Refresh is pressed while the view is open. */
+/** The answers the Worker computes by itself every 4 hours (and stores), so a screen with no copy of its own can open with numbers. */
+const STORED_BY_WORKER = new Set(["/v/summary", "/v/insights", "/v/goals", "/v/live"]);
+const FOUR_HOURS = 4 * 3600e3;
+
+/**
+ * Opening a screen shows the copy saved in this browser. When there is none (a first visit, a new browser or filter) or it is older than
+ * 4 hours, it asks the Worker once for the answer the Worker stored on its own schedule (one stored row, nothing is computed). Refresh,
+ * pressed while the view is open, asks for new numbers. Nothing else makes a request: no timers.
+ */
 export function usePulse<T>(path: string, params: Params, opts: { key?: string; enabled?: boolean } = {}) {
   const { key, enabled = true } = opts;
   const [data, setData] = useState<T | null>(null);
   const [err, setErr] = useState<"key" | "offline" | "server" | null>(null);
   const ver = useVersion();
-  const mountVer = useRef(ver);
+  const handled = useRef(ver); // the Refresh presses already acted on; opening or re-filtering is not a press
   const qs = useMemo(() => {
     const p = new URLSearchParams();
     Object.entries(params).forEach(([k, v]) => v !== undefined && v !== "" && p.set(k, String(v)));
@@ -134,24 +142,41 @@ export function usePulse<T>(path: string, params: Params, opts: { key?: string; 
   useEffect(() => {
     if (!enabled) { setData(null); return; }
     const id = `${path}${qs ? `?${qs}` : ""}`;
-    if (ver === mountVer.current) { // opening or re-filtering: no request, show what was saved
-      const c = readSaved<T>(id);
-      setData(c ? c.d : null);
-      setErr(null);
-      if (c && c.t > updatedAt) { updatedAt = c.t; notify(); }
-      return;
-    }
+    const pressed = ver !== handled.current;
+    handled.current = ver;
+    const headers = key ? { Authorization: `Bearer ${key}` } : undefined;
     let dead = false;
+    const show = (d: T, t: number) => { setData(d); setErr(null); if (t > updatedAt) { updatedAt = t; notify(); } };
+
+    if (!pressed) {
+      const c = readSaved<T>(id);
+      if (c) show(c.d, c.t); else { setData(null); setErr(null); }
+      if (c && Date.now() - c.t < FOUR_HOURS) return; // a copy under 4 hours old: stay silent
+      if (!STORED_BY_WORKER.has(path)) return; // nothing stored for this one: it waits for Refresh
+      (async () => {
+        try {
+          const r = await fetch(`${PULSE_API}${path}?${qs}${qs ? "&" : ""}cached=1`, { cache: "no-store", headers });
+          if (dead || r.status !== 200) return; // 204: nothing stored yet
+          const t = Number(r.headers.get("X-Cached-At")) || Date.now();
+          if (c && t <= c.t) return;
+          const d = (await r.json()) as T;
+          if (dead) return;
+          show(d, t); writeSaved(id, d, t);
+        } catch { /* offline: the saved copy, if any, stays on screen */ }
+      })();
+      return () => { dead = true; };
+    }
+
     (async () => {
       try {
-        const r = await fetch(`${PULSE_API}${path}?${qs}${qs ? "&" : ""}fresh=1`, { cache: "no-store", headers: key ? { Authorization: `Bearer ${key}` } : undefined });
+        const r = await fetch(`${PULSE_API}${path}?${qs}${qs ? "&" : ""}fresh=1`, { cache: "no-store", headers });
         if (dead) return;
         if (r.status === 401) setErr("key");
         else if (!r.ok) setErr("server");
         else {
           const d = (await r.json()) as T;
-          setData(d); setErr(null); writeSaved(id, d);
-          updatedAt = Date.now(); notify();
+          const t = Date.now();
+          show(d, t); writeSaved(id, d, t);
         }
       } catch {
         if (!dead) setErr("offline");

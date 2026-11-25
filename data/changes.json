@@ -613,6 +613,17 @@
       ],
       "detail": "Audit of 22 pages (mobile 86-98, desktop 98-100, CLS 0) found fonts were the one proven LCP cost. Changes: Inter and Space Grotesk no longer preloaded; share, winners, screen and overlay blocks lazy-loaded in 7 tools (about 17 KB less script before load on brackets, round robin, groups, double elimination); desktop hero art no longer loads on phones; prefetch off on in-content links; sheen runs once and the footer seam uses transform only; overlay kit status line reserved (CLS 0.044 to 0). Throttled real-browser LCP: home 1700 to 1556 ms, Free Fire points table 1892 to 1420 ms. Mobile Lighthouse after: 92-94 on the 6 re-measured pages (before 86-91). Commits 4b1c1d7..d2db8bf.",
       "expect": "Pulse load times and INP on phones a little better; no change in look."
+    },
+    {
+      "id": "2026-11-25-dashboard-opens-with-stored-numbers",
+      "date": "2026-11-25",
+      "title": "Dashboard: visitor numbers computed by the Worker every 4 hours, so every screen opens with numbers",
+      "kind": "technical",
+      "hosts": [
+        "analytics.streamerosai.com"
+      ],
+      "detail": "After the no-polling change a first visit (or a new browser or filter) showed 'nothing saved yet' until Refresh was pressed. The tracker Worker now computes and stores the standard answers (summary, summary with all visitors, insights and goals for 28 and 7 days, and live) at hours 0, 4, 8, 12, 16 and 20 UTC, one job per 4-minute cron tick (the free plan allows only one cron trigger for this Worker). A screen with no copy of its own, or one older than 4 hours, asks once for the stored answer (?cached=1: one row read, never computes). Refresh still recomputes.",
+      "expect": "Screens open with numbers that are at most about 4 hours old. A site or range with no stored answer still waits for Refresh."
     }
   ]
 }

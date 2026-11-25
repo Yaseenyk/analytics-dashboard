@@ -32,7 +32,7 @@ export default function PulseChip() {
     <section aria-label="Visitor data" className="mt-3 flex min-h-[44px] items-center gap-3 rounded-xl border border-line bg-card px-3 py-1.5">
       <p className="m-0 min-w-0 flex-1 text-[12px] text-mute">
         <i className={`mr-1.5 inline-block h-2 w-2 rounded-full align-middle ${at ? "bg-good" : "bg-yellow-400"}`} aria-hidden="true" />
-        Visitors{at ? ` · saved ${age(at)}` : " · nothing saved yet"} <span className="text-dim">· {at ? "nothing updates by itself, press Refresh for new numbers" : "press Refresh to load the numbers"}</span>
+        Visitors{at ? ` · as of ${age(at)}` : " · nothing saved yet"} <span className="text-dim">· {at ? "refreshed by itself every 4 hours; press Refresh for new numbers now" : "press Refresh to load the numbers"}</span>
       </p>
       <button
         type="button"

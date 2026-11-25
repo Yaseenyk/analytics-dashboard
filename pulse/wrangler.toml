@@ -18,7 +18,7 @@ database_name = "esports-db"
 database_id = "440646ae-544f-492d-86bc-9a071d883607"
 
 [triggers]
-crons = ["17 * * * *"]
+crons = ["*/4 * * * *"]
 
 [observability]
 enabled = true
