@@ -43,9 +43,9 @@ function Daily({ rows }: { rows: Summary["daily"] }) {
 
 function Journeys({ row, keyStr, onMarked }: { row: FeedRow; keyStr: string; onMarked: () => void }) {
   const params = useMemo(() => ({ sid: row.sid }), [row.sid]);
-  const { data } = usePulse<Journey>("/v/journey", params, { key: keyStr });
+  const { data, err } = usePulse<Journey>("/v/journey", params, { key: keyStr, firstLoad: true });
   const [busy, setBusy] = useState(false);
-  if (!data) return <Sk w={200} h={14} className="m-3" />;
+  if (!data) return err ? <p className="sub m-3 text-bad">{err === "key" ? "That key was not accepted." : "Could not load this visit’s steps. Press Refresh to try again."}</p> : <Sk w={200} h={14} className="m-3" />;
   const mark = async () => {
     setBusy(true);
     const ok = await pulsePost("/v/mine", { sid: row.sid, me: !row.me }, keyStr);
@@ -110,7 +110,7 @@ function Feed({ keyStr, siteFilter, bots }: { keyStr: string; siteFilter: string
   const [open, setOpen] = useState("");
   const [bump, setBump] = useState(0); // asks for the list again straight after a visit is marked
   const params = useMemo(() => ({ limit: 60, site: siteFilter === "all" ? undefined : siteFilter, who: who === "all" ? undefined : who, r: bump || undefined }), [siteFilter, who, bump]);
-  const { data, err } = usePulse<FeedRow[]>("/v/feed", params, { key: keyStr });
+  const { data, err } = usePulse<FeedRow[]>("/v/feed", params, { key: keyStr, firstLoad: true });
   const rows = data && onlyAct ? data.filter((r) => (r.ndl ?? 0) + (r.nout ?? 0) > 0) : data;
   const chip = (on: boolean) => `min-h-10 shrink-0 rounded-full px-4 text-[13px] font-semibold ${on ? "bg-brand/15 text-brand" : "bg-white/[.05] text-mute"}`;
   const th = "whitespace-nowrap border-b border-line px-3 py-2 text-left text-[11.5px] font-medium text-dim";
@@ -127,6 +127,8 @@ function Feed({ keyStr, siteFilter, bots }: { keyStr: string; siteFilter: string
       {who === "people" && <p className="m-0 mt-2 text-[12.5px] text-dim">Bots are left out of this list{bots ? ` (${n(bots)} in this period)` : ""}. Tap Bots to see them, and the Why column says how each visit got its label.</p>}
       {who === "me" && <p className="m-0 mt-2 text-[12.5px] text-dim">Visits from your own devices. They are in no other number on this dashboard.</p>}
       {err === "key" && <p className="sub mt-3 text-bad">That key was not accepted.</p>}
+      {err === "server" && <p className="sub mt-3 text-bad">The visits could not be loaded. Press Refresh to try again.</p>}
+      {err === "offline" && <p className="sub mt-3 text-bad">Could not reach the tracker. Check the connection and press Refresh.</p>}
       {!data && !err && <Sk w={300} h={14} className="mt-4" />}
       {rows && rows.length === 0 && <p className="sub mt-3">No visits like this yet.</p>}
       {rows && rows.length > 0 && (
@@ -180,7 +182,7 @@ function ClickMapCard({ keyStr, pages, days }: { keyStr: string; pages: Summary[
   const [pick, setPick] = useState("");
   const [s, p] = pick.split("|");
   const params = useMemo(() => ({ site: s, path: p, days }), [s, p, days]);
-  const { data } = usePulse<ClickMap>("/v/clickmap", params, { key: keyStr, enabled: !!pick });
+  const { data } = usePulse<ClickMap>("/v/clickmap", params, { key: keyStr, enabled: !!pick, firstLoad: true });
   const deepest = Math.max(0, ...(data?.clicks.map((c) => c.y) ?? [0]));
   const maxY = Math.max(800, Math.ceil((deepest * 1.1) / 100) * 100);
   const top = useMemo(() => {

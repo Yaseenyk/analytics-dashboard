@@ -29,7 +29,7 @@ export function EsportsCard() {
   const f = useFilters();
   const [keyStr] = useKey();
   const params = useMemo(() => ({ days: DAYS[f.range] ?? 90 }), [f.range]);
-  const { data, err } = usePulse<EsportsFile>("/v/esports", params, { key: keyStr, enabled: !!keyStr });
+  const { data, err } = usePulse<EsportsFile>("/v/esports", params, { key: keyStr, enabled: !!keyStr, firstLoad: true });
   if (!keyStr || err === "key") return null;
   const u = data?.users;
   const items = [

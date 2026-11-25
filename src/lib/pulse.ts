@@ -126,9 +126,13 @@ const FOUR_HOURS = 4 * 3600e3;
  * Opening a screen shows the copy saved in this browser. When there is none (a first visit, a new browser or filter) or it is older than
  * 4 hours, it asks the Worker once for the answer the Worker stored on its own schedule (one stored row, nothing is computed). Refresh,
  * pressed while the view is open, asks for new numbers. Nothing else makes a request: no timers.
+ *
+ * firstLoad is for views the Worker cannot store ahead (they need the key, or a visit or page someone just picked, such as the one-by-one
+ * list, a visit's steps, a page's click map, the leads inbox): with no copy, or one older than 4 hours, they load once when they open,
+ * because opening them is itself the person asking. After that they wait for Refresh like the rest.
  */
-export function usePulse<T>(path: string, params: Params, opts: { key?: string; enabled?: boolean } = {}) {
-  const { key, enabled = true } = opts;
+export function usePulse<T>(path: string, params: Params, opts: { key?: string; enabled?: boolean; firstLoad?: boolean } = {}) {
+  const { key, enabled = true, firstLoad = false } = opts;
   const [data, setData] = useState<T | null>(null);
   const [err, setErr] = useState<"key" | "offline" | "server" | null>(null);
   const ver = useVersion();
@@ -148,11 +152,33 @@ export function usePulse<T>(path: string, params: Params, opts: { key?: string; 
     let dead = false;
     const show = (d: T, t: number) => { setData(d); setErr(null); if (t > updatedAt) { updatedAt = t; notify(); } };
 
+    const load = (fresh: boolean) => {
+      (async () => {
+        try {
+          const q = fresh ? `${qs}${qs ? "&" : ""}fresh=1` : qs;
+          const r = await fetch(`${PULSE_API}${path}${q ? `?${q}` : ""}`, { cache: "no-store", headers });
+          if (dead) return;
+          if (r.status === 401) setErr("key");
+          else if (!r.ok) setErr("server");
+          else {
+            const d = (await r.json()) as T;
+            const t = Date.now();
+            show(d, t); writeSaved(id, d, t);
+          }
+        } catch {
+          if (!dead) setErr("offline");
+        }
+      })();
+    };
+
     if (!pressed) {
       const c = readSaved<T>(id);
       if (c) show(c.d, c.t); else { setData(null); setErr(null); }
       if (c && Date.now() - c.t < FOUR_HOURS) return; // a copy under 4 hours old: stay silent
-      if (!STORED_BY_WORKER.has(path)) return; // nothing stored for this one: it waits for Refresh
+      if (!STORED_BY_WORKER.has(path)) { // nothing stored by the Worker for this one
+        if (firstLoad) load(false);
+        return () => { dead = true; };
+      }
       (async () => {
         try {
           const r = await fetch(`${PULSE_API}${path}?${qs}${qs ? "&" : ""}cached=1`, { cache: "no-store", headers });
@@ -167,21 +193,7 @@ export function usePulse<T>(path: string, params: Params, opts: { key?: string; 
       return () => { dead = true; };
     }
 
-    (async () => {
-      try {
-        const r = await fetch(`${PULSE_API}${path}?${qs}${qs ? "&" : ""}fresh=1`, { cache: "no-store", headers });
-        if (dead) return;
-        if (r.status === 401) setErr("key");
-        else if (!r.ok) setErr("server");
-        else {
-          const d = (await r.json()) as T;
-          const t = Date.now();
-          show(d, t); writeSaved(id, d, t);
-        }
-      } catch {
-        if (!dead) setErr("offline");
-      }
-    })();
+    load(true);
     return () => { dead = true; };
   }, [path, qs, key, enabled, ver]);
 
