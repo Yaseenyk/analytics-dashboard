@@ -1,5 +1,6 @@
 "use client";
 
+import Boundary from "@/components/Boundary";
 import { useState } from "react";
 import { BRAND, COLORS } from "@/lib/config";
 import { useMeta } from "@/lib/data";
@@ -73,8 +74,8 @@ export default function Leads() {
   const f = useFilters();
   return (
     <>
-    <FormInbox />
-    <EsportsCard />
+    <Boundary label="Form messages"><FormInbox /></Boundary>
+    <Boundary label="Esports sign-ups"><EsportsCard /></Boundary>
     <SectionHead title="Clicks and leads from Google Analytics" sub="Taps on WhatsApp, email and phone, downloads and lead events, across all sites." />
     <WaitingGate>
       <EventKpis />

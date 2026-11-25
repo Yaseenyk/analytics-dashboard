@@ -1,5 +1,6 @@
 "use client";
 
+import Boundary from "@/components/Boundary";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { SITE_HOSTS } from "@/lib/config";
 import { n } from "@/lib/derive";
@@ -110,7 +111,7 @@ function Feed({ keyStr, siteFilter, bots }: { keyStr: string; siteFilter: string
   const [open, setOpen] = useState("");
   const [bump, setBump] = useState(0); // asks for the list again straight after a visit is marked
   const params = useMemo(() => ({ limit: 60, site: siteFilter === "all" ? undefined : siteFilter, who: who === "all" ? undefined : who, r: bump || undefined }), [siteFilter, who, bump]);
-  const { data, err } = usePulse<FeedRow[]>("/v/feed", params, { key: keyStr, firstLoad: true });
+  const { data, err, detail } = usePulse<FeedRow[]>("/v/feed", params, { key: keyStr, firstLoad: true });
   const rows = data && onlyAct ? data.filter((r) => (r.ndl ?? 0) + (r.nout ?? 0) > 0) : data;
   const chip = (on: boolean) => `min-h-10 shrink-0 rounded-full px-4 text-[13px] font-semibold ${on ? "bg-brand/15 text-brand" : "bg-white/[.05] text-mute"}`;
   const th = "whitespace-nowrap border-b border-line px-3 py-2 text-left text-[11.5px] font-medium text-dim";
@@ -127,8 +128,8 @@ function Feed({ keyStr, siteFilter, bots }: { keyStr: string; siteFilter: string
       {who === "people" && <p className="m-0 mt-2 text-[12.5px] text-dim">Bots are left out of this list{bots ? ` (${n(bots)} in this period)` : ""}. Tap Bots to see them, and the Why column says how each visit got its label.</p>}
       {who === "me" && <p className="m-0 mt-2 text-[12.5px] text-dim">Visits from your own devices. They are in no other number on this dashboard.</p>}
       {err === "key" && <p className="sub mt-3 text-bad">That key was not accepted.</p>}
-      {err === "server" && <p className="sub mt-3 text-bad">The visits could not be loaded. Press Refresh to try again.</p>}
-      {err === "offline" && <p className="sub mt-3 text-bad">Could not reach the tracker. Check the connection and press Refresh.</p>}
+      {err === "server" && <p className="sub mt-3 text-bad">The visits could not be loaded{detail ? ` (${detail})` : ""}. Press Refresh to try again.</p>}
+      {err === "offline" && <p className="sub mt-3 text-bad">Could not reach the tracker{detail ? ` (${detail})` : ""}. Check the connection and press Refresh.</p>}
       {!data && !err && <Sk w={300} h={14} className="mt-4" />}
       {rows && rows.length === 0 && <p className="sub mt-3">No visits like this yet.</p>}
       {rows && rows.length > 0 && (
@@ -369,7 +370,7 @@ export default function Watch() {
       </details>
 
       {meFlash && <p role="status" className="m-0 rounded-xl bg-brand/10 px-4 py-3 text-[13.5px] text-ink">{meFlash === "on" ? "Done. This device is now left out on all 13 sites." : "Done. This device counts as a normal visitor again."}</p>}
-      {keyStr && <Feed keyStr={keyStr} siteFilter={f.site} bots={counts.bot} />}
+      {keyStr && <Boundary label="Visits one by one"><Feed keyStr={keyStr} siteFilter={f.site} bots={counts.bot} /></Boundary>}
 
       <AlertsCard ins={ins} />
 
@@ -434,8 +435,8 @@ export default function Watch() {
       <Unlock keyStr={keyStr} setKey={setKey} onDevices={marked ? () => setMarked(false) : undefined} />
       {keyStr && (
         <>
-          {!marked && <MyDevices mine={sum?.mine} onMark={() => setMarked(true)} onUnmark={() => setMarked(false)} onHide={() => setMarked(true)} />}
-          {sum && sum.pages.length > 0 && <ClickMapCard keyStr={keyStr} pages={sum.pages} days={days} />}
+          {!marked && <Boundary label="My devices"><MyDevices mine={sum?.mine} onMark={() => setMarked(true)} onUnmark={() => setMarked(false)} onHide={() => setMarked(true)} /></Boundary>}
+          {sum && sum.pages.length > 0 && <Boundary label="Where people tap"><ClickMapCard keyStr={keyStr} pages={sum.pages} days={days} /></Boundary>}
         </>
       )}
     </div>

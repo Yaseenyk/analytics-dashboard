@@ -135,6 +135,7 @@ export function usePulse<T>(path: string, params: Params, opts: { key?: string; 
   const { key, enabled = true, firstLoad = false } = opts;
   const [data, setData] = useState<T | null>(null);
   const [err, setErr] = useState<"key" | "offline" | "server" | null>(null);
+  const [detail, setDetail] = useState("");
   const ver = useVersion();
   const handled = useRef(ver); // the Refresh presses already acted on; opening or re-filtering is not a press
   const qs = useMemo(() => {
@@ -158,15 +159,17 @@ export function usePulse<T>(path: string, params: Params, opts: { key?: string; 
           const q = fresh ? `${qs}${qs ? "&" : ""}fresh=1` : qs;
           const r = await fetch(`${PULSE_API}${path}${q ? `?${q}` : ""}`, { cache: "no-store", headers });
           if (dead) return;
-          if (r.status === 401) setErr("key");
-          else if (!r.ok) setErr("server");
+          if (r.status === 401) { setErr("key"); setDetail(""); }
+          else if (!r.ok) { setErr("server"); setDetail(`The tracker answered HTTP ${r.status}`); }
           else {
-            const d = (await r.json()) as T;
+            let d: T;
+            try { d = (await r.json()) as T; } catch { if (!dead) { setErr("server"); setDetail("The tracker's answer was not readable"); } return; }
             const t = Date.now();
+            setDetail("");
             show(d, t); writeSaved(id, d, t);
           }
-        } catch {
-          if (!dead) setErr("offline");
+        } catch (e) {
+          if (!dead) { setErr("offline"); setDetail(String((e as { message?: string })?.message ?? e)); }
         }
       })();
     };
@@ -197,7 +200,7 @@ export function usePulse<T>(path: string, params: Params, opts: { key?: string; 
     return () => { dead = true; };
   }, [path, qs, key, enabled, ver]);
 
-  return { data, err };
+  return { data, err, detail };
 }
 
 /** A keyed write to the tracker (marking a visit as the owner's own). True when it was accepted. */
