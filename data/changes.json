@@ -602,6 +602,17 @@
       ],
       "detail": "A UX reviewer screenshotted every new screen and ranked 29 problems; 27 fixed fully, 2 partly. Main ones: sign-in keeps ?id= on recap/screenshot links, feedback bubble hides while typing on phones, one share block per result, one primary button per view, 2-sentence intros above tools (SEO text moved below, not removed), first-visit XP toast waits for first tap, story share cards keep Instagram safe zones, overlay kit two columns with labelled example preview, rooms Copy buttons, screenshot results Confirm all clean rows, /tools/ grouped by event stage. Commits 86fe49a..aa8a9ba, CI green.",
       "expect": "Fewer dead taps and rage clicks on tool pages in Pulse; more share-picture downloads; no change in LCP."
+    },
+    {
+      "id": "esports-speed-pass",
+      "date": "2026-11-25",
+      "title": "Esports: speed pass from a Lighthouse audit (fonts, lazy share code, no phone hero art)",
+      "kind": "speed",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Audit of 22 pages (mobile 86-98, desktop 98-100, CLS 0) found fonts were the one proven LCP cost. Changes: Inter and Space Grotesk no longer preloaded; share, winners, screen and overlay blocks lazy-loaded in 7 tools (about 17 KB less script before load on brackets, round robin, groups, double elimination); desktop hero art no longer loads on phones; prefetch off on in-content links; sheen runs once and the footer seam uses transform only; overlay kit status line reserved (CLS 0.044 to 0). Throttled real-browser LCP: home 1700 to 1556 ms, Free Fire points table 1892 to 1420 ms. Mobile Lighthouse after: 92-94 on the 6 re-measured pages (before 86-91). Commits 4b1c1d7..d2db8bf.",
+      "expect": "Pulse load times and INP on phones a little better; no change in look."
     }
   ]
 }
