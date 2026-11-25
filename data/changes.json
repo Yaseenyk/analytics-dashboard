@@ -646,6 +646,17 @@
       ],
       "detail": "From a treg-backed audit: llms.txt rewritten to cover player tools, pt-BR pages and comparisons, new /llms-full.txt built from page data; 51 indexable titles over 60 chars cut to 0; tools SoftwareApplication get @id, publisher and author, Person referenced by @id only, Organization gets sameAs and is in the pt layout; 404 has one robots tag; pt-BR guide no longer points hreflang at a merged noindex English guide; /tools/team-name-generator/ retitled to BGMI/clan names so it stops competing with the guild page. Commit fc65ba1, CI green.",
       "expect": "More AI-assistant citations for player tools; team-name and guild pages each ranking for their own terms; fewer title rewrites in Google."
+    },
+    {
+      "id": "esports-player-card-qr",
+      "date": "2026-11-25",
+      "title": "Esports: player card with QR to the player page, indexable player pages behind a quality gate",
+      "kind": "feature",
+      "hosts": [
+        "esports.streamerosai.com"
+      ],
+      "detail": "Player card studio at /app/player-card/ with a QR that opens /p/?k=<128-bit token> (resettable, noindex, no-referrer, uniform not-found, rate-limited). Public player page shows only fields the player turned on (12 show/hide switches), verified stats labelled, achievements labelled as player-added, report button. Indexable /players/<slug>/ static pages only when the player opts in to Google, is public, 18+, consented, not moderated and has real content; ProfilePage JSON-LD, max 10 new per week. Migration 0081. Backend 3170649, acc9ae3, c79c6cd; frontend 0defcab.",
+      "expect": "Player sign-ups via shared cards; a few strong player pages indexed over weeks; no thin pages."
     }
   ]
 }
