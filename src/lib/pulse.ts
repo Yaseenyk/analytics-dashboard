@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 /** Our own visit tracker (the `pulse` Worker). Aggregates are public; one-by-one views need the key. */
-export const PULSE_API = "https://pulse.yaseenyk.workers.dev";
+/**
+ * The tracker's address. For debugging on this computer, start the tracker locally (pulse/DEV.md) and build or run the dashboard with
+ * NEXT_PUBLIC_PULSE_API=http://127.0.0.1:8787: that is dev mode, where no key is needed. The live site never sets it.
+ */
+export const PULSE_API = (process.env.NEXT_PUBLIC_PULSE_API || "https://pulse.yaseenyk.workers.dev").replace(/\/$/, "");
+/** True when the dashboard is pointed at a tracker on this computer. */
+export const DEV_API = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(PULSE_API);
 const KEY_STORE = "pulse-key";
 
 export type Status = "real" | "unclear" | "bot";
@@ -77,11 +83,13 @@ export interface ClickMap { visits: number; clicks: { kind: string; label: strin
 
 /** The saved key, kept only in this browser. */
 export function useKey(): [string, (k: string) => void] {
-  const [key, setK] = useState("");
+  const [key, setK] = useState(DEV_API ? "dev-no-key" : "");
   useEffect(() => {
+    if (DEV_API) return; // dev mode: the local tracker asks for no key
     try { setK(localStorage.getItem(KEY_STORE) || ""); } catch { /* storage can be blocked */ }
   }, []);
   const set = useCallback((k: string) => {
+    if (DEV_API) return;
     setK(k);
     try { k ? localStorage.setItem(KEY_STORE, k) : localStorage.removeItem(KEY_STORE); } catch { /* ignore */ }
   }, []);
@@ -89,6 +97,19 @@ export function useKey(): [string, (k: string) => void] {
 }
 
 type Params = Record<string, string | number | undefined>;
+
+// The last answer for each question is kept in this browser and shown at once while the new one loads, so a screen is never blank or
+// waiting. It is only ever replaced by a newer answer from the tracker.
+const LAST = "pulse-last:v1:";
+function readLast<T>(id: string): T | null {
+  try { const s = localStorage.getItem(LAST + id); return s ? (JSON.parse(s) as T) : null; } catch { return null; }
+}
+function writeLast(id: string, d: unknown) {
+  const v = JSON.stringify(d);
+  try { localStorage.setItem(LAST + id, v); } catch {
+    try { Object.keys(localStorage).filter((k) => k.startsWith(LAST)).forEach((k) => localStorage.removeItem(k)); localStorage.setItem(LAST + id, v); } catch { /* storage is blocked: no saved copy, nothing else changes */ }
+  }
+}
 
 /** Fetch from pulse every time a screen opens (a page load or reload, or a filter change), and repeat when `poll` is set. Skips the request while the tab is hidden, and while `enabled` is false. */
 export function usePulse<T>(path: string, params: Params, opts: { key?: string; poll?: number; enabled?: boolean } = {}) {
@@ -106,6 +127,9 @@ export function usePulse<T>(path: string, params: Params, opts: { key?: string; 
     if (!enabled) { setData(null); return; }
     let dead = false;
     let timer = 0;
+    const id = `${path}${qs ? `?${qs}` : ""}`;
+    const last = readLast<T>(id);
+    setData(last); // the last answer, at once (or nothing the first time); the fetch below replaces it
     const run = async () => {
       if (!document.hidden) {
         try {
@@ -117,6 +141,7 @@ export function usePulse<T>(path: string, params: Params, opts: { key?: string; 
             let d: T;
             try { d = (await r.json()) as T; } catch { if (!dead) { setErr("server"); setDetail("The tracker's answer was not readable"); } return; }
             setData(d); setErr(null); setDetail("");
+            writeLast(id, d);
           }
         } catch (e) {
           if (!dead) { setErr("offline"); setDetail(String((e as { message?: string })?.message ?? e)); }

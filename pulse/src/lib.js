@@ -24,6 +24,7 @@
  * day, so the code cannot be turned back into an address or linked across days.
  * Rows older than 90 days are deleted by the daily cron.
  */
+import { devMode } from './dev.js';
 import { TRACKER } from './tracker.js';
 
 export const SITES = [
@@ -221,7 +222,7 @@ const AGG_WHY = `(CASE WHEN MAX(wd)=1 THEN 'auto' WHEN MAX(human)=1 THEN 'acted'
 /** The Indian calendar day of a page view. */
 const DAY = `date(ts/1000+${IST},'unixepoch')`;
 /** Search Console counts its days in Pacific time, so the cross-check has to as well. */
-function pacificOffset(ms) {
+export function pacificOffset(ms) {
   try { return /PDT/.test(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', timeZoneName: 'short' }).format(new Date(ms))) ? -25200 : -28800; } catch { return -28800; }
 }
 
@@ -342,6 +343,7 @@ export function cors(req) {
 }
 
 export function authorised(req, env) {
+  if (devMode(req, env)) return true; // local dev only, see dev.js
   const key = env.PULSE_KEY;
   const got = (req.headers.get('Authorization') || '').replace(/^Bearer /, '');
   if (!key || got.length !== key.length) return false;

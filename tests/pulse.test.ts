@@ -22,7 +22,7 @@ function fakeD1() {
       let args: unknown[] = [];
       const st = {
         bind(...a: unknown[]) { args = a; return st; },
-        async all() { return { results: db.prepare(sql).all(...(args as never[])) }; },
+        async all() { const results = db.prepare(sql).all(...(args as never[])); return { results, meta: { rows_read: results.length } }; },
         _run() { return db.prepare(sql).run(...(args as never[])); },
         async run() { const r = db.prepare(sql).run(...(args as never[])); return { meta: { changes: Number(r.changes) } }; },
       };
@@ -280,18 +280,50 @@ describe("reads", () => {
     expect(clicks.n).toBe(1);
   });
 
-  it("keeps dashboard answers for five minutes in the database, shared by every Worker instance, and recomputes after that", async () => {
+  const nu = (env: { DB: object; PULSE_KEY: string }) => ({ DB: Object.assign(Object.create(env.DB), {}), PULSE_KEY: env.PULSE_KEY }); // another Worker instance: empty memory, same database
+
+  it("works an answer out again only when new data has arrived, and shares it between Worker instances", async () => {
     const env = await seeded();
     const a = await (await get(env, "/v/insights?days=7")).text();
-    env.DB.db.exec("DELETE FROM hits");
-    // a different Worker instance has an empty memory but sees the stored answer
-    const other = { DB: Object.assign(Object.create(env.DB), {}), PULSE_KEY: env.PULSE_KEY };
-    expect(await (await get(other, "/v/insights?days=7")).text()).toBe(a);
-    env.DB.db.exec("UPDATE rcache SET t = t - 2 * 60 * 1000"); // 2 minutes later: still the saved answer
-    expect(await (await get({ DB: Object.assign(Object.create(env.DB), {}), PULSE_KEY: env.PULSE_KEY }, "/v/insights?days=7")).text()).toBe(a);
-    env.DB.db.exec("UPDATE rcache SET t = t - 4 * 60 * 1000"); // 6 minutes old: computed again
-    const later = JSON.parse(await (await get({ DB: Object.assign(Object.create(env.DB), {}), PULSE_KEY: env.PULSE_KEY }, "/v/insights?days=7")).text());
-    expect(later.flows).toEqual([]);
+    env.DB.db.exec("DELETE FROM hits"); // the numbers would change if they were worked out again...
+    expect(await (await get(nu(env), "/v/insights?days=7")).text()).toBe(a); // ...but this is within the gap, so the saved answer is served
+    env.DB.db.exec("UPDATE rcache SET t = t - 5 * 60 * 1000"); // 5 minutes later, with nothing new having arrived? data did change (the delete), so this recomputes
+    const again = JSON.parse(await (await get(nu(env), "/v/insights?days=7")).text());
+    expect(again.flows).toEqual([]);
+  });
+
+  it("reuses an answer for half an hour when no new data has arrived, then refreshes it", async () => {
+    const env = await seeded();
+    const a = await (await get(env, "/v/summary?days=7")).text();
+    env.DB.db.exec("UPDATE rcache SET t = t - 20 * 60 * 1000"); // 20 minutes old, same data
+    expect(await (await get(nu(env), "/v/summary?days=7")).text()).toBe(a);
+    env.DB.db.exec("UPDATE rcache SET t = t - 15 * 60 * 1000"); // 35 minutes old: the date windows have moved, so it is worked out again
+    expect(await (await get(nu(env), "/v/summary?days=7")).text()).not.toBe(a);
+  });
+
+  it("stretches the wait between calculations as the day's read allowance fills, and stops at 90%", async () => {
+    const env = await seeded();
+    const day = new Date().toISOString().slice(0, 10);
+    const setUsed = (rows: number) => env.DB.db.exec(`INSERT INTO rbudget (day, rows) VALUES ('${day}', ${rows}) ON CONFLICT(day) DO UPDATE SET rows=${rows}`);
+    const stamp = async () => JSON.parse(await (await get(nu(env), "/v/summary?days=7")).text()).generatedAt as string;
+    const first = await stamp();
+    const touch = () => env.DB.db.exec("UPDATE hits SET last = last + 1"); // new activity, so a recalculation is allowed
+    const age = (min: number) => env.DB.db.exec(`UPDATE rcache SET t = ${Date.now() - min * 60000}`);
+    setUsed(0); touch(); age(3); expect(await stamp()).not.toBe(first); // plenty left: 2-minute gap
+    const second = await stamp();
+    setUsed(2_500_000); touch(); age(3); expect(await stamp()).toBe(second); // half used: 10-minute gap, so 3 minutes is too soon
+    age(11); expect(await stamp()).not.toBe(second); // ...and 11 minutes is enough
+    const third = await stamp();
+    setUsed(4_700_000); touch(); age(45); expect(await stamp()).toBe(third); // 94% used: the saved answer is served as it is
+  });
+
+  it("counts the rows each calculation reads against today's allowance", async () => {
+    const env = await seeded();
+    await get(env, "/v/summary?days=28");
+    const used = (env.DB.db.prepare("SELECT rows FROM rbudget").get() as { rows: number }).rows;
+    expect(used).toBeGreaterThan(0);
+    await get(nu(env), "/v/summary?days=28"); // served from the saved answer: costs nothing more
+    expect((env.DB.db.prepare("SELECT rows FROM rbudget").get() as { rows: number }).rows).toBe(used);
   });
 
   it("Refresh (fresh=1) asks for new numbers, but a press right after another is served the saved answer", async () => {

@@ -2,7 +2,8 @@
  * pulse Worker entry. A Worker module may export only its handler, so every helper lives in lib.js (and is tested there).
  * Routes are listed at the top of lib.js.
  */
-import { cacheKey, cacheTable, stored } from './cache.js';
+import { cacheKey, cacheTable, governed, stored } from './cache.js';
+import { countingEnv, devMode } from './dev.js';
 import { esportsStats } from './esports.js';
 import { LEAD_RETENTION_DAYS, leadCors, listLeads, receiveLead, updateLead } from './leads.js';
 import { PK, RETENTION_DAYS, STATUS, authorised, clickmap, cors, feed, goals, ingest, insights, istDay, journey, json, live, markMine, meStep, summary } from './lib.js';
@@ -38,6 +39,7 @@ export default {
       env.DB.prepare(`DELETE FROM hits WHERE id IN (${oldBots})`).bind(botCut),
       env.DB.prepare('DELETE FROM clicks WHERE ts<?').bind(cut),
       env.DB.prepare('DELETE FROM rcache WHERE t<?').bind(Date.now() - 2 * 864e5),
+      env.DB.prepare('DELETE FROM rbudget WHERE day<?').bind(new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10)),
       env.DB.prepare('DELETE FROM errs WHERE ts<?').bind(cut),
       // form messages are kept longer than visits: 24 months, spam 30 days
       env.DB.prepare('DELETE FROM leads WHERE ts<?').bind(Date.now() - LEAD_RETENTION_DAYS * 864e5),
@@ -49,7 +51,24 @@ export default {
   },
 
   async fetch(req, env) {
-    const ch = cors(req);
+    if (!devMode(req, env)) return handle(req, env);
+    const { env: e, state } = countingEnv(env);
+    const rows0 = state.rows, q0 = state.queries;
+    const res = await handle(req, e);
+    const out = new Response(res.body, res);
+    out.headers.set('X-Rows-Read', String(state.rows - rows0));
+    out.headers.set('X-Queries', String(state.queries - q0));
+    out.headers.set('Access-Control-Expose-Headers', 'X-Rows-Read, X-Queries, X-Cached-At');
+    return out;
+  },
+};
+
+async function handle(req, env) {
+    let ch = cors(req);
+    if (devMode(req, env)) { // dev mode: a dashboard served from this computer may read it
+      const o = req.headers.get('Origin') || '';
+      if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o)) ch = { ...ch, 'Access-Control-Allow-Origin': o, 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Expose-Headers': 'X-Rows-Read, X-Queries' };
+    }
     const url = new URL(req.url);
     // Form inbox: public, but only from our own sites' pages.
     if (url.pathname === '/lead') {
@@ -67,7 +86,7 @@ export default {
     }
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: ch });
     if (url.pathname === '/v/esports' && req.method === 'GET') {
-      if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
+      if (!env.PULSE_KEY && !devMode(req, env)) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
       if (!authorised(req, env)) return json({ error: 'wrong key' }, ch, 401);
       try { return json(await esportsStats(env, url.searchParams), ch); } catch (e) {
         console.error('esports read failed:', String((e && e.message) || e));
@@ -75,7 +94,7 @@ export default {
       }
     }
     if (url.pathname === '/v/leads' || url.pathname === '/v/leads/update') {
-      if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
+      if (!env.PULSE_KEY && !devMode(req, env)) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
       if (!authorised(req, env)) return json({ error: 'wrong key' }, ch, 401);
       try {
         if (req.method === 'GET' && url.pathname === '/v/leads') return json(await listLeads(env, url.searchParams), ch);
@@ -96,10 +115,19 @@ export default {
       return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': req.headers.get('Origin') || '*' } });
     }
     if (url.pathname === '/health') return new Response('ok', { headers: ch });
+    // dev mode only (see dev.js): run one read-only question and say how many rows it read, to find out what a query costs
+    if (url.pathname === '/dev/sql' && devMode(req, env)) {
+      const sql = url.searchParams.get('q') || '';
+      if (!/^\s*(select|with)\s/i.test(sql) || /;\s*\S/.test(sql)) return json({ error: 'one SELECT or WITH query only' }, ch, 400);
+      try {
+        const r = await env.DB.prepare(sql).all();
+        return json({ rows: (r.results || []).slice(0, 50), count: (r.results || []).length, rowsRead: r.meta && r.meta.rows_read }, ch);
+      } catch (e) { return json({ error: String((e && e.message) || e) }, ch, 400); }
+    }
     if (url.pathname === '/me' && req.method === 'GET') return new Response(null, { status: 302, headers: { Location: meStep(url.searchParams), 'Cache-Control': 'no-store' } });
 
     if (req.method === 'POST' && url.pathname === '/v/mine') {
-      if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
+      if (!env.PULSE_KEY && !devMode(req, env)) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
       if (!authorised(req, env)) return json({ error: 'wrong key' }, ch, 401);
       try {
         MEMOS.delete(env.DB);
@@ -113,25 +141,27 @@ export default {
 
     if (req.method === 'GET' && url.pathname.startsWith('/v/')) {
       const q = url.searchParams;
-      // ?fresh=1 asks for new numbers even if a saved answer is under 5 minutes old (but not under a minute old)
+      // ?fresh=1 is the dashboard's Refresh: it skips the wait between calculations (see governed() in cache.js), but not the daily read allowance
       const fresh = q.get('fresh') === '1';
       const kq = new URLSearchParams(q);
       kq.delete('fresh');
       kq.sort();
       const ks = kq.toString() ? '?' + kq.toString() : '';
-      // Answers are kept briefly so a page load always calls the tracker but a few open tabs share one computation (the live count 10 s, the rest 5 min)
-      const TTL = { '/v/summary': 300000, '/v/insights': 300000, '/v/goals': 300000, '/v/live': 10000 };
-      const SAVED = { '/v/summary': summary, '/v/insights': insights, '/v/goals': goals, '/v/live': live };
+      // The three heavy answers read tens of thousands of rows, so they are worked out only when new data has arrived and within a daily
+      // allowance (governed). The live count is cheap and is kept for 10 seconds.
+      const HEAVY = { '/v/summary': summary, '/v/insights': insights, '/v/goals': goals };
       try {
-        if (SAVED[url.pathname]) {
-          const key = cacheKey(url.pathname, ks);
-          const fn = SAVED[url.pathname];
-          return json(await memo(env, ks + '|' + url.pathname, 8000, () => stored(env, key, TTL[url.pathname], () => fn(env, q), fresh), fresh), ch, 200, 'public, max-age=30');
+        if (HEAVY[url.pathname]) {
+          const fn = HEAVY[url.pathname];
+          return json(await memo(env, ks + '|' + url.pathname, 8000, () => governed(env, cacheKey(url.pathname, ks), (e) => fn(e, q), { fresh }), fresh), ch, 200, 'public, max-age=30');
+        }
+        if (url.pathname === '/v/live') {
+          return json(await memo(env, ks + '|live', 8000, () => stored(env, cacheKey('/v/live', ks), 10000, () => live(env, q), fresh), fresh), ch, 200, 'public, max-age=30');
         }
         if (['/v/feed', '/v/journey', '/v/clickmap'].includes(url.pathname)) {
-          if (!env.PULSE_KEY) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
+          if (!env.PULSE_KEY && !devMode(req, env)) return json({ error: 'PULSE_KEY is not set on the Worker' }, ch, 503);
           if (!authorised(req, env)) return json({ error: 'wrong key' }, ch, 401);
-          if (url.pathname === '/v/feed') return json(await memo(env, ks + '|feed', 10000, () => feed(env, q), fresh), ch);
+          if (url.pathname === '/v/feed') return json(await memo(env, ks + '|feed', 10000, () => governed(env, cacheKey('/v/feed', ks), (e) => feed(e, q), { fresh, baseGap: 30000, maxAge: 300000 }), fresh), ch);
           if (url.pathname === '/v/journey') return json(await memo(env, ks + '|journey', 30000, () => journey(env, q), fresh), ch);
           return json(await memo(env, ks + '|clickmap', 30000, () => clickmap(env, q), fresh), ch);
         }
@@ -141,5 +171,4 @@ export default {
       }
     }
     return new Response('not found', { status: 404, headers: ch });
-  },
-};
+}

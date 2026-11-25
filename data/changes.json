@@ -690,6 +690,17 @@
       ],
       "detail": "The owner asked for the original behavior: every page load or reload calls the tracker, with the earlier repeat intervals (live count 10 s, other views 60 s, visits feed 10 s) while a tab is visible, and the Refresh button for Google data back. The saved-copy-only mode, the visitor Refresh chip and the 4-hour precompute were removed. Kept on the Worker to protect the free D1 limit (5M rows read a day): the single-pass visitor-flow query, hourly bot clean-up, and a short answer cache shared by all tabs (5 minutes for summary, insights and goals; 10 seconds for the live count). Kept on the dashboard: the broken-card boundary that names a problem. The analytics Worker still also refreshes Google data every 4 hours.",
       "expect": "Numbers update on every load. If several tabs stay open for many hours the tracker database can approach its daily read limit again (Cloudflare emails at about 80%); the answer cache bounds it."
+    },
+    {
+      "id": "2026-11-25-dashboard-budgeted-numbers",
+      "date": "2026-11-25",
+      "title": "Dashboard numbers: worked out only when new data arrives, within a daily database read allowance; last numbers shown instantly; local no-key dev mode",
+      "kind": "technical",
+      "hosts": [
+        "analytics.streamerosai.com"
+      ],
+      "detail": "Measured: one calculation of the Home numbers read about 67,000 rows of a 750-row table (55 separate SQL questions) and the free D1 plan allows 5,000,000 a day. Now the tracker Worker (cache.js, governed) reuses an answer until new data has arrived and the gap since the last calculation has passed (2 minutes; 10 minutes past 40% of the day's allowance, an hour past 70%, saved answer only past 90%), counts the rows each calculation really read in a daily tally, and a repeat load costs about 15 rows. Background timers no longer ask for the heavy answers (summary, insights, goals); only a page load or a filter change does. The Home page no longer asks for a second summary (about 20,000 rows). The visits feed polls every 30 s through the same guard. The dashboard shows each screen's last answer at once and replaces it when the new one arrives. Dev mode (pulse/DEV.md): the tracker runs locally on a copy of the real data with no key and reports rows read per request; it works only with PULSE_DEV=1 and a localhost request, and is off on the live Worker. A verified in-memory version (agg.js, about 6,000 rows) is kept switched off because it needs 50-200 ms of CPU against the free plan's 10 ms.",
+      "expect": "Numbers are exact and at most a few minutes old on a quiet day, and only somewhat older on a very busy day; the tracker database cannot pass its daily limit. Press Refresh on Google data as before."
     }
   ]
 }
